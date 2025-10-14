@@ -1,0 +1,120 @@
+module EX (
+    input clk,
+	input rst,
+
+    input in_valid,
+    input out_ready,
+    output in_ready,
+    output reg out_valid,
+
+    input [31: 0] PC,
+	input [11: 0] alu_op,
+    input src1_is_pc,
+    input src2_is_imm,
+    input res_from_mem,
+    input gr_we,
+    input mem_we,
+    input [4: 0] dest,
+    input [31:0] imm,
+    input [31: 0] rj_value,
+    input [31: 0] rkd_value,
+	output [31: 0] alu_result,
+    
+    output reg [31: 0] alu_result_out,
+    output reg [31: 0] PC_out,
+    output reg res_from_mem_out,
+    output reg gr_we_out,
+    output reg mem_we_out,
+    output reg [4: 0] dest_out,
+    output reg [31: 0] rkd_value_out
+);
+    wire ready_go;
+    assign ready_go = 1'b1;
+
+    assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+
+    always @(posedge clk) begin
+        if (rst) begin
+            out_valid <= 1'b0;
+        end
+        else if (out_ready) begin
+            out_valid <= in_valid & ready_go;
+        end
+    end
+
+	wire [31:0] alu_src1;
+    wire [31:0] alu_src2;
+
+	alu u_alu(
+        .alu_op     (alu_op    ),
+        .alu_src1   (alu_src1  ),
+        .alu_src2   (alu_src2  ),
+        .alu_result (alu_result)
+    );
+
+    assign alu_src1 = src1_is_pc  ? PC[31:0] : rj_value;
+    assign alu_src2 = src2_is_imm ? imm : rkd_value;
+    
+    always @(posedge clk) begin
+		if (rst) begin
+			alu_result_out <= 32'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			alu_result_out <= alu_result;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			PC_out <= 32'h1c000000;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			PC_out <= PC;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			res_from_mem_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_mem_out <= res_from_mem;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			gr_we_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			gr_we_out <= gr_we;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			mem_we_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			mem_we_out <= mem_we;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			dest_out <= 5'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			dest_out <= dest;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			rkd_value_out <= 32'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			rkd_value_out <= rkd_value;
+		end
+	end
+endmodule
