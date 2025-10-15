@@ -33,8 +33,8 @@ module IF (
     wire [31:0] seq_pc;
     wire [31:0] nextpc;
 
-    assign seq_pc       = PC_out + 32'h4;
-    assign nextpc       = br_taken ? br_target : seq_pc;
+    assign seq_pc       = (ready_go && out_ready) ? PC_out + 32'h4: PC_out;
+    assign nextpc       = (ready_go && out_ready && br_taken) ? br_target : seq_pc;
 
     assign inst_sram_en = ready_go;
     assign inst_sram_we    = 4'b0;
