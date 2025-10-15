@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - 新增除法器操作码: div_op = {inst_mod_wu, inst_mod_w, inst_div_wu, inst_div_w}
 - 新增跳转、访存指令译码
     - 新增访存操作码: load_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b}
+- 新增简单乘除法器和完整数据通路
+    - **注意：简单乘除法器的接口和要求不一致**
 
 ## [exp9] - 2025-10-14
 ### Added
