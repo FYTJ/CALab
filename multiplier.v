@@ -24,7 +24,7 @@ module multiplier (
     generate
         for(i = 0; i < 17; i = i + 1) begin
             booth booth_uint(
-                .exponent(i[4:0]),
+                .exponent(i[5:0] << 1),
                 .y_2_0(y_shift1[2*i+2:2*i]),
                 .x_ext(x_ext),
                 .neg_x_ext(neg_x_ext),

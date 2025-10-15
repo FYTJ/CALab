@@ -1,5 +1,5 @@
 module booth (
-    input [4:0] exponent,
+    input [5:0] exponent,
     input [2:0] y_2_0,
     input [63:0] x_ext, neg_x_ext, x_ext_mult2, neg_x_ext_mult2,
 
