@@ -11,6 +11,7 @@ module MEM (
 
     input [31: 0] alu_result,
     input [31: 0] PC,
+    input [7: 0] load_op,
     input res_from_mem,
     input gr_we,
     input mem_we,
@@ -24,6 +25,7 @@ module MEM (
 
     output reg [31: 0] alu_result_out,
     output reg [31: 0] PC_out,
+    output reg [7: 0] load_op_out,
     output reg res_from_mem_out,
     output reg gr_we_out,
     output reg [4: 0] dest_out
@@ -43,7 +45,11 @@ module MEM (
     end
 
     assign data_sram_en = 1'b1;
-    assign data_sram_we    = {4{mem_we && valid && in_valid}};
+    assign data_sram_we    = {4{mem_we && valid && in_valid}} & (
+                                ({4{load_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
+                                ({4{load_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
+                                ({4{load_op[7]}} & 4'b1111)  // SW;
+                            );
     assign data_sram_addr  = alu_result;
     assign data_sram_wdata = rkd_value;
 
@@ -55,6 +61,15 @@ module MEM (
 			PC_out <= PC;
 		end
 	end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            load_op_out <= 8'b0;
+        end
+        else if (in_valid & ready_go & out_ready) begin
+			load_op_out <= load_op;
+		end
+    end
 
     always @(posedge clk) begin
 		if (rst) begin

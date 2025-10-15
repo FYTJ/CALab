@@ -62,8 +62,10 @@ module mycpu_top(
     wire [31: 0] EX_PC;
     wire EX_br_taken;
     wire [31: 0] EX_br_target;
-    wire EX_load_use_sign;
+    wire [7: 0] EX_load_op;
     wire [11: 0] EX_alu_op;
+    wire [2: 0] EX_mul_op;
+    wire [3: 0] EX_div_op;
     wire EX_src1_is_pc;
     wire EX_src1_is_imm;
     wire EX_res_from_mem;
@@ -79,6 +81,7 @@ module mycpu_top(
     wire MEM_out_valid;
     wire [31: 0] MEM_alu_result;
     wire [31: 0] MEM_PC;
+    wire [7: 0] MEM_load_op;
     wire MEM_res_from_mem;
     wire MEM_gr_we;
     wire MEM_mem_we;
@@ -88,6 +91,7 @@ module mycpu_top(
     wire WB_in_ready;
     wire [31: 0] WB_PC;
     wire [31: 0] WB_alu_result;
+    wire [7: 0] WB_load_op;
     wire WB_res_from_mem;
     wire WB_gr_we;
     wire [4: 0] WB_dest;
@@ -99,7 +103,6 @@ module mycpu_top(
         .out_ready(ID_in_ready),
         .br_taken(EX_br_taken),
         .br_target(EX_br_target),
-        .load_use_sign(EX_load_use_sign),
         .inst_sram_en(inst_sram_en),
         .inst_sram_we(inst_sram_we),
         .inst_sram_addr(inst_sram_addr),
@@ -137,8 +140,10 @@ module mycpu_top(
         .rf_rdata2(rf_rdata2),
         .br_taken_out(EX_br_taken),
         .br_target_out(EX_br_target),
-        .load_use_sign(EX_load_use_sign),
+        .load_op_out(EX_load_op),
         .alu_op_out(EX_alu_op),
+        .mul_op_out(EX_mul_op),
+        .div_op_out(EX_div_op),
         .src1_is_pc_out(EX_src1_is_pc),
         .src2_is_imm_out(EX_src1_is_imm),
         .res_from_mem_out(EX_res_from_mem),
@@ -161,7 +166,10 @@ module mycpu_top(
         .out_valid(EX_out_valid),
 
         .PC(EX_PC),
+        .load_op(EX_load_op),
         .alu_op(EX_alu_op),
+        .mul_op(EX_mul_op),
+        .div_op(EX_div_op),
         .src1_is_pc(EX_src1_is_pc),
         .src2_is_imm(EX_src1_is_imm),
         .res_from_mem(EX_res_from_mem),
@@ -174,6 +182,7 @@ module mycpu_top(
         .alu_result(alu_result),
         .alu_result_out(MEM_alu_result),
         .PC_out(MEM_PC),
+        .load_op_out(MEM_load_op),
         .res_from_mem_out(MEM_res_from_mem),
         .gr_we_out(MEM_gr_we),
         .mem_we_out(MEM_mem_we),
@@ -193,6 +202,7 @@ module mycpu_top(
 
         .alu_result(MEM_alu_result),
         .PC(MEM_PC),
+        .load_op(MEM_load_op),
         .res_from_mem(MEM_res_from_mem),
         .gr_we(MEM_gr_we),
         .mem_we(MEM_mem_we),
@@ -204,6 +214,7 @@ module mycpu_top(
         .data_sram_wdata(data_sram_wdata),
         .alu_result_out(WB_alu_result),
         .PC_out(WB_PC),
+        .load_op_out(WB_load_op),
         .res_from_mem_out(WB_res_from_mem),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest)
@@ -219,6 +230,7 @@ module mycpu_top(
         .data_sram_rdata(data_sram_rdata),
         .alu_result(WB_alu_result),
         .PC(WB_PC),
+        .load_op(WB_load_op),
         .res_from_mem(WB_res_from_mem),
         .gr_we(WB_gr_we),
         .dest(WB_dest),

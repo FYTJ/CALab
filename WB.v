@@ -10,6 +10,7 @@ module WB (
     input [31: 0] data_sram_rdata,
     input [31: 0] alu_result,
     input [31: 0] PC,
+    input [7: 0] load_op,
     input res_from_mem,
     input gr_we,
     input [4: 0] dest,
@@ -30,7 +31,17 @@ module WB (
     
     wire [31: 0] mem_result;
     wire [31: 0] final_result;
-    assign mem_result   = data_sram_rdata;
+    // load_op为1时符号扩展，load_op为0时0扩展
+    assign mem_result   = 
+        {32{load_op[0] | load_op[3]}} &   // LB & LBU
+            ({32{alu_result[1: 0] == 2'b00}} & {{24{load_op[3] & data_sram_rdata[7]}}, data_sram_rdata[7: 0]} | 
+    		{32{alu_result[1: 0] == 2'b01}} & {{24{load_op[3] & data_sram_rdata[15]}}, data_sram_rdata[15: 8]} | 
+			{32{alu_result[1: 0] == 2'b10}} & {{24{load_op[3] & data_sram_rdata[23]}}, data_sram_rdata[23: 16]} | 
+			{32{alu_result[1: 0] == 2'b11}} & {{24{load_op[3] & data_sram_rdata[31]}}, data_sram_rdata[31: 24]}) |
+		{32{load_op[1] | load_op[4]}} &   // LH & LHU
+			({32{alu_result[1: 0] == 2'b00}} & {{16{load_op[4] & data_sram_rdata[15]}}, data_sram_rdata[15: 0]} |
+			{32{alu_result[1: 0] == 2'b10}} & {{16{load_op[4] & data_sram_rdata[31]}}, data_sram_rdata[31: 16]}) |
+	 	{32{load_op[2]}} & data_sram_rdata;  // LW
     assign final_result = res_from_mem ? mem_result : alu_result;
 
     assign rf_we    = gr_we && valid && in_valid;
