@@ -1,4 +1,4 @@
-module mul_tb (
+module multiplier (
     input mul_clk,
     input resetn,
     input mul_signed,
@@ -25,7 +25,7 @@ module mul_tb (
         for(i = 0; i < 17; i = i + 1) begin
             booth booth_uint(
                 .exponent(i[4:0]),
-                .y_2_0(y_shift1[2i+2:2i]),
+                .y_2_0(y_shift1[2*i+2:2*i]),
                 .x_ext(x_ext),
                 .neg_x_ext(neg_x_ext),
                 .x_ext_mult2(x_ext_mult2),
@@ -59,6 +59,8 @@ module mul_tb (
             );
         end
     endgenerate
+
+    assign result = {C[62:0], 1'b0} + S;
 
 
 endmodule
