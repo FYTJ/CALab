@@ -21,9 +21,9 @@ module EX (
     input [31:0] imm,
     input [31: 0] rj_value,
     input [31: 0] rkd_value,
-	output [31: 0] alu_result,
+	output [31: 0] result,
     
-    output reg [31: 0] alu_result_out,
+    output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
 	output reg [7: 0] load_op_out,
     output reg res_from_mem_out,
@@ -46,25 +46,43 @@ module EX (
         end
     end
 
-	wire [31:0] alu_src1;
-    wire [31:0] alu_src2;
+	wire [31: 0] src1;
+    wire [31: 0] src2;
+	wire [31: 0] alu_result;
+	wire [31: 0] mul_result;
+	wire [31: 0] div_result;
+	assign result = alu_result | mul_result | div_result;
 
 	alu u_alu(
         .alu_op     (alu_op    ),
-        .alu_src1   (alu_src1  ),
-        .alu_src2   (alu_src2  ),
+        .alu_src1   (src1  ),
+        .alu_src2   (src2  ),
         .alu_result (alu_result)
     );
 
-    assign alu_src1 = src1_is_pc  ? PC[31:0] : rj_value;
-    assign alu_src2 = src2_is_imm ? imm : rkd_value;
+	idiot_mul u_mul(
+		.mul_op(mul_op),
+		.x(src1),
+		.y(src2),
+		.result(mul_result)
+	);
+
+	idiot_div u_div(
+		.div_op(div_op),
+		.x(src1),
+		.y(src2),
+		.result(div_result)
+	);
+
+    assign src1 = src1_is_pc  ? PC[31:0] : rj_value;
+    assign src2 = src2_is_imm ? imm : rkd_value;
     
     always @(posedge clk) begin
 		if (rst) begin
-			alu_result_out <= 32'b0;
+			result_out <= 32'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
-			alu_result_out <= alu_result;
+			result_out <= result;
 		end
 	end
 
