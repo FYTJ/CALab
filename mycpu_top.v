@@ -75,11 +75,11 @@ module mycpu_top(
     wire [31: 0] EX_imm;
     wire [31: 0] EX_rj_value;
     wire [31: 0] EX_rkd_value;
-    wire [31: 0] alu_result;
+    wire [31: 0] result;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
-    wire [31: 0] MEM_alu_result;
+    wire [31: 0] MEM_result;
     wire [31: 0] MEM_PC;
     wire [7: 0] MEM_load_op;
     wire MEM_res_from_mem;
@@ -90,7 +90,7 @@ module mycpu_top(
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
-    wire [31: 0] WB_alu_result;
+    wire [31: 0] WB_result;
     wire [7: 0] WB_load_op;
     wire WB_res_from_mem;
     wire WB_gr_we;
@@ -119,18 +119,18 @@ module mycpu_top(
         .in_ready(ID_in_ready),
         .out_valid(ID_out_valid),
 
-        .alu_result(alu_result),
+        .result(result),
         .MEM_valid(EX_out_valid),
         .MEM_gr_we(MEM_gr_we),
         .MEM_dest(MEM_dest),
         .MEM_res_from_mem(MEM_res_from_mem),
-        .MEM_alu_result(MEM_alu_result),
+        .MEM_result(MEM_result),
         .WB_valid(valid),
         .WB_gr_we(WB_gr_we),
         .WB_res_from_mem(WB_res_from_mem),
         .WB_dest(WB_dest),
         .WB_data_sram_rdata(data_sram_rdata),
-        .WB_alu_result(WB_alu_result),
+        .WB_result(WB_result),
         
         .inst(inst_sram_rdata),
         .PC(ID_PC),
@@ -179,8 +179,8 @@ module mycpu_top(
         .imm(EX_imm),
         .rj_value(EX_rj_value),
         .rkd_value(EX_rkd_value),
-        .alu_result(alu_result),
-        .alu_result_out(MEM_alu_result),
+        .result(result),
+        .result_out(MEM_result),
         .PC_out(MEM_PC),
         .load_op_out(MEM_load_op),
         .res_from_mem_out(MEM_res_from_mem),
@@ -200,7 +200,7 @@ module mycpu_top(
         .out_valid(MEM_out_valid),
         .valid(valid),
 
-        .alu_result(MEM_alu_result),
+        .result(MEM_result),
         .PC(MEM_PC),
         .load_op(MEM_load_op),
         .res_from_mem(MEM_res_from_mem),
@@ -212,7 +212,7 @@ module mycpu_top(
         .data_sram_we(data_sram_we),
         .data_sram_addr(data_sram_addr),
         .data_sram_wdata(data_sram_wdata),
-        .alu_result_out(WB_alu_result),
+        .result_out(WB_result),
         .PC_out(WB_PC),
         .load_op_out(WB_load_op),
         .res_from_mem_out(WB_res_from_mem),
@@ -228,7 +228,7 @@ module mycpu_top(
         .valid(valid),
 
         .data_sram_rdata(data_sram_rdata),
-        .alu_result(WB_alu_result),
+        .result(WB_result),
         .PC(WB_PC),
         .load_op(WB_load_op),
         .res_from_mem(WB_res_from_mem),

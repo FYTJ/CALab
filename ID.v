@@ -7,19 +7,19 @@ module ID (
     output in_ready,
     output reg out_valid,
 
-    input [31: 0] alu_result,
+    input [31: 0] result,
     input MEM_valid,
     input MEM_gr_we,
     input [4: 0] MEM_dest,
     input MEM_res_from_mem,
-    input [31: 0] MEM_alu_result,
+    input [31: 0] MEM_result,
 
     input WB_valid,
     input WB_gr_we,
     input WB_res_from_mem,
     input [4: 0] WB_dest,
     input [31: 0] WB_data_sram_rdata,
-    input [31: 0] WB_alu_result,
+    input [31: 0] WB_result,
 
     input [31: 0] inst,
 	input [31: 0] PC,
@@ -296,13 +296,13 @@ module ID (
 			rj_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr1 == dest_out) && (dest_out != 5'b0)) begin
-            rj_value = alu_result;
+            rj_value = result;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr1 == MEM_dest) && (MEM_dest != 5'b0)) begin
-            rj_value = MEM_alu_result;
+            rj_value = MEM_result;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr1 == WB_dest) && (WB_dest != 5'b0)) begin
-            rj_value = WB_res_from_mem ? WB_data_sram_rdata : WB_alu_result;
+            rj_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
         end
         else begin
             rj_value = rf_rdata1;
@@ -314,13 +314,13 @@ module ID (
 			rkd_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr2 == dest_out) && (dest_out != 5'b0)) begin
-            rkd_value = alu_result;
+            rkd_value = result;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr2 == MEM_dest) && (MEM_dest != 5'b0)) begin
-            rkd_value = MEM_alu_result;
+            rkd_value = MEM_result;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr2 == WB_dest) && (WB_dest != 5'b0)) begin
-            rkd_value = WB_res_from_mem ? WB_data_sram_rdata : WB_alu_result;
+            rkd_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
         end
         else begin
             rkd_value = rf_rdata2;
