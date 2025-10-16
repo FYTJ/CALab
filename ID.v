@@ -265,6 +265,9 @@ module ID (
                            inst_srli_w   |
                            inst_srai_w   |
                            inst_addi_w   |
+                           inst_andi     |
+                           inst_ori      |
+                           inst_xori     |
                            inst_slti     |
                            inst_sltui    |
                            inst_ld_b     |
