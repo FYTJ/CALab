@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-16
+### Fixed
+- 修复部分译码错误
+- 修复写内存数据错误
+    - **注意:** 读写内存接口含义如下：
+        - data_sram_we: 按字节写，定义方式与risc-v的Write_Strb相同
+        - **data_sram_wdata: 需要将数据移动到待写入位置处，其余位置补0**
+
 ## [Unreleased] - 2025-10-15
 ### Added
 - 新增alu运算、乘除法指令译码
