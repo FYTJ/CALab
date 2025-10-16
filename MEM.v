@@ -46,8 +46,8 @@ module MEM (
 
     assign data_sram_en = 1'b1;
     assign data_sram_we    = {4{mem_we && valid && in_valid}} & (
-                                ({4{load_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
-                                ({4{load_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
+                                ({4{load_op[5]}} & 4'b0001) |  // SB
+                                ({4{load_op[6]}} & 4'b0011) |  // SH
                                 ({4{load_op[7]}} & 4'b1111)  // SW;
                             );
     assign data_sram_addr  = result;
