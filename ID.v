@@ -244,13 +244,12 @@ module ID (
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
     assign need_si12  =  inst_addi_w | inst_ld_b | inst_ld_h | inst_ld_w | inst_st_b | inst_st_h | inst_st_w | inst_ld_bu | inst_ld_hu | inst_slti | inst_sltui;
     assign need_si16  =  inst_jirl | inst_beq | inst_bne;
-    assign need_si20  =  inst_lu12i_w;
+    assign need_si20  =  inst_lu12i_w | inst_pcaddu12i;
     assign need_si26  =  inst_b | inst_bl;
     assign src2_is_4  =  inst_jirl | inst_bl;
 
     assign imm = src2_is_4      ? 32'h4                      :
                  need_si20      ? {i20[19:0], 12'b0}         :
-                 inst_pcaddu12i ? {{20{i20[0]}}, 12'b0}      :
     /*need_ui5 || need_si12*/     {{20{i12[11]}}, i12[11:0]} ;
 
     assign br_offs = need_si26 ? {{ 4{i26[25]}}, i26[25:0], 2'b0} :
