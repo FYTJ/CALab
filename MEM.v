@@ -51,7 +51,17 @@ module MEM (
                                 ({4{load_op[7]}} & 4'b1111)  // SW;
                             );
     assign data_sram_addr  = result & ~32'b11;
-    assign data_sram_wdata = rkd_value;
+    assign data_sram_wdata = {32{load_op[5]}} & (
+                                {32{result[1:0]==2'b00}} & {24'b0, rkd_value[7: 0]} |
+                                {32{result[1:0]==2'b01}} & {16'b0, rkd_value[7: 0], 8'b0} |
+                                {32{result[1:0]==2'b10}} & {8'b0, rkd_value[7: 0], 16'b0} |
+                                {rkd_value[7:0], 24'b0}
+                             ) | 
+                             {32{load_op[6]}} & (
+                                {32{result[1:0]==2'b00}} & {16'b0, rkd_value[15: 0]} |
+                                {32{result[1:0]==2'b10}} & {rkd_value[15: 0], 16'b0}
+                             ) |
+                             {32{load_op[7]}} & rkd_value;
 
     always @(posedge clk) begin
 		if (rst) begin
