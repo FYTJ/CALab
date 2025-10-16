@@ -50,7 +50,7 @@ module MEM (
                                 ({4{load_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
                                 ({4{load_op[7]}} & 4'b1111)  // SW;
                             );
-    assign data_sram_addr  = result;
+    assign data_sram_addr  = result & ~32'b11;
     assign data_sram_wdata = rkd_value;
 
     always @(posedge clk) begin
