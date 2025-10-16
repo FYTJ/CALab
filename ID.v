@@ -225,8 +225,7 @@ module ID (
 
     assign load_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 
-    assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_st_w
-                        | inst_jirl | inst_bl | inst_pcaddu12i;
+    assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_ld_h | inst_ld_b | inst_ld_hu | inst_ld_bu | inst_st_w | inst_st_h | inst_st_b | inst_jirl | inst_bl | inst_pcaddu12i;
     assign alu_op[ 1] = inst_sub_w;
     assign alu_op[ 2] = inst_slt | inst_slti;
     assign alu_op[ 3] = inst_sltu | inst_sltui;
