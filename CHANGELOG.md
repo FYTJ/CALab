@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-10-17
+### Added
+- 新增除法器模块
+    - **除0在LoongArch指令集中是未定义行为，在该除法器中采用了和risc-v相同的处理：商为0xFFFF_FFFF，余数与被除数相同**
+
 ## [Unreleased] - 2025-10-16
 ### Fixed
 - 修复部分译码错误
