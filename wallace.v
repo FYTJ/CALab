@@ -22,27 +22,10 @@ module wallace (
         end
     endgenerate
 
-    // register for pipeline
-    reg [13:0] Cin_reg;
-    reg [ 4:0] S1_reg;
-    reg [16:0] in_reg;
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            Cin_reg <= 14'd0;
-            S1_reg <= 4'd0;
-            in_reg <= 17'd0;
-        end 
-        else begin
-            Cin_reg <= Cin;
-            S1_reg <= S1;
-            in_reg <= in;
-        end
-    end
-
     // second layer
     wire [3:0] S2;
     wire [11:0] in2;
-    assign in2 = {S1_reg, in_reg[1:0], Cin_reg[4:0]};
+    assign in2 = {S1, in[1:0], Cin[4:0]};
     generate
         for(i = 0; i < 4; i = i + 1) begin : layer2
             full_adder full_adder_layer_2 (
@@ -87,12 +70,26 @@ module wallace (
         end
     endgenerate
 
+    // register for pipeline
+    reg [13:0] Cin_reg;
+    reg [ 1:0] S4_reg;
+    always @(posedge mul_clk) begin
+        if(!resetn) begin
+            Cin_reg <= 14'd0;
+            S4_reg <= 2'd0;
+        end 
+        else begin
+            Cin_reg <= Cin;
+            S4_reg <= S4;
+        end
+    end
+
     // fifth layer
     wire S5;
     full_adder full_adder_layer_5 (
-        .A(S4[1]),
-        .B(S4[0]),
-        .Cin(Cin[11]),
+        .A(S4_reg[1]),
+        .B(S4_reg[0]),
+        .Cin(Cin_reg[11]),
         .S(S5),
         .Cout(Cout[13])
     );
@@ -101,7 +98,7 @@ module wallace (
     full_adder full_adder_layer_6 (
         .A(S5),
         .B(Cin[13]),
-        .Cin(Cin[12]),
+        .Cin(Cin_reg[12]),
         .S(S),
         .Cout(C)
     );
