@@ -6,12 +6,20 @@ module MEM (
     input out_ready,
     output in_ready,
     output reg out_valid,
-
     input valid,
+
+    output to_div_resp_ready,
+    input from_div_resp_valid,
+    input [31: 0] div_quotient,
+    input [31: 0] div_remainder,
 
     input [31: 0] result,
     input [31: 0] PC,
     input [7: 0] load_op,
+    input [2: 0] mul_op,
+	input [3: 0] div_op,
+    input res_from_mul,
+	input res_from_div,
     input res_from_mem,
     input gr_we,
     input mem_we,
@@ -31,9 +39,11 @@ module MEM (
     output reg [4: 0] dest_out
 );
     wire ready_go;
-    assign ready_go = 1'b1;
+    assign ready_go = !in_valid ||
+                      !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+    assign to_div_resp_ready = 1'b1;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -86,7 +96,9 @@ module MEM (
 			result_out <= 32'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
-			result_out <= result;
+			result_out <= {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
+                          {32{res_from_div}} & {32{div_op[2] | div_op[3]}} & div_remainder |
+                          result;
 		end
 	end
 

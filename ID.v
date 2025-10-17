@@ -35,6 +35,8 @@ module ID (
     output reg [3: 0] div_op_out,
     output reg src1_is_pc_out,
     output reg src2_is_imm_out,
+    output reg res_from_mul_out,
+    output reg res_from_div_out,
     output reg res_from_mem_out,
     output reg gr_we_out,
     output reg mem_we_out,
@@ -73,6 +75,8 @@ module ID (
     wire [3: 0] div_op;
     wire        src1_is_pc;
     wire        src2_is_imm;
+    wire        res_from_mul;
+    wire        res_from_div;
     wire        res_from_mem;
     wire        dst_is_r1;
     wire        gr_we;
@@ -285,6 +289,8 @@ module ID (
                            inst_bl       |
                            inst_pcaddu12i;
 
+    assign res_from_mul  = inst_mul_w | inst_mulh_w | inst_mulh_wu;
+    assign res_from_div  = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
     assign res_from_mem  = inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu;
     assign dst_is_r1     = inst_bl;
 
@@ -428,6 +434,24 @@ module ID (
 		end
 		else if (in_valid & ready_go & out_ready) begin
 			src2_is_imm_out <= src2_is_imm;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			res_from_mul_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_mul_out <= res_from_mul;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			res_from_div_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_div_out <= res_from_div;
 		end
 	end
 

@@ -51,6 +51,27 @@ module mycpu_top(
         .wdata  (rf_wdata )
     );
 
+    wire from_div_req_ready;
+    wire to_div_req_valid;
+    wire to_div_resp_ready;
+    wire from_div_resp_valid;
+    wire [31: 0] div_quotient;
+    wire [31: 0] div_remainder;
+
+    Div u_div(
+        .clock(clk),
+        .reset(reset),
+        .io_in_ready(from_div_req_ready),
+        .io_in_valid(to_div_req_valid),
+        .io_in_bits_divOp(EX_div_op),
+        .io_in_bits_dividend(EX_rj_value),
+        .io_in_bits_divisor(EX_rkd_value),
+        .io_out_ready(to_div_resp_ready),
+        .io_out_valid(from_div_resp_valid),
+        .io_out_bits_quotient(div_quotient),
+        .io_out_bits_remainder(div_remainder)
+    );
+
     wire IF_out_valid;
 
     wire ID_in_ready;
@@ -59,6 +80,7 @@ module mycpu_top(
 
     wire EX_in_ready;
     wire EX_out_valid;
+
     wire [31: 0] EX_PC;
     wire EX_br_taken;
     wire [31: 0] EX_br_target;
@@ -68,6 +90,8 @@ module mycpu_top(
     wire [3: 0] EX_div_op;
     wire EX_src1_is_pc;
     wire EX_src1_is_imm;
+    wire EX_res_from_mul;
+    wire EX_res_from_div;
     wire EX_res_from_mem;
     wire EX_gr_we;
     wire EX_mem_we;
@@ -82,6 +106,10 @@ module mycpu_top(
     wire [31: 0] MEM_result;
     wire [31: 0] MEM_PC;
     wire [7: 0] MEM_load_op;
+    wire [2: 0] MEM_mul_op;
+    wire [3: 0] MEM_div_op;
+    wire MEM_res_from_mul;
+    wire MEM_res_from_div;
     wire MEM_res_from_mem;
     wire MEM_gr_we;
     wire MEM_mem_we;
@@ -146,6 +174,8 @@ module mycpu_top(
         .div_op_out(EX_div_op),
         .src1_is_pc_out(EX_src1_is_pc),
         .src2_is_imm_out(EX_src1_is_imm),
+        .res_from_mul_out(EX_res_from_mul),
+        .res_from_div_out(EX_res_from_div),
         .res_from_mem_out(EX_res_from_mem),
         .gr_we_out(EX_gr_we),
         .mem_we_out(EX_mem_we),
@@ -165,6 +195,9 @@ module mycpu_top(
         .in_ready(EX_in_ready),
         .out_valid(EX_out_valid),
 
+        .from_div_req_ready(from_div_req_ready),
+        .to_div_req_valid(to_div_req_valid),
+
         .PC(EX_PC),
         .load_op(EX_load_op),
         .alu_op(EX_alu_op),
@@ -172,6 +205,8 @@ module mycpu_top(
         .div_op(EX_div_op),
         .src1_is_pc(EX_src1_is_pc),
         .src2_is_imm(EX_src1_is_imm),
+        .res_from_mul(EX_res_from_mul),
+        .res_from_div(EX_res_from_div),
         .res_from_mem(EX_res_from_mem),
         .gr_we(EX_gr_we),
         .mem_we(EX_mem_we),
@@ -183,6 +218,10 @@ module mycpu_top(
         .result_out(MEM_result),
         .PC_out(MEM_PC),
         .load_op_out(MEM_load_op),
+        .mul_op_out(MEM_mul_op),
+        .div_op_out(MEM_div_op),
+        .res_from_mul_out(MEM_res_from_mul),
+        .res_from_div_out(MEM_res_from_div),
         .res_from_mem_out(MEM_res_from_mem),
         .gr_we_out(MEM_gr_we),
         .mem_we_out(MEM_mem_we),
@@ -200,9 +239,18 @@ module mycpu_top(
         .out_valid(MEM_out_valid),
         .valid(valid),
 
+        .to_div_resp_ready(to_div_resp_ready),
+        .from_div_resp_valid(from_div_resp_valid),
+        .div_quotient(div_quotient),
+        .div_remainder(div_remainder),
+
         .result(MEM_result),
         .PC(MEM_PC),
         .load_op(MEM_load_op),
+        .mul_op(MEM_mul_op),
+        .div_op(MEM_div_op),
+        .res_from_mul(MEM_res_from_mul),
+        .res_from_div(MEM_res_from_div),
         .res_from_mem(MEM_res_from_mem),
         .gr_we(MEM_gr_we),
         .mem_we(MEM_mem_we),
