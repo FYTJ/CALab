@@ -1,8 +1,7 @@
 module wallace (
     input [16:0] in,    // 17-bit
     input [13:0] Cin,
-    input resetn,
-    input mul_clk,
+
     output [13:0] Cout,
     output S,
     output C
@@ -80,25 +79,11 @@ module wallace (
         .Cout(Cout[13])
     );
 
-    // register for pipeline
-    reg [13:0] Cin_reg;
-    reg        S5_reg;
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            Cin_reg <= 14'd0;
-            S5_reg <= 1'd0;
-        end 
-        else begin
-            Cin_reg <= Cin;
-            S5_reg <= S5;
-        end
-    end
-
     // sixth layer
     full_adder full_adder_layer_6 (
-        .A(S5_reg),
-        .B(Cin_reg[13]),
-        .Cin(Cin_reg[12]),
+        .A(S5),
+        .B(Cin[13]),
+        .Cin(Cin[12]),
         .S(S),
         .Cout(C)
     );

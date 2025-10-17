@@ -52,8 +52,7 @@ module multiplier (
             wallace wallace_uint(
                 .in(wallace_input[i]),
                 .Cin(cin_cout[i]),
-                .resetn(resetn),
-                .mul_clk(mul_clk),
+
                 .Cout(cin_cout[i+1]),
                 .S(S[i]),
                 .C(C[i])
@@ -61,7 +60,20 @@ module multiplier (
         end
     endgenerate
 
-    assign result = {C[62:0], 1'b0} + S;
+    // register for pipeline
+    reg [63:0] S_reg, C_reg;
+    always @(posedge mul_clk) begin
+        if(!resetn) begin
+            S_reg <= 64'd0;
+            C_reg <= 64'd0;
+        end
+        else begin
+            S_reg <= S;
+            C_reg <= C;
+        end
+    end
+
+    assign result = {C_reg[62:0], 1'b0} + S_reg;
 
 
 endmodule
