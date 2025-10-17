@@ -60,20 +60,6 @@ module multiplier (
         end
     endgenerate
 
-    // register for pipeline
-    reg [63:0] S_reg, C_reg;
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            S_reg <= 64'd0;
-            C_reg <= 64'd0;
-        end
-        else begin
-            S_reg <= S;
-            C_reg <= C;
-        end
-    end
-
-    assign result = {C_reg[62:0], 1'b0} + S_reg;
-
+    assign result = {C[62:0], 1'b0} + S;
 
 endmodule
