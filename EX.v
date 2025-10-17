@@ -79,13 +79,6 @@ module EX (
 		.result(mul_result)
 	);
 
-	idiot_div u_div(
-		.div_op(div_op),
-		.x(src1),
-		.y(src2),
-		.result(div_result)
-	);
-
     assign src1 = src1_is_pc  ? PC[31:0] : rj_value;
     assign src2 = src2_is_imm ? imm : rkd_value;
     
