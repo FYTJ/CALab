@@ -70,34 +70,34 @@ module wallace (
         end
     endgenerate
 
-    // register for pipeline
-    reg [13:0] Cin_reg;
-    reg [ 1:0] S4_reg;
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            Cin_reg <= 14'd0;
-            S4_reg <= 2'd0;
-        end 
-        else begin
-            Cin_reg <= Cin;
-            S4_reg <= S4;
-        end
-    end
-
     // fifth layer
     wire S5;
     full_adder full_adder_layer_5 (
-        .A(S4_reg[1]),
-        .B(S4_reg[0]),
-        .Cin(Cin_reg[11]),
+        .A(S4[1]),
+        .B(S4[0]),
+        .Cin(Cin[11]),
         .S(S5),
         .Cout(Cout[13])
     );
 
+    // register for pipeline
+    reg [13:0] Cin_reg;
+    reg        S5_reg;
+    always @(posedge mul_clk) begin
+        if(!resetn) begin
+            Cin_reg <= 14'd0;
+            S5_reg <= 1'd0;
+        end 
+        else begin
+            Cin_reg <= Cin;
+            S5_reg <= S5;
+        end
+    end
+
     // sixth layer
     full_adder full_adder_layer_6 (
-        .A(S5),
-        .B(Cin[13]),
+        .A(S5_reg),
+        .B(Cin_reg[13]),
         .Cin(Cin_reg[12]),
         .S(S),
         .Cout(C)
