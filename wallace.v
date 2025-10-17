@@ -38,10 +38,24 @@ module wallace (
         end
     endgenerate
 
+    // register for pipeline
+    reg [13:0] Cin_reg;
+    reg [ 3:0] S2_reg;
+    always @(posedge mul_clk) begin
+        if(!resetn) begin
+            Cin_reg <= 14'd0;
+            S2_reg <= 4'd0;
+        end 
+        else begin
+            Cin_reg <= Cin;
+            S2_reg <= S2;
+        end
+    end
+
     // third layer
     wire [1:0] S3;
     wire [5:0] in3;
-    assign in3 = {S2, Cin[6:5]};
+    assign in3 = {S2_reg, Cin_reg[6:5]};
     generate
         for(i = 0; i < 2; i = i + 1) begin : layer3
             full_adder full_adder_layer_3 (
@@ -54,24 +68,10 @@ module wallace (
         end
     endgenerate
 
-    // register for pipeline
-    reg [13:0] Cin_reg;
-    reg [ 1:0] S3_reg;
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            Cin_reg <= 14'd0;
-            S3_reg <= 2'd0;
-        end 
-        else begin
-            Cin_reg <= Cin;
-            S3_reg <= S3;
-        end
-    end
-
     // fourth layer
     wire [1:0] S4;
     wire [5:0] in4;
-    assign in4 = {S3_reg, Cin_reg[10:7]};
+    assign in4 = {S3, Cin[10:9], Cin_reg[8:7]};
     generate
         for(i = 0; i < 2; i = i + 1) begin : layer4
             full_adder full_adder_layer_4 (
