@@ -45,30 +45,15 @@ module multiplier (
         end
     endgenerate
 
-    // wallace input register for pipeline
-    integer k;
-    reg [16:0] wallace_input_reg [63:0];
-    always @(posedge mul_clk) begin
-        if(!resetn) begin
-            for(k = 0; k < 64; k = k + 1) begin
-                wallace_input_reg[k] <= 17'd0;
-            end
-        end
-        else begin
-            for(k = 0; k < 64; k = k + 1) begin
-                wallace_input_reg[k] <= wallace_input[k];
-            end
-        end 
-    end
-
     // wallace
     assign cin_cout[0] = 14'd0;
     generate
         for(i = 0; i < 64; i = i + 1) begin
             wallace wallace_uint(
-                .in(wallace_input_reg[i]),
+                .in(wallace_input[i]),
                 .Cin(cin_cout[i]),
-
+                .resetn(resetn),
+                .mul_clk(mul_clk),
                 .Cout(cin_cout[i+1]),
                 .S(S[i]),
                 .C(C[i])
