@@ -120,6 +120,8 @@ module mycpu_top(
     wire [31: 0] WB_PC;
     wire [31: 0] WB_result;
     wire [7: 0] WB_load_op;
+    wire WB_res_from_mul;
+    wire WB_res_from_div;
     wire WB_res_from_mem;
     wire WB_gr_we;
     wire [4: 0] WB_dest;
@@ -151,10 +153,14 @@ module mycpu_top(
         .MEM_valid(EX_out_valid),
         .MEM_gr_we(MEM_gr_we),
         .MEM_dest(MEM_dest),
+        .MEM_res_from_mul(MEM_res_from_mul),
+        .MEM_res_from_div(MEM_res_from_div),
         .MEM_res_from_mem(MEM_res_from_mem),
         .MEM_result(MEM_result),
-        .WB_valid(valid),
+        .WB_valid(MEM_out_valid),
         .WB_gr_we(WB_gr_we),
+        .WB_res_from_mul(WB_res_from_mul),
+        .WB_res_from_div(WB_res_from_div),
         .WB_res_from_mem(WB_res_from_mem),
         .WB_dest(WB_dest),
         .WB_data_sram_rdata(data_sram_rdata),
@@ -263,6 +269,8 @@ module mycpu_top(
         .result_out(WB_result),
         .PC_out(WB_PC),
         .load_op_out(WB_load_op),
+        .res_from_mul_out(WB_res_from_mul),
+        .res_from_div_out(WB_res_from_div),
         .res_from_mem_out(WB_res_from_mem),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest)

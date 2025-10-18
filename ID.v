@@ -11,11 +11,15 @@ module ID (
     input MEM_valid,
     input MEM_gr_we,
     input [4: 0] MEM_dest,
+    input MEM_res_from_mul,
+    input MEM_res_from_div,
     input MEM_res_from_mem,
     input [31: 0] MEM_result,
 
     input WB_valid,
     input WB_gr_we,
+    input WB_res_from_mul,
+    input WB_res_from_div,
     input WB_res_from_mem,
     input [4: 0] WB_dest,
     input [31: 0] WB_data_sram_rdata,
@@ -48,8 +52,9 @@ module ID (
 );
 
     wire ready_go;
+    wire mul_div_hazzard;
     wire load_use_sign;
-    assign ready_go = ~in_valid | ~load_use_sign;
+    assign ready_go = ~in_valid | ~load_use_sign & ~mul_div_hazzard;
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
@@ -501,9 +506,18 @@ module ID (
 	end
 
     assign load_use_sign = in_valid & (
-		rf_raddr1 == dest_out & gr_we_out & res_from_mem_out & out_valid |
-        rf_raddr2 == dest_out & gr_we_out & res_from_mem_out & out_valid |
-        rf_raddr1 == MEM_dest & MEM_gr_we & MEM_res_from_mem & MEM_valid |
-        rf_raddr2 == MEM_dest & MEM_gr_we & MEM_res_from_mem & MEM_valid
+		rf_raddr1 == dest_out && !src1_is_pc &&  gr_we_out && res_from_mem_out && out_valid ||
+        rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && res_from_mem_out && out_valid ||
+        rf_raddr1 == MEM_dest && !src1_is_pc &&  MEM_gr_we && MEM_res_from_mem && MEM_valid ||
+        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_mem && MEM_valid
+    );
+
+    assign mul_div_hazzard = in_valid & (
+        rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
+        rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
+        rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
+        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
+        rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid ||
+        rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid
     );
 endmodule

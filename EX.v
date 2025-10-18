@@ -47,7 +47,7 @@ module EX (
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_div_req_valid = 1'b1;
+	assign to_div_req_valid = in_valid && res_from_div;
 
     always @(posedge clk) begin
         if (rst) begin

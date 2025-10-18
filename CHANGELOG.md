@@ -5,10 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-17
+## [Unreleased] - 2025-10-18
 ### Added
 - 新增除法器模块
     - **除0在LoongArch指令集中是未定义行为，在该除法器中采用了和risc-v相同的处理：商为0xFFFF_FFFF，余数与被除数相同**
+    - 除法器在CPU的EX、MEM两级同步进行计算，由EX级发送数据，MEM级接收结果。两级均需要等待握手完成才能进行数据传输。除法器在status=0(IDLE)时准备好接收数据；在status=1(BUSY)时进行计算，clk_count记录计算状态，当clk_count=32时计算完成，结果有效。
+    - 乘除法器的计算结果不参与旁路。在ID级设置信号mul_div_hazzard，该信号拉高表示读取未写回的乘除法结果，此时应该进行阻塞等待。
 
 ## [Unreleased] - 2025-10-16
 ### Fixed
