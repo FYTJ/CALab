@@ -1,10 +1,10 @@
 module wallace (
-    input [16:0] in,    // 17-bit
-    input [13:0] Cin,
+    input wire [16:0] in,    // 17-bit
+    input wire [13:0] Cin,
 
-    output [13:0] Cout,
-    output S,
-    output C
+    output wire [13:0] Cout,
+    output wire S,
+    output wire C
 );
     // first layer
     wire [4:0] S1;
