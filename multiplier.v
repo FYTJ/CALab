@@ -1,6 +1,6 @@
 module multiplier (
     input mul_clk,
-    input resetn,
+    input reset,
     input mul_signed,
     input [31:0] x,
     input [31:0] y,
