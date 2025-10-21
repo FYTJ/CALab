@@ -8,6 +8,8 @@ module MEM (
     output reg out_valid,
     input valid,
 
+    input [63: 0] mul_result,
+
     output to_div_resp_ready,
     input from_div_resp_valid,
     input [31: 0] div_quotient,
@@ -100,6 +102,8 @@ module MEM (
 		else if (in_valid & ready_go & out_ready) begin
 			result_out <= {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
                           {32{res_from_div}} & {32{div_op[2] | div_op[3]}} & div_remainder |
+                        //   {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
+                        //   {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
                           result;
 		end
 	end

@@ -51,6 +51,12 @@ module mycpu_top(
         .wdata  (rf_wdata )
     );
 
+    wire from_mul_req_ready;
+    wire to_mul_req_valid;
+    wire to_mul_resp_ready;
+    wire from_mul_resp_valid;
+    wire [63: 0] mul_result;
+
     wire from_div_req_ready;
     wire to_div_req_valid;
     wire to_div_resp_ready;
@@ -244,6 +250,8 @@ module mycpu_top(
         .in_ready(MEM_in_ready),
         .out_valid(MEM_out_valid),
         .valid(valid),
+
+        .mul_result(mul_result),
 
         .to_div_resp_ready(to_div_resp_ready),
         .from_div_resp_valid(from_div_resp_valid),

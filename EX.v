@@ -61,8 +61,10 @@ module EX (
 	wire [31: 0] src1;
     wire [31: 0] src2;
 	wire [31: 0] alu_result;
-	wire [31: 0] mul_result;
-	assign result = alu_result | mul_result;
+	wire [63: 0] mul_result;
+	wire [31: 0] final_mul_result = {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
+                              {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0];
+	assign result = res_from_mul ? final_mul_result : alu_result;
 
 	alu u_alu(
         .alu_op     (alu_op    ),
@@ -71,12 +73,14 @@ module EX (
         .alu_result (alu_result)
     );
 
-	idiot_mul u_mul(
-		.mul_op(mul_op),
-		.x(src1),
-		.y(src2),
-		.result(mul_result)
-	);
+	multiplier u_mul(
+        .mul_clk(clk),
+        .reset(rst),
+        .mul_op(mul_op),
+        .x(src1),
+        .y(src2),
+        .result(mul_result)
+    );
 
     assign src1 = src1_is_pc  ? PC[31:0] : rj_value;
     assign src2 = src2_is_imm ? imm : rkd_value;
