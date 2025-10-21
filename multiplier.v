@@ -1,11 +1,16 @@
 module multiplier (
     input mul_clk,
-    input resetn,
-    input mul_signed,
+    input reset,
+    input [2: 0] mul_op,
     input [31:0] x,
     input [31:0] y,
+    input  to_mul_req_valid,
+    output from_mul_req_ready,
+    input  to_mul_resp_ready,
+    output from_mul_resp_valid,
     output [63:0] result
 );
+    wire mul_signed;
     wire [63:0] x_ext, neg_x_ext, x_ext_mult2, neg_x_ext_mult2;
     wire [34:0] y_shift1;
     wire [63:0] partial_product [16:0];
@@ -13,6 +18,21 @@ module multiplier (
     wire [13:0] cin_cout [64:0];
     wire [63:0] S, C;
     
+    wire do_mul;
+    reg  from_mul_resp_valid_reg;
+    assign do_mul = to_mul_req_valid && from_mul_req_ready;
+    always @(posedge mul_clk) begin
+        if(reset) begin
+            from_mul_resp_valid_reg <= 1'b0;
+        end
+        else if(do_mul) begin
+            from_mul_resp_valid_reg <= 1'b1;
+        end
+    end
+    assign from_mul_resp_valid = from_mul_resp_valid_reg;
+    assign from_mul_req_ready = to_mul_resp_ready;
+
+    assign mul_signed = mul_op[0] || mul_op[1];
     assign x_ext = {{32{x[31] & mul_signed}}, x};
     assign neg_x_ext = ~x_ext + 1;
     assign x_ext_mult2 = x_ext << 1;
@@ -52,7 +72,9 @@ module multiplier (
             wallace wallace_uint(
                 .in(wallace_input[i]),
                 .Cin(cin_cout[i]),
-
+                .reset(reset),
+                .mul_clk(mul_clk),
+                .do_mul(do_mul),
                 .Cout(cin_cout[i+1]),
                 .S(S[i]),
                 .C(C[i])
@@ -61,5 +83,6 @@ module multiplier (
     endgenerate
 
     assign result = {C[62:0], 1'b0} + S;
+
 
 endmodule
