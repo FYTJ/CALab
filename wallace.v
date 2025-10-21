@@ -1,10 +1,12 @@
 module wallace (
-    input wire [16:0] in,    // 17-bit
-    input wire [13:0] Cin,
-
-    output wire [13:0] Cout,
-    output wire S,
-    output wire C
+    input [16:0] in,    // 17-bit
+    input [13:0] Cin,
+    input reset,
+    input mul_clk,
+    input do_mul,
+    output [13:0] Cout,
+    output S,
+    output C
 );
     // first layer
     wire [4:0] S1;
@@ -37,10 +39,24 @@ module wallace (
         end
     endgenerate
 
+    // register for pipeline
+    reg [13:0] Cin_reg;
+    reg [ 3:0] S2_reg;
+    always @(posedge mul_clk) begin
+        if(reset) begin
+            Cin_reg <= 14'd0;
+            S2_reg <= 4'd0;
+        end 
+        else if(do_mul)begin
+            Cin_reg <= Cin;
+            S2_reg <= S2;
+        end
+    end
+
     // third layer
     wire [1:0] S3;
     wire [5:0] in3;
-    assign in3 = {S2, Cin[6:5]};
+    assign in3 = {S2_reg, Cin_reg[6:5]};
     generate
         for(i = 0; i < 2; i = i + 1) begin : layer3
             full_adder full_adder_layer_3 (
@@ -56,7 +72,7 @@ module wallace (
     // fourth layer
     wire [1:0] S4;
     wire [5:0] in4;
-    assign in4 = {S3, Cin[10:7]};
+    assign in4 = {S3, Cin[10:9], Cin_reg[8:7]};
     generate
         for(i = 0; i < 2; i = i + 1) begin : layer4
             full_adder full_adder_layer_4 (
