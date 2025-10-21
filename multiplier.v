@@ -1,11 +1,13 @@
 module multiplier (
     input mul_clk,
     input reset,
-    input mul_signed,
+    input [2: 0] mul_op,
     input [31:0] x,
     input [31:0] y,
     output [63:0] result
 );
+    wire mul_signed = mul_op[0] || mul_op[1];
+
     wire [63:0] x_ext, neg_x_ext, x_ext_mult2, neg_x_ext_mult2;
     wire [34:0] y_shift1;
     wire [63:0] partial_product [16:0];
@@ -61,6 +63,4 @@ module multiplier (
     endgenerate
 
     assign result = {C[62:0], 1'b0} + S;
-
-
 endmodule
