@@ -10,7 +10,9 @@ module MEM (
 
     input [63: 0] mul_result,
 
+    output to_mul_resp_ready,
     output to_div_resp_ready,
+    input from_mul_resp_valid,
     input from_div_resp_valid,
     input [31: 0] div_quotient,
     input [31: 0] div_remainder,
@@ -44,9 +46,11 @@ module MEM (
 );
     wire ready_go;
     assign ready_go = !in_valid ||
+                      !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+    assign to_mul_resp_ready = 1'b1;
     assign to_div_resp_ready = in_valid && res_from_div;
 
     always @(posedge clk) begin
@@ -77,6 +81,13 @@ module MEM (
                              ) |
                              {32{load_op[7]}} & rkd_value;
 
+    wire [31: 0] result_out_next;
+    assign result_out_next = {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
+                             {32{res_from_div}} & {32{div_op[2] | div_op[3]}} & div_remainder |
+                             {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
+                             {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
+                             result;
+
     always @(posedge clk) begin
 		if (rst) begin
 			PC_out <= 32'h1c000000;
@@ -100,11 +111,7 @@ module MEM (
 			result_out <= 32'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
-			result_out <= {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
-                          {32{res_from_div}} & {32{div_op[2] | div_op[3]}} & div_remainder |
-                        //   {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
-                        //   {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
-                          result;
+			result_out <= result_out_next;
 		end
 	end
 

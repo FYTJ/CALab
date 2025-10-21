@@ -1,9 +1,9 @@
 module full_adder (
-    input A,
-    input B,
-    input Cin,
-    output S,
-    output Cout
+    input wire A,
+    input wire B,
+    input wire Cin,
+    output wire S,
+    output wire Cout
 );
     assign S = A ^ B ^ Cin;
     assign Cout = A & B | (A | B) & Cin;

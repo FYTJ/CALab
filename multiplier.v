@@ -43,7 +43,7 @@ module multiplier (
     // booth
     generate
         for(i = 0; i < 17; i = i + 1) begin
-            booth booth_uint(
+            booth booth_unit(
                 .exponent(i[5:0] << 1),
                 .y_2_0(y_shift1[2*i+2:2*i]),
                 .x_ext(x_ext),
@@ -69,7 +69,7 @@ module multiplier (
     assign cin_cout[0] = 14'd0;
     generate
         for(i = 0; i < 64; i = i + 1) begin
-            wallace wallace_uint(
+            wallace wallace_unit(
                 .in(wallace_input[i]),
                 .Cin(cin_cout[i]),
                 .reset(reset),

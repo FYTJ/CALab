@@ -55,6 +55,10 @@ module mycpu_top(
     wire to_mul_req_valid;
     wire to_mul_resp_ready;
     wire from_mul_resp_valid;
+    wire [2: 0] mul_op;
+    wire [31: 0] src1;
+    wire [31: 0] src2;
+
     wire [63: 0] mul_result;
 
     wire from_div_req_ready;
@@ -63,6 +67,22 @@ module mycpu_top(
     wire from_div_resp_valid;
     wire [31: 0] div_quotient;
     wire [31: 0] div_remainder;
+
+    multiplier u_mul(
+        .mul_clk(clk),
+        .reset(rst),
+        .mul_op(EX_mul_op),
+        .x(src1),
+        .y(src2),
+
+        .to_mul_req_valid(to_mul_req_valid),
+        .from_mul_req_ready(from_mul_req_ready),
+        .to_mul_resp_ready(to_mul_resp_ready),
+        .from_mul_resp_valid(from_mul_resp_valid),
+
+        .result(mul_result)
+
+    );
 
     Div u_div(
         .clock(clk),
@@ -131,6 +151,7 @@ module mycpu_top(
     wire WB_res_from_mem;
     wire WB_gr_we;
     wire [4: 0] WB_dest;
+
 
     IF IF_unit(
         .clk(clk),
@@ -207,6 +228,8 @@ module mycpu_top(
         .in_ready(EX_in_ready),
         .out_valid(EX_out_valid),
 
+        .from_mul_req_ready(from_mul_req_ready),
+        .to_mul_req_valid(to_mul_req_valid),
         .from_div_req_ready(from_div_req_ready),
         .to_div_req_valid(to_div_req_valid),
 
@@ -226,6 +249,8 @@ module mycpu_top(
         .imm(EX_imm),
         .rj_value(EX_rj_value),
         .rkd_value(EX_rkd_value),
+        .src1_wire(src1),
+        .src2_wire(src2),
         .result(result),
         .result_out(MEM_result),
         .PC_out(MEM_PC),
@@ -253,7 +278,9 @@ module mycpu_top(
 
         .mul_result(mul_result),
 
+        .to_mul_resp_ready(to_mul_resp_ready),
         .to_div_resp_ready(to_div_resp_ready),
+        .from_mul_resp_valid(from_mul_resp_valid),
         .from_div_resp_valid(from_div_resp_valid),
         .div_quotient(div_quotient),
         .div_remainder(div_remainder),
