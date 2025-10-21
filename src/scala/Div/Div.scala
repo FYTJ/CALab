@@ -75,6 +75,7 @@ class Div extends Module {
     zext_dividend := BitUtils.zext(abs_dividend, 32, 64)
     val zext_divisor = Wire(UInt(33.W))
     zext_divisor := BitUtils.zext(abs_divisor, 32, 33)
+    val add_dividend = RegInit(0.U(31.W))
 
     def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
         val sub = Wire(UInt(33.W))
@@ -96,6 +97,7 @@ class Div extends Module {
         val zext_in_dividend = Wire(UInt(64.W))
         zext_in_dividend := BitUtils.zext(Mux(io.in.bits.divOp === DivOp.DIV || io.in.bits.divOp === DivOp.REM, BitUtils.abs(io.in.bits.dividend), io.in.bits.dividend), 32, 64)
         new_dividend := zext_in_dividend(63, 31)
+        add_dividend := zext_in_dividend(30, 0)
     }.elsewhen (clk_counter < 32.U && status === Status.BUSY) {
         when (divisor === 0.U) {
             clk_counter := 32.U
@@ -103,9 +105,10 @@ class Div extends Module {
             num_remainder := Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_remainder, (~dividend + 1.U), dividend)
         }.otherwise {
             val (quotient_bit, remainder) = div_iter(new_dividend, zext_divisor)
-            num_quotient := num_quotient | quotient_bit << (31.U - clk_counter)
+            num_quotient := (num_quotient << 1) | quotient_bit
             num_remainder := remainder
-            new_dividend := Mux(clk_counter === 31.U, 0.U, Cat(remainder(31, 0), zext_dividend(30.U - clk_counter)))
+            new_dividend := Mux(clk_counter === 31.U, 0.U, Cat(remainder(31, 0), add_dividend(30)))
+            add_dividend := add_dividend << 1
             clk_counter := clk_counter + 1.U
         }
     }.elsewhen (clk_counter === 32.U && io.out.fire) {
