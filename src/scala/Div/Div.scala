@@ -101,8 +101,6 @@ class Div extends Module {
     }.elsewhen (clk_counter < 32.U && status === Status.BUSY) {
         when (divisor === 0.U) {
             clk_counter := 32.U
-            num_quotient := Mux(sign_quotient, (1.U(32.W)), "hFFFFFFFF".U)
-            num_remainder := Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_remainder, (~dividend + 1.U), dividend)
         }.otherwise {
             val (quotient_bit, remainder) = div_iter(new_dividend, zext_divisor)
             num_quotient := (num_quotient << 1) | quotient_bit
@@ -119,6 +117,6 @@ class Div extends Module {
 
     io.in.ready := status === Status.IDLE
     io.out.valid := (clk_counter === 32.U) && (status === Status.BUSY) 
-    io.out.bits.quotient := Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_quotient, (~num_quotient + 1.U), num_quotient)
-    io.out.bits.remainder := Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_remainder, (~num_remainder + 1.U), num_remainder)
+    io.out.bits.quotient := Mux(divisor === 0.U, "hFFFFFFFF".U, Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_quotient, (~num_quotient + 1.U), num_quotient))
+    io.out.bits.remainder := Mux(divisor === 0.U, dividend, Mux((divOp === DivOp.DIV || divOp === DivOp.REM) && sign_remainder, (~num_remainder + 1.U), num_remainder))
 }
