@@ -70,7 +70,7 @@ module mycpu_top(
 
     multiplier u_mul(
         .mul_clk(clk),
-        .reset(rst),
+        .reset(reset),
         .mul_op(EX_mul_op),
         .x(src1),
         .y(src2),
