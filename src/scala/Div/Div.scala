@@ -105,7 +105,7 @@ class Div extends Module {
             val (quotient_bit, remainder) = div_iter(new_dividend, zext_divisor)
             num_quotient := (num_quotient << 1) | quotient_bit
             num_remainder := remainder
-            new_dividend := Mux(clk_counter === 31.U, 0.U, Cat(remainder(31, 0), add_dividend(30)))
+            new_dividend := Cat(remainder(31, 0), add_dividend(30))
             add_dividend := add_dividend << 1
             clk_counter := clk_counter + 1.U
         }
@@ -113,6 +113,7 @@ class Div extends Module {
         status := Status.IDLE
         clk_counter := 0.U
         num_quotient := 0.U
+        new_dividend := 0
     }
 
     io.in.ready := status === Status.IDLE
