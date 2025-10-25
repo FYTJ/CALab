@@ -69,16 +69,8 @@ module MEM (
                                 ({4{mem_op[7]}} & 4'b1111)  // SW;
                             );
     assign data_sram_addr  = result & ~32'b11;
-    assign data_sram_wdata = {32{mem_op[5]}} & (
-                                {32{result[1:0]==2'b00}} & {24'b0, rkd_value[7: 0]} |
-                                {32{result[1:0]==2'b01}} & {16'b0, rkd_value[7: 0], 8'b0} |
-                                {32{result[1:0]==2'b10}} & {8'b0, rkd_value[7: 0], 16'b0} |
-                                {rkd_value[7:0], 24'b0}
-                             ) | 
-                             {32{mem_op[6]}} & (
-                                {32{result[1:0]==2'b00}} & {16'b0, rkd_value[15: 0]} |
-                                {32{result[1:0]==2'b10}} & {rkd_value[15: 0], 16'b0}
-                             ) |
+    assign data_sram_wdata = {32{mem_op[5]}} & {4{rkd_value[7:0]}} | 
+                             {32{mem_op[6]}} & {2{rkd_value[15: 0]}} |
                              {32{mem_op[7]}} & rkd_value;
 
     wire [31: 0] result_out_next;
