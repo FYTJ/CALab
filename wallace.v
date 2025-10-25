@@ -3,7 +3,8 @@ module wallace (
     input wire [13:0] Cin,
     input wire reset,
     input wire mul_clk,
-    input wire do_mul,
+    input wire M1_ready_go,
+    input wire M1_out_ready,
     output wire [13:0] Cout,
     output wire S,
     output wire C
@@ -47,7 +48,7 @@ module wallace (
             Cin_reg <= 14'd0;
             S2_reg <= 4'd0;
         end 
-        else if(do_mul)begin
+        else if(M1_ready_go & M1_out_ready)begin
             Cin_reg <= Cin;
             S2_reg <= S2;
         end

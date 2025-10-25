@@ -17,20 +17,34 @@ module multiplier (
     wire [16:0] wallace_input [63:0];
     wire [13:0] cin_cout [64:0];
     wire [63:0] S, C;
-    
-    wire do_mul;
-    reg  from_mul_resp_valid_reg;
-    assign do_mul = to_mul_req_valid && from_mul_req_ready;
+
+    reg M1_out_valid;
+    wire M1_out_ready;
+    wire M1_ready_go;
+
+    wire M2_in_valid;
+    wire M2_in_ready;
+    wire M2_ready_go;
+
+    assign M1_out_ready = M2_in_ready;
+    assign M1_ready_go = to_mul_req_valid & from_mul_req_ready;
+
+    wire M1_out_valid_next = M1_ready_go & M1_out_ready;
     always @(posedge mul_clk) begin
         if(reset) begin
-            from_mul_resp_valid_reg <= 1'b0;
-        end
-        else if(do_mul) begin
-            from_mul_resp_valid_reg <= 1'b1;
+            M1_out_valid <= 1'b0;
+        end else begin
+            M1_out_valid <= M1_out_valid_next;
         end
     end
-    assign from_mul_resp_valid = from_mul_resp_valid_reg;
-    assign from_mul_req_ready = to_mul_resp_ready;
+
+    assign M2_in_valid = M1_out_valid;
+    assign M2_in_ready = !(M2_in_valid) || M2_ready_go;
+    assign M2_ready_go = to_mul_resp_ready & from_mul_resp_valid;
+
+    assign from_mul_req_ready = M1_out_ready;
+    assign from_mul_resp_valid = M2_in_valid;
+
 
     assign mul_signed = mul_op[0] || mul_op[1];
     assign x_ext = {{32{x[31] & mul_signed}}, x};
@@ -74,7 +88,8 @@ module multiplier (
                 .Cin(cin_cout[i]),
                 .reset(reset),
                 .mul_clk(mul_clk),
-                .do_mul(do_mul),
+                .M1_ready_go(M1_ready_go),
+                .M1_out_ready(M1_out_ready),
                 .Cout(cin_cout[i+1]),
                 .S(S[i]),
                 .C(C[i])
