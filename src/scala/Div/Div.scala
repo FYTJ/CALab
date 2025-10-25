@@ -111,7 +111,6 @@ class Div extends Module {
         }
     }.elsewhen (clk_counter === 32.U && io.out.fire) {
         status := Status.IDLE
-        clk_counter := 0.U
         num_quotient := 0.U
         new_dividend := 0
     }
