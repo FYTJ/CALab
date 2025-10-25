@@ -1,0 +1,57 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}实验简介}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}设计方案介绍}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}总体思路}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}控制通路(整体)}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}指令译码与各模块操作码生成(ID)}{1}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}mul_op(独热码)}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}数据选择(主要在ID)}{2}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}src\_reg\_is\_rd信号}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}“写后读”冲突处理与旁路设计的修改(ID)}{2}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}caption text}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.4}对流水线控制信号的修改(ID、EX、MEM)}{2}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}修改后的ready_go}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}数据通路(整体)}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}“result”的收集}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}流水寄存器的数据传递(这时“控制信号”也可视为被传递的数据)}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}功能实现(局部)}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}算术逻辑运算指令}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}访存指令}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}访存地址}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}store字节写使能}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7}store数据}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8}load数据}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}转移指令}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9}转移指令条件判断信号}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.4}乘除法指令}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10}CPU的除法运算请求}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11}CPU的除法运算接收准备}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}乘法器}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.1}乘法器接口}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.2}组合逻辑乘法器结构框图及实现原理}{5}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces “华莱士树”与“乘法器总体结构”框图}}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(a)}{\ignorespaces {17个部分积相加的1位华莱士树(左侧“C5\textasciitilde 9”应为“C5\textasciitilde 8”)}}}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {subfigure}{\numberline{(b)}{\ignorespaces {33位定点补码乘法器结构}}}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.3}流水化改进}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 相邻两棵华莱士树的数据通路（流水化）}}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12}乘法器控制信号}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {13}华莱士树流水寄存器}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14}华莱士树第4层的输入}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}除法器}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.1}除法器接口}{8}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 除法器模块接口}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.2}除法器结构框图}{9}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 除法器结构框图}}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.3}除法器设计思路}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15}IO接口}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {16}除法器发向外部的握手信号}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {17}试减模块(div_iter)}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18}数据输入}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {19}迭代试减(num_quotient和num_remainder用于保存最终结果)}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Debug记录}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}IF阶段seq_pc与nextpc逻辑的修正}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}新的发现}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}合作说明}{11}{}\protected@file@percent }
+\gdef \@abspage@last{11}
