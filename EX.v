@@ -13,7 +13,7 @@ module EX (
 	output to_div_req_valid,
 
     input [31: 0] PC,
-	input [7: 0] load_op,
+	input [7: 0] mem_op,
 	input [11: 0] alu_op,
 	input [2: 0] mul_op,
 	input [3: 0] div_op,
@@ -34,7 +34,7 @@ module EX (
     
     output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
-	output reg [7: 0] load_op_out,
+	output reg [7: 0] mem_op_out,
 	output reg [2: 0] mul_op_out,
 	output reg [3: 0] div_op_out,
 	output reg res_from_mul_out,
@@ -114,10 +114,10 @@ module EX (
 
 	always @(posedge clk) begin
         if (rst) begin
-            load_op_out <= 8'b0;
+            mem_op_out <= 8'b0;
         end
         else if (in_valid & ready_go & out_ready) begin
-			load_op_out <= load_op;
+			mem_op_out <= mem_op;
 		end
     end
 

@@ -110,7 +110,7 @@ module mycpu_top(
     wire [31: 0] EX_PC;
     wire EX_br_taken;
     wire [31: 0] EX_br_target;
-    wire [7: 0] EX_load_op;
+    wire [7: 0] EX_mem_op;
     wire [11: 0] EX_alu_op;
     wire [2: 0] EX_mul_op;
     wire [3: 0] EX_div_op;
@@ -131,7 +131,7 @@ module mycpu_top(
     wire MEM_out_valid;
     wire [31: 0] MEM_result;
     wire [31: 0] MEM_PC;
-    wire [7: 0] MEM_load_op;
+    wire [7: 0] MEM_mem_op;
     wire [2: 0] MEM_mul_op;
     wire [3: 0] MEM_div_op;
     wire MEM_res_from_mul;
@@ -145,7 +145,7 @@ module mycpu_top(
     wire WB_in_ready;
     wire [31: 0] WB_PC;
     wire [31: 0] WB_result;
-    wire [7: 0] WB_load_op;
+    wire [7: 0] WB_mem_op;
     wire WB_res_from_mul;
     wire WB_res_from_div;
     wire WB_res_from_mem;
@@ -201,7 +201,7 @@ module mycpu_top(
         .rf_rdata2(rf_rdata2),
         .br_taken_out(EX_br_taken),
         .br_target_out(EX_br_target),
-        .load_op_out(EX_load_op),
+        .mem_op_out(EX_mem_op),
         .alu_op_out(EX_alu_op),
         .mul_op_out(EX_mul_op),
         .div_op_out(EX_div_op),
@@ -234,7 +234,7 @@ module mycpu_top(
         .to_div_req_valid(to_div_req_valid),
 
         .PC(EX_PC),
-        .load_op(EX_load_op),
+        .mem_op(EX_mem_op),
         .alu_op(EX_alu_op),
         .mul_op(EX_mul_op),
         .div_op(EX_div_op),
@@ -254,7 +254,7 @@ module mycpu_top(
         .result(result),
         .result_out(MEM_result),
         .PC_out(MEM_PC),
-        .load_op_out(MEM_load_op),
+        .mem_op_out(MEM_mem_op),
         .mul_op_out(MEM_mul_op),
         .div_op_out(MEM_div_op),
         .res_from_mul_out(MEM_res_from_mul),
@@ -287,7 +287,7 @@ module mycpu_top(
 
         .result(MEM_result),
         .PC(MEM_PC),
-        .load_op(MEM_load_op),
+        .mem_op(MEM_mem_op),
         .mul_op(MEM_mul_op),
         .div_op(MEM_div_op),
         .res_from_mul(MEM_res_from_mul),
@@ -303,7 +303,7 @@ module mycpu_top(
         .data_sram_wdata(data_sram_wdata),
         .result_out(WB_result),
         .PC_out(WB_PC),
-        .load_op_out(WB_load_op),
+        .mem_op_out(WB_mem_op),
         .res_from_mul_out(WB_res_from_mul),
         .res_from_div_out(WB_res_from_div),
         .res_from_mem_out(WB_res_from_mem),
@@ -321,7 +321,7 @@ module mycpu_top(
         .data_sram_rdata(data_sram_rdata),
         .result(WB_result),
         .PC(WB_PC),
-        .load_op(WB_load_op),
+        .mem_op(WB_mem_op),
         .res_from_mem(WB_res_from_mem),
         .gr_we(WB_gr_we),
         .dest(WB_dest),
