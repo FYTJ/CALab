@@ -592,6 +592,18 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
 \section{Debug记录}
 
 \subsection{IF阶段seq_pc与nextpc逻辑的修正}
+    \indent 在检查IF.v的相关代码时，我们发现了可通过仿真测试用例但不够严谨的控制逻辑。\\
+    \indent 在之前的设计中：
+    \begin{lstlisting}
+    assign seq_pc       = PC_out + 32'h4: PC_out;
+    assign nextpc       = br_taken ? br_target : seq_pc;
+    \end{lstlisting}
+
+    \indent 事实上，如果有一条跳转指令在ID阶段被阻塞，next\_pc仍会根据跳转结果更新，并进行取指，这将导致取回的指令无法被ID接收。因此，取指的请求应该在out\_ready = 1时才可以发送。因此逻辑更改为
+    \begin{lstlisting}
+    assign seq_pc       = out_ready ? PC_out + 32'h4: PC_out;
+    assign nextpc       = out_ready && br_taken ? br_target : seq_pc;
+    \end{lstlisting}
 
 % \subsection{除法器流水切分时的逻辑混乱}
 
