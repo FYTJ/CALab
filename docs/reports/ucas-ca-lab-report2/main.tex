@@ -166,28 +166,16 @@
 特别地，由于引入新的模块（乘/除法器），乘除法的功能实现将单独介绍。
 
 下图为经过本次实验修改后的处理器结构框图：
-\begin{lstlisting}
-\
-\
-\
-\
-\       
-\
-\
-\                皇帝的新图
-\
-\
-\
-\
-\
-\
-\
-\end{lstlisting}
-\subsection{控制通路(整体)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/结构框图.jpg}
+    \caption{处理器结构框图}
+\end{figure}
+\subsection{控制通路(宏观)}
 
 \subsubsection{指令译码与各模块操作码生成(ID)}
 
-延续原有的设计思路，结合指令的操作码，利用译码器对每一条新添加的指令单独译码，生成专门的控制信号inst_xxx（例如inst_div_wu、inst_mod_w等）。
+延续原有的设计思路，结合指令的操作码，对每一条新添加的指令单独译码，生成专门的控制信号inst_xxx（例如inst_div_wu、inst_mod_w等）。
 
 新增加的指令涉及的部分运算需求，可以充分利用原有alu的功能，在生成alu_op时采用“或”逻辑，把新增指令的inst_xxx信号加入其中。比如新增的ld_b计算访存地址时要使用加法，可以用此法使之与原有的add_w指令共享alu的加法功能。
 
@@ -204,15 +192,15 @@ assign mul_op = {inst_mulh_wu, inst_mulh_w, inst_mul_w};
 assign src_reg_is_rd = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_st_b | inst_st_h | inst_st_w;
 \end{lstlisting}
 
-同理，用这种“附加并复用”的方法处理alu输入操作数的选择信号src1_is_pc、src2_is_imm，还以此法修改了标记访存指令、在判断写后读冲突的同时选择前递数据的res_from_mem信号。此外，仿照res_from_mem，我们又引入了res_from_div和res_from_mem，用于在EX和MEM阶段生成握手信号。
+同理，用这种“附加并复用”的方法处理alu输入操作数的选择信号src1_is_pc、src2_is_imm，还以此法修改了标记访存指令的res_from_mem信号。此外，仿照res_from_mem，我们又引入了res_from_div和res_from_mul，用于在EX和MEM阶段生成握手信号。
 
 （判定寄存器写操作指令的gr_we、判定store指令的mem_we等信号的修改方式也类似，后文不再赘述。）
 
 \subsubsection{“写后读”冲突处理与旁路设计的修改(ID)}
 
-根据课上老师的提示，我们自己设计的乘法器在性能方面会劣于调用Xilinx\ IP实现出的乘法部件——关键路径会长一些。如果再加上前递通路传回ID参与其他逻辑（比如分支指令条件判断），就会进一步增大关键路径，严重影响性能。因此，为了尽可能减少隐患，我们决定不对乘法结果采用前递技术——引入控制信号mul_div_hazzard：
+根据课上老师的提示，我们自己设计的乘除法器在性能方面会劣于调用Xilinx\ IP实现出的乘除法部件——关键路径会长一些。如果再加上前递通路传回ID参与其他逻辑（比如分支指令条件判断），就会进一步加长关键路径，严重影响性能。因此，为了尽可能减少隐患，我们决定不对乘除法结果采用前递技术——引入控制信号mul_div_hazzard：
 
-\begin{lstlisting}[language=Verilog, caption={caption text}]
+\begin{lstlisting}[language=Verilog, caption={mul_div_hazzard信号}]
 assign mul_div_hazzard = in_valid & (
     rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
     rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
@@ -223,7 +211,7 @@ assign mul_div_hazzard = in_valid & (
 );
 \end{lstlisting}
 
-这一设计在实现思路上仿照了写后读的判断逻辑，又另外加入了“与ID冲突的阶段内部是一条乘法或除法指令”的条件。使用这一信号即可准确判定是否有乘法指令与当前ID的指令发生写后读冲突。
+这一设计在实现思路上仿照了写后读的判断逻辑，又另外加入了“与ID冲突的阶段内部是一条乘法或除法指令”的条件。使用这一信号即可准确判定是否有乘除法指令与当前ID的指令发生写后读冲突。
 
 
 \subsubsection{对流水线控制信号的修改(ID、EX、MEM)}
@@ -231,8 +219,8 @@ assign mul_div_hazzard = in_valid & (
 按照原有设计逻辑，每个阶段的ready_go信号意味着一种能力的具备，有“can”之含义（而非will），表示该阶段工作完成，准备好进入下一个阶段（但不一定真的马上（will）进入下一阶段。特别地，如果当前阶段无效，那么ready_go也为1——我们认为无效的“空穴”持续具备移动的能力）。
 
 \begin{enumerate}
-    \item 由于ID阶段屏蔽掉乘法指令的前递，所以在ready_go判断中引入了mul_div_hazzard信号。如果mul_div_hazzard满足，就要一直阻塞ID至前面冲突的指令做完WB阶段.
-    \item EX和MEM涉及与乘/除法器子系统的握手。除了阶段无效可以ready_go外，在阶段有效时，只有“既不是没有req/resp成功的乘法指令，并且也不是没有req/resp成功的除法指令”条件满足，才可以ready_go。
+    \item 由于ID阶段屏蔽掉乘除法指令的前递，所以在ready_go判断中引入了mul_div_hazzard信号。如果mul_div_hazzard满足，就要一直阻塞ID至前面冲突的乘除法指令做完WB阶段.
+    \item EX和MEM涉及与乘/除法器子系统的握手。除了阶段无效可以ready_go外，在阶段有效时，只有“既不是没有握手成功的乘法指令，并且也不是没有握手成功的除法指令”条件满足，才可以ready_go。
 \end{enumerate}
 具体实现如下：
 
@@ -252,16 +240,16 @@ assign ready_go = !in_valid ||
 
 
 
-\subsection{数据通路(整体)}
+\subsection{数据通路(宏观)}
 
 \subsubsection{“result”的收集}
-原先，在EX得到alu的运算结果，WB得到load的结果，要在WB使用选择器根据指令类型选出写回寄存器的结果。现在增加乘除法器模块后，会在MEM阶段收集到乘/除法结果，所以在MEM阶段要额外加入对alu、乘法器、除法器（商和余数）的结果选择，然后传递到WB阶段继续进行选择。
+原先，在EX得到alu的运算结果，WB得到load的结果，要在WB使用选择器根据指令类型选出写回寄存器的结果。现在增加乘除法器模块后，会在MEM阶段收集到乘/除法结果，所以在MEM阶段要额外加入对alu、乘法器、除法器（商和余数）的结果选择，然后传递到WB阶段和load的结果继续进行选择。
 
 \subsubsection{流水寄存器的数据传递(这时“控制信号”也可视为被传递的数据)}
 在ID阶段增加的许多信号要在后续阶段使用，于是要通过流水寄存器逐级传递下去，本次新增的mul_op、div_op等信号要传到计算乘除法的EX和MEM，mem_op要传到MEM和WB用于发送访存请求和接收load结果。
 
 
-\subsection{功能实现(局部)}
+\subsection{功能实现(针对具体不同类型指令特点)}
 
 \subsubsection{算术逻辑运算指令}
 新增的移位、逻辑运算、算术运算都能够复用alu的功能，利用原有算术逻辑运算指令的数据和控制通路进行运算。特别地，新增的andi、ori和xori指令用到了零扩展i12的立即数，只要新增控制信号need_ui12，对imm的生成稍作修改即可。
@@ -273,7 +261,7 @@ assign ready_go = !in_valid ||
 assign data_sram_addr  = result & ~32'b11;
 \end{lstlisting}
 
-如果是非“全字”的store指令，根据操作的字节数(mem_op)和目标地址相对实际访问的起始地址的偏移量（目标地址result的末两位）形成字节掩码（字节写使能位），发送给数据内存：
+如果是非“全字”的store指令，根据操作的字节数(由mem_op得知)和目标地址相对实际访问的起始地址的偏移量（目标地址result的末两位）形成字节掩码（字节写使能位），发送给数据内存：
 \begin{lstlisting}[language=Verilog, caption={store字节写使能}]
 assign data_sram_we = {4{mem_we && valid && in_valid}} & (
                         ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
@@ -281,7 +269,7 @@ assign data_sram_we = {4{mem_we && valid && in_valid}} & (
                         ({4{mem_op[7]}} & 4'b1111)  // SW;
                     );
 \end{lstlisting}
-有了写使能的限制，就可以采取教材中提到的较好的发送store数据的方法——将Byte重复4次，将Half\ Word重复2次，无论地址的相对偏移如何，结合写使能，选到的字节/半字总是从寄存器读出的最低字节/半字：
+有了写使能的限制，就可以采取教材中提到的较优的发送store数据的方法——将Byte重复4次，将Half\ Word重复2次，无论地址的相对偏移如何，结合写使能，选到的字节/半字总是从指令源寄存器读出的最低字节/半字：
 
 \begin{lstlisting}[language=Verilog, caption={store数据}]
 assign data_sram_wdata = {32{mem_op[5]}} & {4{rkd_value[7:0]}} | 
@@ -304,7 +292,7 @@ assign mem_result   =
 	 	{32{mem_op[2]}} & data_sram_rdata;  // LW
 \end{lstlisting}
 
-位扩展的方法比较巧妙，以LH/LHU的情况为例：将mem_op[1]和load出的半字数据“与”在一起，然后扩展。mem_op[1]代表LH，是有符号的，“与”运算结束后得到的就是数据的符号位；若是无符号的LHU，则mem_op[1]为0，“与”之后必为0，位扩展时也自然全用0填充。
+位扩展的方法比较巧妙，以LH/LHU的情况为例：将mem_op[1]和load出的半字数据“与”在一起，然后扩展。mem_op[1]为1，代表LH，是有符号的，“与”运算结束后得到的就是数据的符号位；若是无符号的LHU，则mem_op[1]为0，“与”之后必为0，位扩展时也自然全用0填充。
 
 \subsubsection{转移指令}
 新增的转移指令条件判断需要比较两个寄存器值的大小关系，而非仅仅判断是否相等。我们仿照rj_eq_rd信号，引入了另外两个用于无符号数和有符号数比大小的信号：
@@ -317,8 +305,7 @@ assign rj_ltu_rd = (rj_value < rkd_value);
 然后根据具体指令的inst_xxx和条件判断结果，复用判断转移与否的br_taken和br_target信号即可。
 
 \subsubsection{乘除法指令}
-\noindent
-与乘除法器“子系统”的交互——握手(EX、MEM)：
+首先是CPU与乘除法器这两个“子系统”的交互——握手(EX、MEM)：
 
 做乘除法指令时，CPU利用两个流水级进行运算，在EX级向相应运算模块发送数据，在MEM级接收结果。如果把乘/除法器视为正常的(例如物理内存等)子系统，那么它们与CPU进行交互时就需要用到握手信号。
 
@@ -327,7 +314,7 @@ assign rj_ltu_rd = (rj_value < rkd_value);
 \begin{lstlisting}[language=Verilog, caption={CPU的除法运算请求}]
 assign to_div_req_valid = in_valid && res_from_div;
 \end{lstlisting}
-只要EX有效(in_valid)且内部是除法指令(res_from_mul/div)，就应当发请求。
+只要EX有效(in_valid)且内部是除法指令(res_from_div)，就应当发请求。
 
 进而，在MEM阶段，CPU使用resp_ready向除法器表明自己准备好接收结果：
 \begin{lstlisting}[language=Verilog, caption={CPU的除法运算接收准备}]
@@ -336,7 +323,7 @@ assign to_div_resp_ready = in_valid && res_from_div;
 同理，如果MEM有效且在做除法指令，就能够接收结果。
 
 
-乘/除法器的具体设计见后文对的阐释。
+乘/除法器的具体设计见后文阐述。
 
 
 
@@ -364,32 +351,33 @@ assign to_div_resp_ready = in_valid && res_from_div;
         from_mul_resp_valid & out(wire)  & 1    & 握手信号，表明运算完成，输出有效        \\ \hline
         result              & out(wire)  & 64   & 积                                      \\ \hline
     \end{tabular}
+    \caption{乘法器模块接口}
 \end{table}
 
 \subsubsection{组合逻辑乘法器结构框图及实现原理}
 
-按照教材的说明，我们实现了一个既可以做有符号乘法运算，又可以做无符号乘法运算的33位有符号乘法器。
+按照教材的说明，我们实现了一个既可以做有符号乘法运算，又可以做无符号乘法运算的33位有符号乘法器(模块输入仍为32位，在内部增加一位是为了兼具有无符号运算的本领)。
 
 此处引用书上的内容：下面是乘法器以及其核心部件“华莱士树”的结构框图：
 
 \begin{figure}[H]
   \centering
-  \subfigure[17个部分积相加的1位华莱士树(左侧“C5\textasciitilde 9”应为“C5\textasciitilde 8”)]{
-    \includegraphics[width=0.41\textwidth]{fig/17个部分积相加的1位华莱士树.png}
-  }
   \subfigure[33位定点补码乘法器结构]{
     \includegraphics[width=0.55\textwidth]{fig/33.png}
   }
-  \caption{“华莱士树”与“乘法器总体结构”框图}
+  \subfigure[17个部分积相加的1位华莱士树(左侧“C5\textasciitilde 9”应为“C5\textasciitilde 8”)]{
+    \includegraphics[width=0.41\textwidth]{fig/17个部分积相加的1位华莱士树.png}
+  }
+  \caption{“乘法器总体结构”与“华莱士树”框图}
 \end{figure}
 
 注：教材未给出优化后的33位定点补码乘法器结构图，此处的结构图（b）由教材的32位版本修改而来。
 
-实现上，在除法器模块multiplier内部，我们分别设计了wallace（1位华莱士树）模块、booth（两位booth乘法部分积生成）模块以及起运算辅助作用的full_adder（1位全加器）辅助模块。基本完全按照框图所示的电路图进行连线，故此处不额外展示代码。
+实现上，在除法器模块multiplier内部，我们分别设计了wallace（1位华莱士树）模块、booth（两位booth乘法部分积生成）模块以及起运算辅助作用的full_adder（1位全加器）模块。基本完全按照框图所示的电路图进行连线，故此处不额外展示代码。
 
-如上图中的图（b）所示，第（1）部分实例化了17个booth模块，运算得到17个64位的部分积，送给第（2）部分的转置电路（在顶层模块multiplier内部直接实现），转化成64组(部分积做加法时)每一位上的17个加数，送给第（3）部分。第（3）部分实例化64个wallace，wallace内部利用“保留进位加法”原理进行3:2压缩，通过6层压缩，将17个加数变成2个（最终的和S与进位C），而中间产生的14进位信号C0 \textasciitilde C13则传递给对更高1位进行计算的wallace。
+如上图中的图（a）所示，第（1）部分实例化了17个booth模块，运算得到17个64位的部分积，送给第（2）部分的转置电路（在顶层模块multiplier内部直接实现），转化成64组(在部分积相加时)每一位上的17个加数，送给第（3）部分。第（3）部分实例化64个wallace，wallace内部利用“保留进位加法”原理进行3:2压缩，通过6层压缩，将17个加数变成2个（最终的和S与进位C），而中间产生的14个进位信号C0 \textasciitilde C13则传递给对更高1位进行计算的wallace。
 
-最后用一个64位加法器将每一位的值S与来自低位的进位C相加，得到最终的乘积result。
+最后用一个64位加法器将每一位的S与来自低位的进位C相加，得到最终的乘积result。
 
 \subsubsection{流水化改进}
 
@@ -425,7 +413,7 @@ assign to_div_resp_ready = in_valid && res_from_div;
     \item 如果外界能够接受（resp_ready）乘法器第二级的输出结果，那么乘法器也就做好了接收新输入的准备（req_ready）。
 \end{enumerate}
 
-下面是流水寄存器的设计：S2_reg接收第1级流水的最终输出S2；Cin_reg保存前一棵树送来的进位信号Cin：
+下面是流水寄存器的设计：S2_reg保存第1级流水的最终输出S2；Cin_reg保存前一棵树送来的进位信号Cin：
 
 \begin{lstlisting}[language=Verilog, caption={华莱士树流水寄存器}]
     // register for pipeline
@@ -480,7 +468,7 @@ assign in4 = {S3, Cin[10:9], Cin_reg[8:7]};
     \caption{除法器模块接口}
 \end{table}
 
-其中，握手信号作为控制信号，在握手成功(in(或者out)的valid和ready同时拉高)时，数据通路对数据进行传递，in握手成功则数据进入乘法器，out握手成功则从乘法器输出计算结果。
+其中，握手信号作为控制信号，在握手成功(in(或者out)的valid和ready同时拉高)时，数据通路对数据进行传递，in握手成功则数据进入除法器，out握手成功则从除法器输出计算结果。
 
 \subsubsection{除法器结构框图}
 下图为除法器结构框图：
@@ -563,7 +551,7 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
     \end{lstlisting}
     在BUSY状态下，如果clk_counter小于32(一共要算32拍，此时相当于未完成运算)，则继续运算：
     \begin{enumerate}
-        \item 如果被除数为0，是非法的运算，直接把计数器置为32，使得下一拍直接结束运算，退出。
+        \item 如果除数为0，是非法的运算，直接把计数器置为32，使得下一拍直接结束运算，退出。
         \item 其他正常情况下，调用div_iter产生当前商位(quotient_bit)和余数(remainder)，由于商位要拼接到已得到的部分商值(num_quotient)的最低位，所以采用把部分商值先左移一位，再用或运算拼接的方式来处理。
         
         还要更新被除数中用于试减的33位部分(new_dividend)：舍弃new_dividend的最高位，取用于补充的add_dividend的最高位拼接在new_dividend的最低位。为了便于在更新new_dividend时，每次都取add_dividend的最高位进行补充，所以add_dividend在迭代阶段每次左移一位。
@@ -605,12 +593,52 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
     assign nextpc       = out_ready && br_taken ? br_target : seq_pc;
     \end{lstlisting}
 
-% \subsection{除法器流水切分时的逻辑混乱}
+\subsection{除法器输入信号未保持}
+最初的设计中，我们未把在EX输入除法器的信号单独存入reg，而是直接用传入除法器的wire信号开始运算，导致出现了信号未保持的bug。
 
-% 最初尝试对乘法器进行流水级拆分时，出现逻辑
+具体情况为：EX的除法指令把数据传给除法器。时钟上升沿到来，MEM中的指令向后流动，同时EX也流动，ID也流动，从ID进入到EX的另一条指令覆盖了流水寄存器原来的内容，导致EX传给除法器的wire信号发生变化，不再是原来那条除法指令正确的操作数和操作码，导致除法器算出错误结果。
 
-\section{新的发现}
-在完成本次实验设计后，组内同学总结复盘时，又对流水线的控制信号有了新的理解：
+\subsection{其他}
+由于添加了多条指令，要对数据通路和控制通路的许多信号进行修改，细节较多，所以出了一些类似于数据SRAM字节写使能设置错误、ALUop信号未覆盖新增指令、booth乘法部分积生成逻辑错误等低级失误，带来了不少调试上的麻烦，此处不再赘述。
+
+
+% \section{新的发现}
+% \subsection{问题的提出}
+% 在完成本次实验设计后，组内同学总结复盘时，感觉当前CPU与乘除法器模块的握手信号设计仍有优化空间，逻辑能够更加严密自然，遂试图寻找新的方案，却不慎制造出了组合逻辑环。
+
+% 最终我们解决了问题，提出了如下能在日后具体实施的方案：
+
+% \subsection{方案背景}
+% 对于模块而言，每个模块只能看到自身内部的状态，而不可见其他模块的状态。即：假设有两个独立模块A和B，B的状态A完全不可见，同理A的状态B完全不可见。两者之间的交流需要完全依靠握手信号。
+
+% 以CPU和乘法器为例：CPU采用5级流水：IF, ID, EX, MEM, WB；乘法器采用2级流水：M1, M2。在EX阶段，CPU向M1发送乘法操作码和操作数；在MEM阶段，M2向CPU返回计算结果。CPU不知道乘法器的运算情况，乘法器也不知道CPU的每个阶段都在做什么，因此要有及其合理的握手信号进行交互。
+
+% \subsection{不慎造出组合逻辑环的情况}
+% 按照我们的流水控制，EX_ready_go表示CPU的EX级任务是否完成，若EX级握手不成功，则EX级未完成任务，需要被阻塞，因此有
+% \begin{lstlisting}[language=Verilog]
+% // 在EX级内
+% wire ready_go = to_mul_req_valid && from_mul_req_ready; // 握手完成
+% wire to_mul_req_valid = in_valid;  // 在M1视角下，该信号为from_cpu_req_valid; in_valid用于表示当前阶段是否有效
+% \end{lstlisting}
+% 由于模块间设计的对称性，在M1级内，ready_go信号也应赋值为握手完成(fire)
+% \begin{lstlisting}[language=Verilog]
+% // 在M1级内
+% wire ready_go = to_mul_resp_valid && from_mul_resp_ready; // 握手完成
+% wire from_cpu_req_ready = in_ready;  // 在CPU视角下，该信号为to_mul_req_ready
+% \end{lstlisting}
+% 进而遇到了组合逻辑环(记信号a依赖于信号b为'a <- b')：
+
+% M1_ready_go <- from_cpu_req_ready <- M1_in_ready <- M1_ready_go
+
+% \subsection{新的思路：将from_cpu_req_ready与in_ready解耦}
+% 即：断开上文中from_cpu_req_ready 与 M1_in_ready之间的箭头
+
+% 为什么这种思路是合理的呢？我们不妨考虑一种比“从模块”流水线非对齐更复杂的情况。
+
+% 对于更复杂的设计，我们应该抛弃“流水线”、“子模块”的概念，将“流水线”仅视作一种优化技术，而将整个设计视作由多个子系统(subsystem)组成。这样的理解，要求我们必须维持子系统中信号的对称性。考虑CPU和内存为两个子系统，CPU和内存哪个作为“从模块”都不合适，二者应当视作彼此独立的子系统。
+
+% 作为示例，我们考虑两条独立的流水线，假设EX1向EX2发送信息，MEM1从MEM2接收信息。现在考虑EX2中的in_ready信号，该信号表示EX2是否准备好接收ID2的数据，而握手是EX2级的内部任务，因此我们可以立即发现，to_1_req_ready = in_ready的赋值是不合理的。我们再考虑从EX2向MEM2的数据传输，如果该数据通路被阻塞，则握手成功后EX2接收到的数据将无处可存放。MEM2无法接受数据，意味着EX2的out_ready=0，因此正确的逻辑是to_1_req_ready = out_ready。因为out_ready是后续流水级产生的数据，因此一定不会出现组合逻辑环。
+
 
 
 
