@@ -145,6 +145,7 @@ module mycpu_top(
     wire WB_in_ready;
     wire [31: 0] WB_PC;
     wire [31: 0] WB_result;
+    wire [31: 0] WB_result_bypass;
     wire [7: 0] WB_mem_op;
     wire WB_res_from_mul;
     wire WB_res_from_div;
@@ -191,7 +192,7 @@ module mycpu_top(
         .WB_res_from_mem(WB_res_from_mem),
         .WB_dest(WB_dest),
         .WB_data_sram_rdata(data_sram_rdata),
-        .WB_result(WB_result),
+        .WB_result(WB_result_bypass),
         
         .inst(inst_sram_rdata),
         .PC(ID_PC),
@@ -302,6 +303,7 @@ module mycpu_top(
         .data_sram_addr(data_sram_addr),
         .data_sram_wdata(data_sram_wdata),
         .result_out(WB_result),
+        .result_bypass_out(WB_result_bypass),
         .PC_out(WB_PC),
         .mem_op_out(WB_mem_op),
         .res_from_mul_out(WB_res_from_mul),

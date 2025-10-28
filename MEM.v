@@ -36,6 +36,7 @@ module MEM (
     output [31:0] data_sram_wdata,
 
     output reg [31: 0] result_out,
+    output reg [31: 0] result_bypass_out,
     output reg [31: 0] PC_out,
     output reg [7: 0] mem_op_out,
     output reg res_from_mul_out,
@@ -50,7 +51,7 @@ module MEM (
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
-    assign to_mul_resp_ready = 1'b1;
+    assign to_mul_resp_ready = in_valid && res_from_mul;
     assign to_div_resp_ready = in_valid && res_from_div;
 
     always @(posedge clk) begin
@@ -73,8 +74,8 @@ module MEM (
                              {32{mem_op[6]}} & {2{rkd_value[15: 0]}} |
                              {32{mem_op[7]}} & rkd_value;
 
-    wire [31: 0] result_out_next;
-    assign result_out_next = {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
+    wire [31: 0] result_out_wire;
+    assign result_out_wire = {32{res_from_div}} & {32{div_op[0] | div_op[1]}} & div_quotient |
                              {32{res_from_div}} & {32{div_op[2] | div_op[3]}} & div_remainder |
                              {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
                              {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
@@ -103,7 +104,16 @@ module MEM (
 			result_out <= 32'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
-			result_out <= result_out_next;
+			result_out <= result_out_wire;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			result_bypass_out <= 32'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			result_bypass_out <= result;
 		end
 	end
 
