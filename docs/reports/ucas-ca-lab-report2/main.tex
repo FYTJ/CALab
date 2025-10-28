@@ -111,13 +111,48 @@
     morekeywords={*,...}
 }
 
-
-
-
-
-
-
-
+\lstdefinelanguage{Chisel}{
+    morekeywords={abstract, case, catch, class, def, do, else, extends, false, final, 
+                 finally, for, forSome, if, implicit, import, lazy, match, new, null, 
+                 object, override, package, private, protected, return, sealed, super, 
+                 this, throw, trait, try, true, type, val, var, while, with, yield},
+    morekeywords=[2]{Boolean, Byte, Char, Double, Float, Int, Long, Short, String, Unit, 
+                    Any, AnyRef, AnyVal, Nothing, Null, Option, Some, None, List, Array, 
+                    Map, Set, Seq, Vector, UInt, SInt, Bool, Bundle, Vec, Module, IO, 
+                    Input, Output, Flipped, Decoupled, Wire, Reg, RegInit, RegNext, RegEnable, 
+                    Clock, Reset, AsyncReset, Data, Bits, Aggregate},
+    morekeywords=[3]{printf, assert, assume, cover, when, elsewhen, otherwise, switch, 
+                    is, Cat, Fill, Mux, PriorityMux, PriorityEncoder, OHToUInt, UIntToOH, 
+                    PopCount, Reverse, rotateLeft, rotateRight, asUInt, asSInt, asBool, 
+                    asTypeOf, chiselTypeOf, WireInit, RegInit, DontCare},
+    morekeywords=[4]{:=, <>, =/=, ===, =/==, andR, orR, xorR, +&, -&, *&},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    morestring=[b]',
+    sensitive=true,
+    keywordstyle=\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple}\bfseries,
+    keywordstyle=[3]\color{orange}\bfseries,
+    keywordstyle=[4]\color{red}\bfseries,
+    stringstyle=\color{red},
+    commentstyle=\color{dkgreen},
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=2,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    title=\lstname,
+    escapeinside={\%*}{*},
+    morekeywords={*,...}
+}
 
 % 轻松引用, 可以用\cref{}指令直接引用, 自动加前缀. 
 % 例: 图片label为fig:1
@@ -486,7 +521,7 @@ assign in4 = {S3, Cin[10:9], Cin_reg[8:7]};
 
 
 在除法器模块内部，把divOp(操作码)、dividend(被除数)和divisor(除数)三者打包进DivReq，作为“输入数据包(in)”;把quotient(商)和remainder(余数)打包进DivResp，作为“输出数据包(out)”。借助Flipped和Decoupled工具，使输入输出附带握手信号，io.in.fire代表输入握手成功，io.out.fire代表输出握手成功。
-\begin{lstlisting}[caption={IO接口}]
+\begin{lstlisting}[language=Chisel, caption={IO接口}]
 val io = IO(new Bundle {
         val in = Flipped(Decoupled(new DivReq()))
         val out = Decoupled(new DivResp())
@@ -495,14 +530,14 @@ val io = IO(new Bundle {
 
 除法器发给外界的握手信号为io.in.ready和io.out.valid——当除法器在IDLE空闲状态时，显然应该准备好接收输入；当除法器工作(BUSY)到完成全部计算时(clk_counter用于记录迭代运算周期数，到32拍时完成)，输出结果有效：
 
-\begin{lstlisting}[caption={除法器发向外部的握手信号}]
+\begin{lstlisting}[language=Chisel, caption={除法器发向外部的握手信号}]
 io.in.ready := status === Status.IDLE
 io.out.valid := (clk_counter === 32.U) && (status === Status.BUSY) 
 \end{lstlisting}
 
 
 试减操作是恢复余数除法的核心内容，专门定义一个组合逻辑模块来完成：
-\begin{lstlisting}[caption={试减模块(div_iter)}]
+\begin{lstlisting}[language=Chisel, caption={试减模块(div_iter)}]
 def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
         val sub = Wire(UInt(33.W))
         sub := dividend - divisor
@@ -517,7 +552,7 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
 完整运算的过程则通过when-elsewhen的组合，用时序逻辑实现(类似状态机，不被阻塞的情况下共34拍)：
 \begin{enumerate}
     \item 数据输入：
-    \begin{lstlisting}[caption={数据输入}]
+    \begin{lstlisting}[language=Chisel, caption={数据输入}]
     val status = RegInit(Status.IDLE)
     when (io.in.fire) {
         status := Status.BUSY
@@ -535,7 +570,7 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
     初始时，状态机处于空闲的IDLE状态。当输入握手成功时，进入BUSY工作状态，将输入的操作数和divOp保存在寄存器中，并把取绝对值后的被除数零扩展至64位，其中高33位new_dividend作为被除数中试减的部分，其余31位放在add_dividend中用于后续补充，用于记录运算周期数的clk_counter计数器初始化为0——在第1拍，完成了准备工作。
 
     \item 迭代运算(试减)：
-    \begin{lstlisting}[caption={迭代试减(num_quotient和num_remainder用于保存最终结果)}]
+    \begin{lstlisting}[language=Chisel, caption={迭代试减(num_quotient和num_remainder用于保存最终结果)}]
     .elsewhen (clk_counter < 32.U && status === Status.BUSY) {
         when (divisor === 0.U) {
             clk_counter := 32.U
@@ -560,7 +595,7 @@ def div_iter(dividend: UInt, divisor: UInt): (Bool, UInt) = {
     \end{enumerate}
     
     \item 结束处理(1拍)：
-    \begin{lstlisting}
+    \begin{lstlisting}[language=Chisel, caption={结束处理(1拍)}]
     .elsewhen (clk_counter === 32.U && io.out.fire) {
         status := Status.IDLE
         clk_counter := 0.U
