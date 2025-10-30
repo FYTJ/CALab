@@ -11,10 +11,11 @@
 assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 ```
 
-## 特殊行为说明
+## 部分行为说明
 
 ### 乘除法器
 - 乘除法器的计算结果不参与旁路。在ID级设置信号mul_div_stall，该信号拉高表示读取未写回的乘除法结果，此时应该进行阻塞等待。
 
 ### CSR
+- CSR的读取和写入均在ID阶段完成。
 - CSR的读取和写入操作不参与旁路。在ID级设置信号csr_stall，信号含义与前者相同。
