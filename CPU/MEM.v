@@ -25,6 +25,7 @@ module MEM (
     input res_from_mul,
 	input res_from_div,
     input res_from_mem,
+    input res_from_csr,
     input gr_we,
     input mem_we,
     input [4: 0] dest,
@@ -42,6 +43,7 @@ module MEM (
     output reg res_from_mul_out,
 	output reg res_from_div_out,
     output reg res_from_mem_out,
+    output reg res_from_csr_out,
     output reg gr_we_out,
     output reg [4: 0] dest_out
 );
@@ -141,6 +143,15 @@ module MEM (
 		end
 		else if (in_valid & ready_go & out_ready) begin
 			res_from_mem_out <= res_from_mem;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			res_from_csr_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_csr_out <= res_from_csr;
 		end
 	end
 

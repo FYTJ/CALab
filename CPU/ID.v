@@ -1,3 +1,7 @@
+`include "./utils/decoder_2_4.v"
+`include "./utils/decoder_4_16.v"
+`include "./utils/decoder_5_32.v"
+`include "./utils/decoder_6_64.v"
 module ID (
     input clk,
 	input rst,
@@ -7,13 +11,14 @@ module ID (
     output in_ready,
     output reg out_valid,
 
-    input [31: 0] result,
+    input [31: 0] EX_alu_result,
     input MEM_valid,
     input MEM_gr_we,
     input [4: 0] MEM_dest,
     input MEM_res_from_mul,
     input MEM_res_from_div,
     input MEM_res_from_mem,
+    inout MEM_res_from_csr,
     input [31: 0] MEM_result,
 
     input WB_valid,
@@ -21,6 +26,7 @@ module ID (
     input WB_res_from_mul,
     input WB_res_from_div,
     input WB_res_from_mem,
+    input WB_res_from_csr,
     input [4: 0] WB_dest,
     input [31: 0] WB_data_sram_rdata,
     input [31: 0] WB_result,
@@ -31,6 +37,14 @@ module ID (
     output [ 4:0] rf_raddr2,
     input [31:0] rf_rdata1,
     input [31:0] rf_rdata2,
+
+    output csr_re,
+    output [13: 0] csr_addr,
+    input [31: 0] csr_rvalue,
+    output csr_we,
+    output [31: 0] csr_wmask,
+    output [31: 0] csr_wvalue,
+
     output br_taken_out,
     output [31: 0] br_target_out,
     output reg [7: 0] mem_op_out,
@@ -42,19 +56,22 @@ module ID (
     output reg res_from_mul_out,
     output reg res_from_div_out,
     output reg res_from_mem_out,
+    output reg res_from_csr_out,
     output reg gr_we_out,
     output reg mem_we_out,
     output reg [4: 0] dest_out,
     output reg [31:0] imm_out,
+    output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
     output reg [31: 0] rj_value_out,
     output reg [31: 0] rkd_value_out
 );
 
     wire ready_go;
-    wire mul_div_hazzard;
-    wire load_use_sign;
-    assign ready_go = ~in_valid | ~load_use_sign & ~mul_div_hazzard;
+    wire mul_div_stall;
+    wire load_use_stall;
+    wire csr_stall;
+    assign ready_go = ~in_valid | ~load_use_stall & ~mul_div_stall & ~csr_stall;
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
@@ -63,7 +80,7 @@ module ID (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid & ready_go & ~load_use_sign;
+            out_valid <= in_valid & ready_go;
         end
     end
 
@@ -83,6 +100,7 @@ module ID (
     wire        res_from_mul;
     wire        res_from_div;
     wire        res_from_mem;
+    wire        res_from_csr;
     wire        dst_is_r1;
     wire        gr_we;
     wire        mem_we;
@@ -98,6 +116,7 @@ module ID (
     wire [ 3:0] op_25_22;
     wire [ 1:0] op_21_20;
     wire [ 4:0] op_19_15;
+    wire [4: 0] op_09_05;
     wire [ 4:0] rd;
     wire [ 4:0] rj;
     wire [ 4:0] rk;
@@ -110,6 +129,7 @@ module ID (
     wire [15:0] op_25_22_d;
     wire [ 3:0] op_21_20_d;
     wire [31:0] op_19_15_d;
+    wire [31:0] op_09_05_d;
 
     wire        inst_add_w;
     wire        inst_sub_w;
@@ -157,6 +177,14 @@ module ID (
     wire        inst_mod_w;
     wire        inst_div_wu;
     wire        inst_mod_wu;
+    wire        inst_csrrd;
+    wire        inst_csrwr;
+    wire        inst_csrxchg;
+    wire        inst_etrn;
+    wire        inst_syscall;
+    wire        inst_rdcntid_w;
+    wire        inst_rdcntvl_w;
+    wire        inst_rdcntvh_w;
 
     wire        need_ui5;
     wire        need_si12;
@@ -184,6 +212,7 @@ module ID (
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
     decoder_5_32 u_dec3(.in(op_19_15 ), .out(op_19_15_d ));
+    decoder_5_32 u_dec4(.in(op_09_05 ), .out(op_09_05_d ));
 
     assign inst_add_w     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
     assign inst_sub_w     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h02];
@@ -231,6 +260,9 @@ module ID (
     assign inst_mod_w     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h01];
     assign inst_div_wu    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h02];
     assign inst_mod_wu    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
+    assign inst_csrrd     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h00];
+    assign inst_csrwr     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h01];
+    assign inst_csrxchg   = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & ~op_09_05_d[5'h00] & ~op_09_05_d[5'h01];
 
     assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 
@@ -268,7 +300,7 @@ module ID (
 
     assign jirl_offs = {{14{i16[15]}}, i16[15:0], 2'b0};
 
-    assign src_reg_is_rd = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_st_b | inst_st_h | inst_st_w;
+    assign src_reg_is_rd = inst_beq | inst_bne | inst_blt | inst_bge | inst_bltu | inst_bgeu | inst_st_b | inst_st_h | inst_st_w | inst_csrrd | inst_csrwr | inst_csrxchg;
 
     assign src1_is_pc    = inst_jirl | inst_bl | inst_pcaddu12i;
 
@@ -297,6 +329,7 @@ module ID (
     assign res_from_mul  = inst_mul_w | inst_mulh_w | inst_mulh_wu;
     assign res_from_div  = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
     assign res_from_mem  = inst_ld_b | inst_ld_h | inst_ld_w | inst_ld_bu | inst_ld_hu;
+    assign res_from_csr  = inst_csrrd | inst_csrwr | inst_csrxchg;
     assign dst_is_r1     = inst_bl;
 
     assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu;
@@ -311,7 +344,7 @@ module ID (
 			rj_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr1 == dest_out) && (dest_out != 5'b0)) begin
-            rj_value = result;
+            rj_value = EX_alu_result;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr1 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rj_value = MEM_result;
@@ -329,13 +362,16 @@ module ID (
 			rkd_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr2 == dest_out) && (dest_out != 5'b0)) begin
-            rkd_value = result;
+            rkd_value = EX_alu_result;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr2 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rkd_value = MEM_result;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr2 == WB_dest) && (WB_dest != 5'b0)) begin
             rkd_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
+        end
+        else if (csr_re) begin
+            rkd_value = csr_rvalue;
         end
         else begin
             rkd_value = rf_rdata2;
@@ -345,19 +381,36 @@ module ID (
     assign rj_eq_rd = (rj_value == rkd_value);
     assign rj_lt_rd = ($signed(rj_value) < $signed(rkd_value));
     assign rj_ltu_rd = (rj_value < rkd_value);
-    assign br_taken = (   inst_beq  &&  rj_eq_rd
+    assign br_taken = (inst_beq  &&  rj_eq_rd
                     || inst_bne  && !rj_eq_rd
-                    || inst_blt && rj_lt_rd
-                    || inst_bltu && rj_ltu_rd
-                    || inst_bge && !rj_lt_rd
+                    || inst_blt  &&  rj_lt_rd
+                    || inst_bltu &&  rj_ltu_rd
+                    || inst_bge  && !rj_lt_rd
                     || inst_bgeu && !rj_ltu_rd
                     || inst_jirl
                     || inst_bl
                     || inst_b
     ) && in_valid;
     assign br_target = (inst_beq || inst_bne || inst_bl || inst_b || inst_blt || inst_bltu || inst_bge || inst_bgeu) ? (PC + br_offs) :
-                                                   /*inst_jirl*/ (rj_value + jirl_offs);
+         /*inst_jirl*/ (rj_value + jirl_offs);
     
+    /* csr control */
+    assign csr_re = inst_csrrd || inst_csrwr || inst_csrxchg;
+    assign csr_addr = inst[23: 10];
+    assign csr_we = inst_csrwr || inst_csrxchg;
+    assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
+    assign csr_wvalue = rkd_value;
+
+
+    always @(posedge clk) begin
+		if (rst) begin
+			result_out <= 32'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			result_out <= rkd_value;
+		end
+	end
+
     always @(posedge clk) begin
 		if (rst) begin
 			PC_out <= 32'h1c000000;
@@ -471,6 +524,15 @@ module ID (
 
     always @(posedge clk) begin
 		if (rst) begin
+			res_from_csr_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_csr_out <= res_from_csr;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
 			gr_we_out <= 1'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
@@ -505,19 +567,28 @@ module ID (
 		end
 	end
 
-    assign load_use_sign = in_valid & (
+    assign load_use_stall = in_valid & (
 		rf_raddr1 == dest_out && !src1_is_pc &&  gr_we_out && res_from_mem_out && out_valid ||
         rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && res_from_mem_out && out_valid ||
         rf_raddr1 == MEM_dest && !src1_is_pc &&  MEM_gr_we && MEM_res_from_mem && MEM_valid ||
         rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_mem && MEM_valid
     );
 
-    assign mul_div_hazzard = in_valid & (
+    assign mul_div_stall = in_valid & (
         rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
         rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
         rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
         rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
         rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid ||
         rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid
+    );
+
+    assign csr_stall = in_valid & (
+        rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && res_from_csr_out && out_valid ||
+        rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && res_from_csr_out && out_valid ||
+        rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && MEM_res_from_csr && MEM_valid ||
+        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_csr && MEM_valid ||
+        rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && WB_res_from_csr && WB_valid ||
+        rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && WB_res_from_csr && WB_valid
     );
 endmodule

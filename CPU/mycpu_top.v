@@ -57,6 +57,23 @@ module mycpu_top(
         .wdata  (rf_wdata )
     );
 
+    wire        csr_re;
+    wire [13:0] csr_addr;
+    wire [31:0] csr_rvalue;
+    wire        csr_we;
+    wire [31:0] csr_wmask;
+    wire [31:0] csr_wvalue;
+
+    csr u_csr(
+        .clk(clk),
+        .csr_re(csr_re),
+        .csr_addr(csr_addr),
+        .csr_rvalue(csr_rvalue),
+        .csr_we(csr_we),
+        .csr_wmask(csr_wmask),
+        .csr_wvalue(csr_wvalue)
+    );
+
     wire from_mul_req_ready;
     wire to_mul_req_valid;
     wire to_mul_resp_ready;
@@ -113,6 +130,7 @@ module mycpu_top(
     wire EX_in_ready;
     wire EX_out_valid;
 
+    wire [31: 0] EX_result;
     wire [31: 0] EX_PC;
     wire EX_br_taken;
     wire [31: 0] EX_br_target;
@@ -125,13 +143,14 @@ module mycpu_top(
     wire EX_res_from_mul;
     wire EX_res_from_div;
     wire EX_res_from_mem;
+    wire EX_res_from_csr;
     wire EX_gr_we;
     wire EX_mem_we;
     wire [4: 0] EX_dest;
     wire [31: 0] EX_imm;
     wire [31: 0] EX_rj_value;
     wire [31: 0] EX_rkd_value;
-    wire [31: 0] result;
+    wire [31: 0] EX_alu_result;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -143,6 +162,7 @@ module mycpu_top(
     wire MEM_res_from_mul;
     wire MEM_res_from_div;
     wire MEM_res_from_mem;
+    wire MEM_res_from_csr;
     wire MEM_gr_we;
     wire MEM_mem_we;
     wire [4: 0] MEM_dest;
@@ -156,6 +176,7 @@ module mycpu_top(
     wire WB_res_from_mul;
     wire WB_res_from_div;
     wire WB_res_from_mem;
+    wire WB_res_from_csr;
     wire WB_gr_we;
     wire [4: 0] WB_dest;
 
@@ -183,19 +204,21 @@ module mycpu_top(
         .in_ready(ID_in_ready),
         .out_valid(ID_out_valid),
 
-        .result(result),
+        .EX_alu_result(EX_alu_result),
         .MEM_valid(EX_out_valid),
         .MEM_gr_we(MEM_gr_we),
         .MEM_dest(MEM_dest),
         .MEM_res_from_mul(MEM_res_from_mul),
         .MEM_res_from_div(MEM_res_from_div),
         .MEM_res_from_mem(MEM_res_from_mem),
+        .MEM_res_from_csr(MEM_res_from_csr),
         .MEM_result(MEM_result),
         .WB_valid(MEM_out_valid),
         .WB_gr_we(WB_gr_we),
         .WB_res_from_mul(WB_res_from_mul),
         .WB_res_from_div(WB_res_from_div),
         .WB_res_from_mem(WB_res_from_mem),
+        .WB_res_from_csr(WB_res_from_csr),
         .WB_dest(WB_dest),
         .WB_data_sram_rdata(data_sram_rdata),
         .WB_result(WB_result_bypass),
@@ -206,6 +229,14 @@ module mycpu_top(
         .rf_raddr2(rf_raddr2),
         .rf_rdata1(rf_rdata1),
         .rf_rdata2(rf_rdata2),
+
+        .csr_re(csr_re),
+        .csr_addr(csr_addr),
+        .csr_rvalue(csr_rvalue),
+        .csr_we(csr_we),
+        .csr_wmask(csr_wmask),
+        .csr_wvalue(csr_wvalue),
+
         .br_taken_out(EX_br_taken),
         .br_target_out(EX_br_target),
         .mem_op_out(EX_mem_op),
@@ -217,10 +248,12 @@ module mycpu_top(
         .res_from_mul_out(EX_res_from_mul),
         .res_from_div_out(EX_res_from_div),
         .res_from_mem_out(EX_res_from_mem),
+        .res_from_csr_out(EX_res_from_csr),
         .gr_we_out(EX_gr_we),
         .mem_we_out(EX_mem_we),
         .dest_out(EX_dest),
         .imm_out(EX_imm),
+        .result_out(EX_result),
         .PC_out(EX_PC),
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value)
@@ -240,6 +273,7 @@ module mycpu_top(
         .from_div_req_ready(from_div_req_ready),
         .to_div_req_valid(to_div_req_valid),
 
+        .result(EX_result),
         .PC(EX_PC),
         .mem_op(EX_mem_op),
         .alu_op(EX_alu_op),
@@ -250,6 +284,7 @@ module mycpu_top(
         .res_from_mul(EX_res_from_mul),
         .res_from_div(EX_res_from_div),
         .res_from_mem(EX_res_from_mem),
+        .res_from_csr(EX_res_from_csr),
         .gr_we(EX_gr_we),
         .mem_we(EX_mem_we),
         .dest(EX_dest),
@@ -258,7 +293,7 @@ module mycpu_top(
         .rkd_value(EX_rkd_value),
         .src1_wire(src1),
         .src2_wire(src2),
-        .result(result),
+        .alu_result(EX_alu_result),
         .result_out(MEM_result),
         .PC_out(MEM_PC),
         .mem_op_out(MEM_mem_op),
@@ -267,6 +302,7 @@ module mycpu_top(
         .res_from_mul_out(MEM_res_from_mul),
         .res_from_div_out(MEM_res_from_div),
         .res_from_mem_out(MEM_res_from_mem),
+        .res_from_csr_out(MEM_res_from_csr),
         .gr_we_out(MEM_gr_we),
         .mem_we_out(MEM_mem_we),
         .dest_out(MEM_dest),
@@ -300,6 +336,7 @@ module mycpu_top(
         .res_from_mul(MEM_res_from_mul),
         .res_from_div(MEM_res_from_div),
         .res_from_mem(MEM_res_from_mem),
+        .res_from_csr(MEM_res_from_csr),
         .gr_we(MEM_gr_we),
         .mem_we(MEM_mem_we),
         .dest(MEM_dest),
@@ -315,6 +352,7 @@ module mycpu_top(
         .res_from_mul_out(WB_res_from_mul),
         .res_from_div_out(WB_res_from_div),
         .res_from_mem_out(WB_res_from_mem),
+        .res_from_csr_out(WB_res_from_csr),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest)
     );

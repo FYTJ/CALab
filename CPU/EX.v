@@ -12,6 +12,7 @@ module EX (
 	input from_div_req_ready,
 	output to_div_req_valid,
 
+	input [31: 0] result,
     input [31: 0] PC,
 	input [7: 0] mem_op,
 	input [11: 0] alu_op,
@@ -22,6 +23,7 @@ module EX (
 	input res_from_mul,
 	input res_from_div,
     input res_from_mem,
+	input res_from_csr,
     input gr_we,
     input mem_we,
     input [4: 0] dest,
@@ -30,7 +32,7 @@ module EX (
     input [31: 0] rkd_value,
 	output [31: 0] src1_wire,
 	output [31: 0] src2_wire,
-	output [31: 0] result,
+	output [31: 0] alu_result,
     
     output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
@@ -40,6 +42,7 @@ module EX (
 	output reg res_from_mul_out,
     output reg res_from_div_out,
     output reg res_from_mem_out,
+	output reg res_from_csr_out,
     output reg gr_we_out,
     output reg mem_we_out,
     output reg [4: 0] dest_out,
@@ -66,8 +69,6 @@ module EX (
 
 	wire [31: 0] src1;
     wire [31: 0] src2;
-	wire [31: 0] alu_result;
-	assign result = alu_result;
 
 	alu u_alu(
         .alu_op     (alu_op    ),
@@ -76,14 +77,8 @@ module EX (
         .alu_result (alu_result)
     );
 
-	// multiplier u_mul(
-    //     .mul_clk(clk),
-    //     .reset(rst),
-    //     .mul_op(mul_op),
-    //     .x(src1),
-    //     .y(src2),
-    //     .result(mul_result)
-    // );
+	wire [31: 0] result_out_wire;
+	assign result_out_wire = res_from_csr ? result : alu_result;
 
     assign src1 = src1_is_pc  ? PC[31:0] : rj_value;
     assign src2 = src2_is_imm ? imm : rkd_value;
@@ -95,7 +90,7 @@ module EX (
 			result_out <= 32'b0;
 		end
 		else if (in_valid & ready_go & out_ready) begin
-			result_out <= result;
+			result_out <= result_out_wire;
 		end
 	end
 
@@ -159,6 +154,15 @@ module EX (
 		end
 		else if (in_valid & ready_go & out_ready) begin
 			res_from_mem_out <= res_from_mem;
+		end
+	end
+
+	always @(posedge clk) begin
+		if (rst) begin
+			res_from_csr_out <= 1'b0;
+		end
+		else if (in_valid & ready_go & out_ready) begin
+			res_from_csr_out <= res_from_csr;
 		end
 	end
 
