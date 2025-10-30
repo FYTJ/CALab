@@ -58,3 +58,11 @@ wire from_mul/div_resp_valid;
 - io_in_bits_divisor: 除数
 - io_out_bits_quotient: 商
 - io_out_bits_remainder: 余数
+
+## 控制状态寄存器(CSR)接口说明
+- csr_re: CSR读取使能信号
+- csr_addr: CSR地址
+- csr_rvalue: CSR读取数据
+- csr_we: CSR写入使能信号
+- csr_wmask: 32位写入掩码，每个bit对应一个字节，为1时表示该字节需要写入
+- csr_wvalue: CSR写入数据
