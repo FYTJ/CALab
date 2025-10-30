@@ -67,10 +67,6 @@ module EX (
 	wire [31: 0] src1;
     wire [31: 0] src2;
 	wire [31: 0] alu_result;
-	// wire [63: 0] mul_result;
-	// wire [31: 0] final_mul_result = {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
-    //                           {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0];
-	// assign result = res_from_mul ? final_mul_result : alu_result;
 	assign result = alu_result;
 
 	alu u_alu(

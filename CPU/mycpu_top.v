@@ -1,3 +1,6 @@
+`include "../multiplier/multiplier.v"
+`include "../divider/Div.v"
+
 module mycpu_top(
     input  wire        clk,
     input  wire        resetn,
@@ -17,7 +20,10 @@ module mycpu_top(
     output wire [31:0] debug_wb_pc,
     output wire [ 3:0] debug_wb_rf_we,
     output wire [ 4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata
+    output wire [31:0] debug_wb_rf_wdata,
+
+    // interrupt
+    input wire         intr
 );
     reg         reset;
     always @(posedge clk) reset <= ~resetn;
