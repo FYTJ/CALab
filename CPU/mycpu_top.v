@@ -20,17 +20,7 @@ module mycpu_top(
     output wire [31:0] debug_wb_pc,
     output wire [ 3:0] debug_wb_rf_we,
     output wire [ 4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata,
-
-    // interrupt
-    input  wire        has_interrupt,
-    input  wire [31:0] ex_entry,
-    output wire        exception_submit,
-    output wire [ 5:0] ecode_submit,
-    output wire [ 8:0] esubcode_submit,
-    output wire [31:0] exception_pc_submit,
-    output wire [31:0] exception_maddr_submit,
-    output wire        ertn_submit
+    output wire [31:0] debug_wb_rf_wdata
 );
     reg         reset;
     always @(posedge clk) reset <= ~resetn;
@@ -65,20 +55,39 @@ module mycpu_top(
     );
 
     wire        csr_re;
-    wire [13:0] csr_addr;
+    wire [13:0] csr_num;
     wire [31:0] csr_rvalue;
     wire        csr_we;
     wire [31:0] csr_wmask;
     wire [31:0] csr_wvalue;
 
+    // interrupt
+    wire        has_interrupt;
+    wire [31:0] ex_entry;
+    wire        exception_submit;
+    wire [ 5:0] ecode_submit;
+    wire [ 8:0] esubcode_submit;
+    wire [31:0] exception_pc_submit;
+    wire [31:0] exception_maddr_submit;
+    wire        ertn_submit;
+
     csr u_csr(
         .clk(clk),
+        .rst(reset),
         .csr_re(csr_re),
-        .csr_addr(csr_addr),
+        .csr_num(csr_num),
         .csr_rvalue(csr_rvalue),
         .csr_we(csr_we),
         .csr_wmask(csr_wmask),
-        .csr_wvalue(csr_wvalue)
+        .csr_wvalue(csr_wvalue),
+        .wb_ex(exception_submit),
+        .wb_ecode(ecode_submit),
+        .wb_esubcode(esubcode_submit),
+        .wb_pc(exception_pc_submit),
+        .wb_addr(exception_maddr_submit),
+        .etrn_flush(ertn_submit),
+        .ex_entry(ex_entry),
+        .has_int(has_interrupt)
     );
 
     wire from_mul_req_ready;
@@ -260,7 +269,7 @@ module mycpu_top(
         .rf_rdata2(rf_rdata2),
 
         .csr_re(csr_re),
-        .csr_addr(csr_addr),
+        .csr_num(csr_num),
         .csr_rvalue(csr_rvalue),
         .csr_we(csr_we),
         .csr_wmask(csr_wmask),

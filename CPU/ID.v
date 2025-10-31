@@ -431,10 +431,12 @@ module ID (
     wire SYSCALL;
     wire BRK;
     wire INE;
+    wire INT;
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;
     assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid_w || inst_rdcntvl_w || inst_rdcntvh_w);
+    assign INT = has_interrupt;
 
 
     always @(posedge clk) begin
@@ -607,7 +609,7 @@ module ID (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception || has_interrupt || SYSCALL || BRK || INE;
+            has_exception_out <= has_exception || SYSCALL || BRK || INE || INT;
         end
     end
 
@@ -617,7 +619,7 @@ module ID (
         end
         else if (in_valid && ready_go && out_ready) begin
             if (!has_exception) begin
-                ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd;
+                ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd | {6{INT}} & 6'h0;
             end
             else begin
                 ecode_out <= ecode;
