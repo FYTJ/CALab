@@ -84,7 +84,7 @@ module mycpu_top(
         .wb_ecode(ecode_submit),
         .wb_esubcode(esubcode_submit),
         .wb_pc(exception_pc_submit),
-        .wb_addr(exception_maddr_submit),
+        .wb_vaddr(exception_maddr_submit),
         .etrn_flush(ertn_submit),
         .ex_entry(ex_entry),
         .has_int(has_interrupt)
