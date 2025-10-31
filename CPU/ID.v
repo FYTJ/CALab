@@ -40,7 +40,7 @@ module ID (
     input [31:0] rf_rdata2,
 
     output csr_re,
-    output [13: 0] csr_addr,
+    output [13: 0] csr_num,
     input [31: 0] csr_rvalue,
     output csr_we,
     output [31: 0] csr_wmask,
@@ -422,7 +422,7 @@ module ID (
     
     /* csr control */
     assign csr_re = inst_csrrd || inst_csrwr || inst_csrxchg;
-    assign csr_addr = inst[23: 10];
+    assign csr_num = inst[23: 10];
     assign csr_we = inst_csrwr || inst_csrxchg;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
