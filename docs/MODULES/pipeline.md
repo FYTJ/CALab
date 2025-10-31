@@ -21,6 +21,6 @@ assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_l
 - CSR的读数据不参与旁路。在ID级设置信号csr_stall，信号含义与前者相同。
 
 ### 例外处理
-- 当前支持例外包括：ADEF, ALE, SYS, BRK, INE, INT。具体含义和例外类型编码请参考**《龙芯架构参考手册 卷一：基础架构》P115-116**
+- 当前支持例外包括：ADEF, ALE, SYS, BRK, INE, INT。具体含义和例外类型编码请参考[《龙芯架构参考手册 卷一：基础架构》](https://loongson.github.io/LoongArch-Documentation/README-CN.html)P115-116
 - 中断判断位于ID级，例外提交位于WB级。当WB级提交例外时，所有流水级(除WB)外的**ex_flush**信号全部拉高，此时所有流水级均被冲刷，同时WB级不进行写寄存器操作。
 - 对于带有**has_exception**标记的指令，不参与任何数据发送与接收，包括EX级调用乘除法器以及MEM级访存。
