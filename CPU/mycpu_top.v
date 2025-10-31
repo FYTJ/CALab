@@ -143,6 +143,7 @@ module mycpu_top(
     wire ID_in_ready;
     wire ID_out_valid;
     wire [31: 0] ID_PC;
+    wire ID_this_exception;
     wire ID_has_exception;
     wire [5: 0] ID_ecode;
     wire [8: 0] ID_esubcode;
@@ -170,6 +171,7 @@ module mycpu_top(
     wire [31: 0] EX_rj_value;
     wire [31: 0] EX_rkd_value;
     wire [31: 0] EX_alu_result;
+    wire EX_this_exception;
     wire EX_has_exception;
     wire [5: 0] EX_ecode;
     wire [8: 0] EX_esubcode;
@@ -190,6 +192,7 @@ module mycpu_top(
     wire MEM_mem_we;
     wire [4: 0] MEM_dest;
     wire [31: 0] MEM_rkd_value;
+    wire MEM_this_exception;
     wire MEM_has_exception;
     wire [5: 0] MEM_ecode;
     wire [8: 0] MEM_esubcode;
@@ -207,6 +210,7 @@ module mycpu_top(
     wire WB_res_from_csr;
     wire WB_gr_we;
     wire [4: 0] WB_dest;
+    wire WB_this_exception;
     wire WB_has_exception;
     wire [5: 0] WB_ecode;
     wire [8: 0] WB_esubcode;
@@ -228,6 +232,7 @@ module mycpu_top(
         .inst_sram_addr(inst_sram_addr),
         .inst_sram_wdata(inst_sram_wdata),
         .PC_out(ID_PC),
+        .next_exception(ID_has_exception),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
         .esubcode_out(ID_esubcode)
@@ -296,8 +301,10 @@ module mycpu_top(
         .PC_out(EX_PC),
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value),
+        .this_exception(ID_this_exception),
+        .next_exception(EX_has_exception),
         .has_interrupt(has_interrupt),
-        .has_exception(ID_has_exception),
+        .has_exception_in(ID_has_exception),
         .ecode(ID_ecode),
         .esubcode(ID_esubcode),
         .has_exception_out(EX_has_exception),
@@ -355,7 +362,9 @@ module mycpu_top(
         .mem_we_out(MEM_mem_we),
         .dest_out(MEM_dest),
         .rkd_value_out(MEM_rkd_value),
-        .has_exception(EX_has_exception),
+        .this_exception(EX_this_exception),
+        .next_exception(MEM_has_exception),
+        .has_exception_in(EX_has_exception),
         .ecode(EX_ecode),
         .esubcode(EX_esubcode),
         .ertn(EX_ertn),
@@ -413,7 +422,9 @@ module mycpu_top(
         .res_from_csr_out(WB_res_from_csr),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest),
-        .has_exception(MEM_has_exception),
+        .this_exception(WB_this_exception),
+        .next_exception(WB_has_exception),
+        .has_exception_in(MEM_has_exception),
         .ecode(MEM_ecode),
         .esubcode(MEM_esubcode),
         .exception_maddr(MEM_exception_maddr),
@@ -446,7 +457,8 @@ module mycpu_top(
         .debug_wb_rf_we(debug_wb_rf_we),
         .debug_wb_rf_wnum(debug_wb_rf_wnum),
         .debug_wb_rf_wdata(debug_wb_rf_wdata),
-        .has_exception(MEM_has_exception),
+        .this_exception(WB_this_exception),
+        .has_exception_in(MEM_has_exception),
         .ecode(MEM_ecode),
         .esubcode(MEM_esubcode),
         .exception_maddr(MEM_exception_maddr),

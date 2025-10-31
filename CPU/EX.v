@@ -49,6 +49,9 @@ module EX (
     output reg [4: 0] dest_out,
     output reg [31: 0] rkd_value_out,
 
+	output this_exception,
+    input next_exception,
+
 	input has_exception,
 	input [5: 0] ecode,
     input [8: 0] esubcode,
@@ -62,14 +65,14 @@ module EX (
     wire ready_go;
     assign ready_go = !in_valid ||
 					  ex_flush ||
-					  has_exception || ALE ||
+					  this_exception||
 					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) &&
 					  !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul && !has_exception && !ex_flush;
-	assign to_div_req_valid = in_valid && res_from_div && !has_exception && !ex_flush;
+	assign to_mul_req_valid = in_valid && res_from_mul && !this_exception && !ex_flush;
+	assign to_div_req_valid = in_valid && res_from_div && !this_exception && !ex_flush;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -100,6 +103,8 @@ module EX (
 
 	wire ALE;
 	assign ALE = res_from_mem && rkd_value[1: 0] != 0;
+
+	assign this_exception = has_exception || next_exception || ALE;
     
     always @(posedge clk) begin
 		if (rst) begin
@@ -223,7 +228,7 @@ module EX (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception || ALE;
+            has_exception_out <= has_exception;
         end
     end
 

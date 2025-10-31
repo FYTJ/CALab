@@ -48,6 +48,9 @@ module MEM (
     output reg gr_we_out,
     output reg [4: 0] dest_out,
 
+    output this_exception,
+    input next_exception,
+
     input has_exception,
 	input [5: 0] ecode,
     input [8: 0] esubcode,
@@ -62,6 +65,7 @@ module MEM (
     wire ready_go;
     assign ready_go = !in_valid ||
                       ex_flush ||
+                      this_exception ||
                       !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
@@ -78,8 +82,8 @@ module MEM (
         end
     end
 
-    assign data_sram_en = !has_exception;
-    assign data_sram_we    = {4{mem_we && valid && in_valid && !has_exception}} & (
+    assign data_sram_en = !this_exception;
+    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_exception}} & (
                                 ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
                                 ({4{mem_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
                                 ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -95,6 +99,8 @@ module MEM (
                              {32{res_from_mul}} & {32{mul_op[2] | mul_op[1]}} & mul_result[63: 32] |
                              {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
                              result;
+    
+    assign this_exception = has_exception || next_exception;
 
     always @(posedge clk) begin
 		if (rst) begin
