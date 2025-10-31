@@ -5,8 +5,10 @@ module IF (
     input out_ready,
     output reg out_valid,
     input ex_flush,
+    input ertn_flush,
 
     input [31: 0] ex_entry,
+    input [31: 0] ertn_entry,
     input br_taken,
     input [31: 0] br_target,
     output inst_sram_en,
@@ -42,7 +44,7 @@ module IF (
     wire [31:0] nextpc;
 
     assign seq_pc       = out_ready ? PC_out + 32'h4: PC_out;
-    assign nextpc       = out_ready && br_taken ? br_target : ex_flush ? ex_entry : seq_pc;
+    assign nextpc       = out_ready && ex_flush ? ex_entry : ertn_flush ? ertn_entry : br_taken ? br_target : seq_pc;
 
     assign inst_sram_en = !ADEF;
     assign inst_sram_we    = 4'b0;

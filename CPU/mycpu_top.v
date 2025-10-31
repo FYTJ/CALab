@@ -1,5 +1,11 @@
+`include "../utils/decoder_2_4.v"
+`include "../utils/decoder_4_16.v"
+`include "../utils/decoder_5_32.v"
+`include "../utils/decoder_6_64.v"
 `include "../multiplier/multiplier.v"
 `include "../multiplier/booth.v"
+`include "../multiplier/wallace.v"
+`include "../multiplier/full_adder.v"
 `include "../divider/Div.v"
 
 module mycpu_top(
@@ -65,6 +71,7 @@ module mycpu_top(
     // interrupt
     wire        has_interrupt;
     wire [31:0] ex_entry;
+    wire [31:0] ertn_entry;
     wire        exception_submit;
     wire [ 5:0] ecode_submit;
     wire [ 8:0] esubcode_submit;
@@ -88,6 +95,7 @@ module mycpu_top(
         .wb_vaddr(exception_maddr_submit),
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
+        .ertn_entry(ertn_entry),
         .has_int(has_interrupt)
     );
 
@@ -224,7 +232,9 @@ module mycpu_top(
         .out_valid(IF_out_valid),
         .out_ready(ID_in_ready),
         .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
+        .ertn_entry(ertn_entry),
         .br_taken(EX_br_taken),
         .br_target(EX_br_target),
         .inst_sram_en(inst_sram_en),
@@ -232,7 +242,7 @@ module mycpu_top(
         .inst_sram_addr(inst_sram_addr),
         .inst_sram_wdata(inst_sram_wdata),
         .PC_out(ID_PC),
-        .next_exception(ID_has_exception),
+        .next_exception(ID_this_exception),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
         .esubcode_out(ID_esubcode)
@@ -247,6 +257,7 @@ module mycpu_top(
         .in_ready(ID_in_ready),
         .out_valid(ID_out_valid),
         .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
 
         .EX_alu_result(EX_alu_result),
         .MEM_valid(EX_out_valid),
@@ -302,9 +313,9 @@ module mycpu_top(
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value),
         .this_exception(ID_this_exception),
-        .next_exception(EX_has_exception),
+        .next_exception(EX_this_exception),
         .has_interrupt(has_interrupt),
-        .has_exception_in(ID_has_exception),
+        .has_exception(ID_has_exception),
         .ecode(ID_ecode),
         .esubcode(ID_esubcode),
         .has_exception_out(EX_has_exception),
@@ -322,6 +333,7 @@ module mycpu_top(
         .in_ready(EX_in_ready),
         .out_valid(EX_out_valid),
         .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
 
         .from_mul_req_ready(from_mul_req_ready),
         .to_mul_req_valid(to_mul_req_valid),
@@ -363,8 +375,8 @@ module mycpu_top(
         .dest_out(MEM_dest),
         .rkd_value_out(MEM_rkd_value),
         .this_exception(EX_this_exception),
-        .next_exception(MEM_has_exception),
-        .has_exception_in(EX_has_exception),
+        .next_exception(MEM_this_exception),
+        .has_exception(EX_has_exception),
         .ecode(EX_ecode),
         .esubcode(EX_esubcode),
         .ertn(EX_ertn),
@@ -385,6 +397,7 @@ module mycpu_top(
         .out_valid(MEM_out_valid),
         .valid(valid),
         .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
 
         .mul_result(mul_result),
 
@@ -422,9 +435,9 @@ module mycpu_top(
         .res_from_csr_out(WB_res_from_csr),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest),
-        .this_exception(WB_this_exception),
+        .this_exception(MEM_this_exception),
         .next_exception(WB_has_exception),
-        .has_exception_in(MEM_has_exception),
+        .has_exception(MEM_has_exception),
         .ecode(MEM_ecode),
         .esubcode(MEM_esubcode),
         .exception_maddr(MEM_exception_maddr),
@@ -458,10 +471,10 @@ module mycpu_top(
         .debug_wb_rf_wnum(debug_wb_rf_wnum),
         .debug_wb_rf_wdata(debug_wb_rf_wdata),
         .this_exception(WB_this_exception),
-        .has_exception_in(MEM_has_exception),
-        .ecode(MEM_ecode),
-        .esubcode(MEM_esubcode),
-        .exception_maddr(MEM_exception_maddr),
+        .has_exception(WB_has_exception),
+        .ecode(WB_ecode),
+        .esubcode(WB_esubcode),
+        .exception_maddr(WB_exception_maddr),
         .ertn(WB_ertn),
         .exception_submit(exception_submit),
         .ecode_submit(ecode_submit),

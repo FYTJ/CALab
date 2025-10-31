@@ -15,7 +15,8 @@ module csr(
     input  wire [31:0] wb_vaddr,
     input  wire        ertn_flush,
     output wire [31:0] ex_entry,
-    output wire        has_int
+    output wire        has_int,
+    output wire [31:0] ertn_entry
 );
     //TICLR
     `define CSR_TICLR_CLR 0
@@ -370,7 +371,8 @@ module csr(
 
 // special:
     // to pre-IF
-    assign ex_entry = csr_eentry_rvalue;
+    assign ex_entry   = csr_eentry_rvalue;
+    assign ertn_entry = csr_era_rvalue;
 
     // to ID
     assign has_int = ((csr_estat_is[12:0] & csr_ecfg_lie[12:0]) != 13'b0) && (csr_crmd_ie == 1'b1);

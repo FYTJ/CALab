@@ -70,10 +70,10 @@ module WB (
 
     assign this_exception = 1'b0;
 
-    assign exception_submit = has_exception;
+    assign exception_submit = in_valid && has_exception;
     assign ecode_submit = ecode;
     assign esubcode_submit = esubcode;
     assign exception_pc_submit = PC;
     assign exception_maddr_submit = exception_maddr;
-    assign ertn_submit = ertn;
+    assign ertn_submit = in_valid && ertn;
 endmodule

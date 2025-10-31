@@ -11,6 +11,7 @@ module ID (
     output in_ready,
     output reg out_valid,
     input ex_flush,
+    input ertn_flush,
 
     input [31: 0] EX_alu_result,
     input MEM_valid,
@@ -86,7 +87,7 @@ module ID (
     wire load_use_stall;
     wire csr_stall;
     assign ready_go = !in_valid ||
-                      ex_flush ||
+                      ex_flush || ertn_flush ||
                       this_exception ||
                       !load_use_stall && !mul_div_stall && !csr_stall;
 
@@ -97,7 +98,7 @@ module ID (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
         end
     end
 
@@ -220,6 +221,9 @@ module ID (
     assign op_25_22  = inst[25:22];
     assign op_21_20  = inst[21:20];
     assign op_19_15  = inst[19:15];
+    assign op_14_10  = inst[14:10];
+    assign op_09_05  = inst[ 9: 5];
+    assign op_04_00  = inst[ 4: 0];
 
     assign rd   = inst[ 4: 0];
     assign rj   = inst[ 9: 5];
@@ -286,13 +290,13 @@ module ID (
     assign inst_mod_wu    = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h03];
     assign inst_csrrd     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h00];
     assign inst_csrwr     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h01];
-    assign inst_csrxchg   = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & ~op_09_05_d[5'h00] & ~op_09_05_d[5'h01];
+    assign inst_csrxchg   = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & ~op_09_05_d[5'h00] & ~op_04_00_d[5'h01];
     assign inst_ertn      = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'b0] & op_19_15_d[5'h10] & op_14_10_d[5'h0e] &   op_09_05_d[5'h00] & op_04_00_d[5'h00];
     assign inst_syscall   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
     assign inst_break     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
     assign inst_rdcntid_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_04_00_d[5'h00];
     assign inst_rdcntvl_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_09_05_d[5'h00];
-    assign inst_rdcntvl_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h19] & op_09_05_d[5'h00];
+    assign inst_rdcntvh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h19] & op_09_05_d[5'h00];
 
     assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 
@@ -400,9 +404,6 @@ module ID (
         else if (WB_valid && WB_gr_we && (rf_raddr2 == WB_dest) && (WB_dest != 5'b0)) begin
             rkd_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
         end
-        else if (csr_re) begin
-            rkd_value = csr_rvalue;
-        end
         else begin
             rkd_value = rf_rdata2;
         end
@@ -425,9 +426,9 @@ module ID (
          /*inst_jirl*/ (rj_value + jirl_offs);
     
     /* csr control */
-    assign csr_re = inst_csrrd || inst_csrwr || inst_csrxchg;
+    assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = inst_csrwr || inst_csrxchg;
+    assign csr_we = (inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 
@@ -450,7 +451,7 @@ module ID (
 			result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= rkd_value;
+			result_out <= res_from_csr ? csr_rvalue : rkd_value;
 		end
 	end
 
@@ -615,7 +616,7 @@ module ID (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception;
+            has_exception_out <= has_exception || SYSCALL || BRK || INE || INT;
         end
     end
 

@@ -8,6 +8,7 @@ module MEM (
     output reg out_valid,
     input valid,
     input ex_flush,
+    input ertn_flush,
 
     input [63: 0] mul_result,
 
@@ -64,7 +65,7 @@ module MEM (
 );
     wire ready_go;
     assign ready_go = !in_valid ||
-                      ex_flush ||
+                      ex_flush || ertn_flush ||
                       this_exception ||
                       !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
@@ -78,7 +79,7 @@ module MEM (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
         end
     end
 

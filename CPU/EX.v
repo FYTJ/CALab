@@ -7,6 +7,7 @@ module EX (
     output in_ready,
     output reg out_valid,
 	input ex_flush,
+	input ertn_flush,
 
 	input from_mul_req_ready,
 	output to_mul_req_valid,
@@ -64,22 +65,22 @@ module EX (
 );
     wire ready_go;
     assign ready_go = !in_valid ||
-					  ex_flush ||
+					  ex_flush || ertn_flush ||
 					  this_exception||
 					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) &&
 					  !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul && !this_exception && !ex_flush;
-	assign to_div_req_valid = in_valid && res_from_div && !this_exception && !ex_flush;
+	assign to_mul_req_valid = in_valid && res_from_mul && !this_exception && !ex_flush && !ertn_flush;
+	assign to_div_req_valid = in_valid && res_from_div && !this_exception && !ex_flush && !ertn_flush;
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
         end
     end
 
@@ -93,16 +94,14 @@ module EX (
         .alu_result (alu_result)
     );
 
-	wire [31: 0] result_out_wire;
-	assign result_out_wire = res_from_csr ? result : alu_result;
-
     assign src1 = src1_is_pc  ? PC[31:0] : rj_value;
     assign src2 = src2_is_imm ? imm : rkd_value;
 	assign src1_wire = src1;
 	assign src2_wire = src2;
 
 	wire ALE;
-	assign ALE = res_from_mem && rkd_value[1: 0] != 0;
+	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
+		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
 	assign this_exception = has_exception || next_exception || ALE;
     
@@ -111,7 +110,7 @@ module EX (
 			result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= result_out_wire;
+			result_out <= res_from_csr ? result : alu_result;
 		end
 	end
 
@@ -228,7 +227,7 @@ module EX (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception;
+            has_exception_out <= has_exception || ALE;
         end
     end
 
