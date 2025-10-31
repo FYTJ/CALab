@@ -67,6 +67,10 @@ module ID (
     output reg [31: 0] rj_value_out,
     output reg [31: 0] rkd_value_out,
 
+
+    output this_exception,
+    input next_exception,
+
     input has_interrupt,
     input has_exception,
     input [5: 0] ecode,
@@ -83,7 +87,7 @@ module ID (
     wire csr_stall;
     assign ready_go = !in_valid ||
                       ex_flush ||
-                      has_exception || has_interrupt || SYSCALL || BRK || INE ||
+                      this_exception ||
                       !load_use_stall && !mul_div_stall && !csr_stall;
 
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
@@ -438,6 +442,8 @@ module ID (
     assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid_w || inst_rdcntvl_w || inst_rdcntvh_w);
     assign INT = has_interrupt;
 
+    assign this_exception = has_exception || next_exception || SYSCALL || BRK || INE || INT;
+
 
     always @(posedge clk) begin
 		if (rst) begin
@@ -609,7 +615,7 @@ module ID (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception || SYSCALL || BRK || INE || INT;
+            has_exception_out <= has_exception;
         end
     end
 

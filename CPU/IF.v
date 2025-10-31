@@ -15,6 +15,8 @@ module IF (
     output [31:0] inst_sram_wdata,
     output reg [31: 0] PC_out,
     
+    input next_exception,
+
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out
