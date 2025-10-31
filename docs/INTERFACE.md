@@ -66,3 +66,11 @@ wire from_mul/div_resp_valid;
 - csr_we: CSR写入使能信号
 - csr_wmask: 32位写入掩码，每个bit对应一个字节，为1时表示该字节需要写入
 - csr_wvalue: CSR写入数据
+- wb_ex: 异常提交信号
+- wb_ecode: 异常类型一级编码
+- wb_esubcode: 异常类型二级编码
+- wb_pc: 异常发生时的PC值以及ADEF异常发生时的错误PC值
+- wb_addr: ALE异常发生时的错误地址
+- etrn_flush: 异常返回时流水线冲刷信号
+- ex_entry: 异常处理入口地址
+- has_int: 是否有中断请求
