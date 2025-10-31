@@ -7,6 +7,7 @@ module MEM (
     output in_ready,
     output reg out_valid,
     input valid,
+    input ex_flush,
 
     input [63: 0] mul_result,
 
@@ -45,10 +46,22 @@ module MEM (
     output reg res_from_mem_out,
     output reg res_from_csr_out,
     output reg gr_we_out,
-    output reg [4: 0] dest_out
+    output reg [4: 0] dest_out,
+
+    input has_exception,
+	input [5: 0] ecode,
+    input [8: 0] esubcode,
+    input [31: 0] exception_maddr,
+    input ertn,
+    output reg has_exception_out,
+	output reg [5: 0] ecode_out,
+    output reg [8: 0] esubcode_out,
+    output reg [31: 0] exception_maddr_out,
+    output reg ertn_out
 );
     wire ready_go;
     assign ready_go = !in_valid ||
+                      ex_flush ||
                       !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
@@ -61,12 +74,12 @@ module MEM (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid & ready_go;
+            out_valid <= in_valid && ready_go && !ex_flush;
         end
     end
 
-    assign data_sram_en = 1'b1;
-    assign data_sram_we    = {4{mem_we && valid && in_valid}} & (
+    assign data_sram_en = !has_exception;
+    assign data_sram_we    = {4{mem_we && valid && in_valid && !has_exception}} & (
                                 ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
                                 ({4{mem_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
                                 ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -87,7 +100,7 @@ module MEM (
 		if (rst) begin
 			PC_out <= 32'h1c000000;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			PC_out <= PC;
 		end
 	end
@@ -96,7 +109,7 @@ module MEM (
         if (rst) begin
             mem_op_out <= 8'b0;
         end
-        else if (in_valid & ready_go & out_ready) begin
+        else if (in_valid && ready_go && out_ready) begin
 			mem_op_out <= mem_op;
 		end
     end
@@ -105,7 +118,7 @@ module MEM (
 		if (rst) begin
 			result_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			result_out <= result_out_wire;
 		end
 	end
@@ -114,7 +127,7 @@ module MEM (
 		if (rst) begin
 			result_bypass_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			result_bypass_out <= result;
 		end
 	end
@@ -123,7 +136,7 @@ module MEM (
 		if (rst) begin
 			res_from_mul_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mul_out <= res_from_mul;
 		end
 	end
@@ -132,7 +145,7 @@ module MEM (
 		if (rst) begin
 			res_from_div_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_div_out <= res_from_div;
 		end
 	end
@@ -141,7 +154,7 @@ module MEM (
 		if (rst) begin
 			res_from_mem_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mem_out <= res_from_mem;
 		end
 	end
@@ -150,7 +163,7 @@ module MEM (
 		if (rst) begin
 			res_from_csr_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_csr_out <= res_from_csr;
 		end
 	end
@@ -159,7 +172,7 @@ module MEM (
 		if (rst) begin
 			gr_we_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			gr_we_out <= gr_we;
 		end
 	end
@@ -168,8 +181,53 @@ module MEM (
 		if (rst) begin
 			dest_out <= 5'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			dest_out <= dest;
+		end
+	end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            has_exception_out <= 1'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            has_exception_out <= has_exception;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            exception_maddr_out <= 32'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            exception_maddr_out <= exception_maddr;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            ecode_out <= 6'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            ecode_out <= ecode;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            esubcode_out <= 9'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            esubcode_out <= esubcode;
+        end
+    end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			ertn_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			ertn_out <= ertn;
 		end
 	end
 endmodule

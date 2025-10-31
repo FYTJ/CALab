@@ -6,6 +6,7 @@ module EX (
     input out_ready,
     output in_ready,
     output reg out_valid,
+	input ex_flush,
 
 	input from_mul_req_ready,
 	output to_mul_req_valid,
@@ -46,24 +47,36 @@ module EX (
     output reg gr_we_out,
     output reg mem_we_out,
     output reg [4: 0] dest_out,
-    output reg [31: 0] rkd_value_out
+    output reg [31: 0] rkd_value_out,
+
+	input has_exception,
+	input [5: 0] ecode,
+    input [8: 0] esubcode,
+	input ertn,
+    output reg has_exception_out,
+	output reg [5: 0] ecode_out,
+    output reg [8: 0] esubcode_out,
+	output reg [31: 0] exception_maddr_out,
+	output reg ertn_out
 );
     wire ready_go;
     assign ready_go = !in_valid ||
+					  ex_flush ||
+					  has_exception || ALE ||
 					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) &&
 					  !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul;
-	assign to_div_req_valid = in_valid && res_from_div;
+	assign to_mul_req_valid = in_valid && res_from_mul && !has_exception && !ex_flush;
+	assign to_div_req_valid = in_valid && res_from_div && !has_exception && !ex_flush;
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid & ready_go;
+            out_valid <= in_valid && ready_go && !ex_flush;
         end
     end
 
@@ -84,12 +97,15 @@ module EX (
     assign src2 = src2_is_imm ? imm : rkd_value;
 	assign src1_wire = src1;
 	assign src2_wire = src2;
+
+	wire ALE;
+	assign ALE = res_from_mem && rkd_value[1: 0] != 0;
     
     always @(posedge clk) begin
 		if (rst) begin
 			result_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			result_out <= result_out_wire;
 		end
 	end
@@ -98,7 +114,7 @@ module EX (
 		if (rst) begin
 			PC_out <= 32'h1c000000;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			PC_out <= PC;
 		end
 	end
@@ -107,7 +123,7 @@ module EX (
         if (rst) begin
             mem_op_out <= 8'b0;
         end
-        else if (in_valid & ready_go & out_ready) begin
+        else if (in_valid && ready_go && out_ready) begin
 			mem_op_out <= mem_op;
 		end
     end
@@ -116,7 +132,7 @@ module EX (
         if (rst) begin
             mul_op_out <= 3'b0;
         end
-        else if (in_valid & ready_go & out_ready) begin
+        else if (in_valid && ready_go && out_ready) begin
 			mul_op_out <= mul_op;
 		end
     end
@@ -125,7 +141,7 @@ module EX (
         if (rst) begin
             div_op_out <= 4'b0;
         end
-        else if (in_valid & ready_go & out_ready) begin
+        else if (in_valid && ready_go && out_ready) begin
 			div_op_out <= div_op;
 		end
     end
@@ -134,7 +150,7 @@ module EX (
 		if (rst) begin
 			res_from_mul_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mul_out <= res_from_mul;
 		end
 	end
@@ -143,7 +159,7 @@ module EX (
 		if (rst) begin
 			res_from_div_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_div_out <= res_from_div;
 		end
 	end
@@ -152,7 +168,7 @@ module EX (
 		if (rst) begin
 			res_from_mem_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mem_out <= res_from_mem;
 		end
 	end
@@ -161,7 +177,7 @@ module EX (
 		if (rst) begin
 			res_from_csr_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_csr_out <= res_from_csr;
 		end
 	end
@@ -170,7 +186,7 @@ module EX (
 		if (rst) begin
 			gr_we_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			gr_we_out <= gr_we;
 		end
 	end
@@ -179,7 +195,7 @@ module EX (
 		if (rst) begin
 			mem_we_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			mem_we_out <= mem_we;
 		end
 	end
@@ -188,7 +204,7 @@ module EX (
 		if (rst) begin
 			dest_out <= 5'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			dest_out <= dest;
 		end
 	end
@@ -197,8 +213,63 @@ module EX (
 		if (rst) begin
 			rkd_value_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			rkd_value_out <= rkd_value;
+		end
+	end
+
+	always @(posedge clk) begin
+        if (rst) begin
+            has_exception_out <= 1'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            has_exception_out <= has_exception || ALE;
+        end
+    end
+
+	always @(posedge clk) begin
+        if (rst) begin
+            ecode_out <= 6'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            if (!has_exception) begin
+                ecode_out <= {6{ALE}} & 6'h9;
+            end
+            else begin
+                ecode_out <= ecode;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            esubcode_out <= 9'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            if (!has_exception) begin
+                esubcode_out <= 9'b0;
+            end
+            else begin
+                esubcode_out <= esubcode;
+            end
+        end
+    end
+
+	always @(posedge clk) begin
+        if (rst) begin
+            exception_maddr_out <= 32'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            exception_maddr_out <= result;
+        end
+    end
+
+	always @(posedge clk) begin
+		if (rst) begin
+			ertn_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			ertn_out <= ertn;
 		end
 	end
 endmodule

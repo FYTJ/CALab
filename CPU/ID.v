@@ -10,6 +10,7 @@ module ID (
     input out_ready,
     output in_ready,
     output reg out_valid,
+    input ex_flush,
 
     input [31: 0] EX_alu_result,
     input MEM_valid,
@@ -18,7 +19,7 @@ module ID (
     input MEM_res_from_mul,
     input MEM_res_from_div,
     input MEM_res_from_mem,
-    inout MEM_res_from_csr,
+    input MEM_res_from_csr,
     input [31: 0] MEM_result,
 
     input WB_valid,
@@ -64,23 +65,35 @@ module ID (
     output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
     output reg [31: 0] rj_value_out,
-    output reg [31: 0] rkd_value_out
+    output reg [31: 0] rkd_value_out,
+
+    input has_interrupt,
+    input has_exception,
+    input [5: 0] ecode,
+    input [8: 0] esubcode,
+    output reg has_exception_out,
+    output reg [5: 0] ecode_out,
+    output reg [8: 0] esubcode_out,
+    output reg ertn_out
 );
 
     wire ready_go;
     wire mul_div_stall;
     wire load_use_stall;
     wire csr_stall;
-    assign ready_go = ~in_valid | ~load_use_stall & ~mul_div_stall & ~csr_stall;
+    assign ready_go = !in_valid ||
+                      ex_flush ||
+                      has_exception || has_interrupt || SYSCALL || BRK || INE ||
+                      !load_use_stall && !mul_div_stall && !csr_stall;
 
-    assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+    assign in_ready = !rst && (!in_valid || ready_go && out_ready);
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid & ready_go;
+            out_valid <= in_valid && ready_go && !ex_flush;
         end
     end
 
@@ -116,7 +129,9 @@ module ID (
     wire [ 3:0] op_25_22;
     wire [ 1:0] op_21_20;
     wire [ 4:0] op_19_15;
-    wire [4: 0] op_09_05;
+    wire [ 4:0] op_14_10;
+    wire [ 4:0] op_09_05;
+    wire [ 4:0] op_04_00;
     wire [ 4:0] rd;
     wire [ 4:0] rj;
     wire [ 4:0] rk;
@@ -129,7 +144,9 @@ module ID (
     wire [15:0] op_25_22_d;
     wire [ 3:0] op_21_20_d;
     wire [31:0] op_19_15_d;
+    wire [31:0] op_14_10_d;
     wire [31:0] op_09_05_d;
+    wire [31:0] op_04_00_d;
 
     wire        inst_add_w;
     wire        inst_sub_w;
@@ -180,8 +197,9 @@ module ID (
     wire        inst_csrrd;
     wire        inst_csrwr;
     wire        inst_csrxchg;
-    wire        inst_etrn;
+    wire        inst_ertn;
     wire        inst_syscall;
+    wire        inst_break;
     wire        inst_rdcntid_w;
     wire        inst_rdcntvl_w;
     wire        inst_rdcntvh_w;
@@ -212,7 +230,9 @@ module ID (
     decoder_4_16 u_dec1(.in(op_25_22 ), .out(op_25_22_d ));
     decoder_2_4  u_dec2(.in(op_21_20 ), .out(op_21_20_d ));
     decoder_5_32 u_dec3(.in(op_19_15 ), .out(op_19_15_d ));
-    decoder_5_32 u_dec4(.in(op_09_05 ), .out(op_09_05_d ));
+    decoder_5_32 u_dec4(.in(op_14_10 ), .out(op_14_10_d ));
+    decoder_5_32 u_dec5(.in(op_09_05 ), .out(op_09_05_d ));
+    decoder_5_32 u_dec6(.in(op_04_00 ), .out(op_04_00_d ));
 
     assign inst_add_w     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h00];
     assign inst_sub_w     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h1] & op_19_15_d[5'h02];
@@ -263,6 +283,12 @@ module ID (
     assign inst_csrrd     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h00];
     assign inst_csrwr     = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & op_09_05_d[5'h01];
     assign inst_csrxchg   = op_31_26_d[6'h01] & ~inst[25] & ~inst[24] & ~op_09_05_d[5'h00] & ~op_09_05_d[5'h01];
+    assign inst_ertn      = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'b0] & op_19_15_d[5'h10] & op_14_10_d[5'h0e] &   op_09_05_d[5'h00] & op_04_00_d[5'h00];
+    assign inst_syscall   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
+    assign inst_break     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
+    assign inst_rdcntid_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_04_00_d[5'h00];
+    assign inst_rdcntvl_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_09_05_d[5'h00];
+    assign inst_rdcntvl_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h19] & op_09_05_d[5'h00];
 
     assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 
@@ -402,11 +428,20 @@ module ID (
     assign csr_wvalue = rkd_value;
 
 
+    wire SYSCALL;
+    wire BRK;
+    wire INE;
+
+    assign SYSCALL = inst_syscall;
+    assign BRK = inst_break;
+    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid_w || inst_rdcntvl_w || inst_rdcntvh_w);
+
+
     always @(posedge clk) begin
 		if (rst) begin
 			result_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			result_out <= rkd_value;
 		end
 	end
@@ -415,7 +450,7 @@ module ID (
 		if (rst) begin
 			PC_out <= 32'h1c000000;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			PC_out <= PC;
 		end
 	end
@@ -424,7 +459,7 @@ module ID (
 		if (rst) begin
 			rj_value_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			rj_value_out <= rj_value;
 		end
 	end
@@ -433,19 +468,19 @@ module ID (
 		if (rst) begin
 			rkd_value_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			rkd_value_out <= rkd_value;
 		end
 	end
 
-    assign br_taken_out = (~rst) & in_valid & ready_go & out_ready & br_taken;
-    assign br_target_out = {32{(~rst) & in_valid & ready_go & out_ready}} & br_target;
+    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken;
+    assign br_target_out = {32{(~rst) & in_valid && ready_go && out_ready}} & br_target;
 
     always @(posedge clk) begin
         if (rst) begin
             mem_op_out <= 8'b0;
         end
-        else if (in_valid & ready_go & out_ready) begin
+        else if (in_valid && ready_go && out_ready) begin
 			mem_op_out <= mem_op;
 		end
     end
@@ -454,7 +489,7 @@ module ID (
 		if (rst) begin
 			alu_op_out <= 12'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			alu_op_out <= alu_op;
 		end
 	end
@@ -463,7 +498,7 @@ module ID (
 		if (rst) begin
 			mul_op_out <= 3'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			mul_op_out <= mul_op;
 		end
 	end
@@ -472,7 +507,7 @@ module ID (
 		if (rst) begin
 			div_op_out <= 4'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			div_op_out <= div_op;
 		end
 	end
@@ -481,7 +516,7 @@ module ID (
 		if (rst) begin
 			src1_is_pc_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			src1_is_pc_out <= src1_is_pc;
 		end
 	end
@@ -490,7 +525,7 @@ module ID (
 		if (rst) begin
 			src2_is_imm_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			src2_is_imm_out <= src2_is_imm;
 		end
 	end
@@ -499,7 +534,7 @@ module ID (
 		if (rst) begin
 			res_from_mul_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mul_out <= res_from_mul;
 		end
 	end
@@ -508,7 +543,7 @@ module ID (
 		if (rst) begin
 			res_from_div_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_div_out <= res_from_div;
 		end
 	end
@@ -517,7 +552,7 @@ module ID (
 		if (rst) begin
 			res_from_mem_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_mem_out <= res_from_mem;
 		end
 	end
@@ -526,7 +561,7 @@ module ID (
 		if (rst) begin
 			res_from_csr_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			res_from_csr_out <= res_from_csr;
 		end
 	end
@@ -535,7 +570,7 @@ module ID (
 		if (rst) begin
 			gr_we_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			gr_we_out <= gr_we;
 		end
 	end
@@ -544,7 +579,7 @@ module ID (
 		if (rst) begin
 			mem_we_out <= 1'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			mem_we_out <= mem_we;
 		end
 	end
@@ -553,7 +588,7 @@ module ID (
 		if (rst) begin
 			dest_out <= 5'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			dest_out <= dest;
 		end
 	end
@@ -562,10 +597,47 @@ module ID (
 		if (rst) begin
 			imm_out <= 32'b0;
 		end
-		else if (in_valid & ready_go & out_ready) begin
+		else if (in_valid && ready_go && out_ready) begin
 			imm_out <= imm;
 		end
 	end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            has_exception_out <= 1'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            has_exception_out <= has_exception || has_interrupt || SYSCALL || BRK || INE;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            ecode_out <= 6'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            if (!has_exception) begin
+                ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd;
+            end
+            else begin
+                ecode_out <= ecode;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            esubcode_out <= 9'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            if (!has_exception) begin
+                esubcode_out <= 9'b0;
+            end
+            else begin
+                esubcode_out <= esubcode;
+            end
+        end
+    end
 
     assign load_use_stall = in_valid & (
 		rf_raddr1 == dest_out && !src1_is_pc &&  gr_we_out && res_from_mem_out && out_valid ||
@@ -573,6 +645,15 @@ module ID (
         rf_raddr1 == MEM_dest && !src1_is_pc &&  MEM_gr_we && MEM_res_from_mem && MEM_valid ||
         rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_mem && MEM_valid
     );
+
+    always @(posedge clk) begin
+		if (rst) begin
+			ertn_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			ertn_out <= inst_ertn;
+		end
+	end
 
     assign mul_div_stall = in_valid & (
         rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||

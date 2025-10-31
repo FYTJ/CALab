@@ -22,7 +22,19 @@ module WB (
     output wire [31:0] debug_wb_pc,
     output wire [ 3:0] debug_wb_rf_we,
     output wire [ 4:0] debug_wb_rf_wnum,
-    output wire [31:0] debug_wb_rf_wdata
+    output wire [31:0] debug_wb_rf_wdata,
+
+    input has_exception,
+	input [5: 0] ecode,
+    input [8: 0] esubcode,
+    input [31: 0] exception_maddr,
+    input ertn,
+    output exception_submit,
+    output [5: 0] ecode_submit,
+    output [8: 0] esubcode_submit,
+    output [31: 0] exception_pc_submit,
+    output [31: 0] exception_maddr_submit,
+    output ertn_submit
 );
     wire ready_go;
     assign ready_go = 1'b1;
@@ -44,7 +56,7 @@ module WB (
 	 	{32{mem_op[2]}} & data_sram_rdata;  // LW
     assign final_result = res_from_mem ? mem_result : result;
 
-    assign rf_we    = gr_we && valid && in_valid;
+    assign rf_we    = gr_we && valid && in_valid && !has_exception;
     assign rf_waddr = dest;
     assign rf_wdata = final_result;
 
@@ -53,4 +65,11 @@ module WB (
     assign debug_wb_rf_we    = {4{rf_we}};
     assign debug_wb_rf_wnum  = dest;
     assign debug_wb_rf_wdata = final_result;
+
+    assign exception_submit = has_exception;
+    assign ecode_submit = ecode;
+    assign esubcode_submit = esubcode;
+    assign exception_pc_submit = PC;
+    assign exception_maddr_submit = exception_maddr;
+    assign ertn_submit = ertn;
 endmodule
