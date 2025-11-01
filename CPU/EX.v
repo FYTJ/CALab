@@ -61,7 +61,8 @@ module EX (
 	output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
 	output reg [31: 0] exception_maddr_out,
-	output reg ertn_out
+	output reg ertn_out,
+	output ertn_submit
 );
     wire ready_go;
     assign ready_go = !in_valid ||
@@ -264,7 +265,7 @@ module EX (
             exception_maddr_out <= 32'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            exception_maddr_out <= result;
+            exception_maddr_out <= alu_result;
         end
     end
 
@@ -276,4 +277,6 @@ module EX (
 			ertn_out <= ertn;
 		end
 	end
+
+	assign ertn_submit = in_valid && ertn;
 endmodule

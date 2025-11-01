@@ -184,6 +184,7 @@ module mycpu_top(
     wire [5: 0] EX_ecode;
     wire [8: 0] EX_esubcode;
     wire EX_ertn;
+    wire EX_ertn_submit;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -206,6 +207,7 @@ module mycpu_top(
     wire [8: 0] MEM_esubcode;
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
+    wire MEM_ertn_submit;
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
@@ -321,7 +323,9 @@ module mycpu_top(
         .has_exception_out(EX_has_exception),
         .ecode_out(EX_ecode),
         .esubcode_out(EX_esubcode),
-        .ertn_out(EX_ertn)
+        .ertn_out(EX_ertn),
+        .MEM_ertn_submit(MEM_ertn_submit),
+        .EX_ertn_submit(EX_ertn_submit)
     );
 
     EX EX_unit(
@@ -384,7 +388,8 @@ module mycpu_top(
         .ecode_out(MEM_ecode),
         .esubcode_out(MEM_esubcode),
         .exception_maddr_out(MEM_exception_maddr),
-        .ertn_out(MEM_ertn)
+        .ertn_out(MEM_ertn),
+        .ertn_submit(EX_ertn_submit)
     );
 
     MEM MEM_unit(
@@ -446,7 +451,8 @@ module mycpu_top(
         .ecode_out(WB_ecode),
         .esubcode_out(WB_esubcode),
         .exception_maddr_out(WB_exception_maddr),
-        .ertn_out(WB_ertn)
+        .ertn_out(WB_ertn),
+        .ertn_submit(MEM_ertn_submit)
     );
 
     WB WB_unit(

@@ -79,7 +79,9 @@ module ID (
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
-    output reg ertn_out
+    output reg ertn_out,
+    input MEM_ertn_submit,
+    input EX_ertn_submit
 );
 
     wire ready_go;
@@ -428,7 +430,7 @@ module ID (
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = (inst_csrwr || inst_csrxchg) && ready_go;
+    assign csr_we = (inst_csrwr || inst_csrxchg) && ready_go && !ex_flush && !ertn_flush && !(inst_ertn && in_valid) && !EX_ertn_submit && !MEM_ertn_submit;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 

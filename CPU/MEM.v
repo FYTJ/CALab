@@ -61,7 +61,8 @@ module MEM (
 	output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
     output reg [31: 0] exception_maddr_out,
-    output reg ertn_out
+    output reg ertn_out,
+    input  ertn_submit
 );
     wire ready_go;
     assign ready_go = !in_valid ||
@@ -84,7 +85,7 @@ module MEM (
     end
 
     assign data_sram_en = !this_exception;
-    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_exception}} & (
+    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_exception && !ex_flush && !ertn_flush}} & (
                                 ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
                                 ({4{mem_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
                                 ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -237,4 +238,6 @@ module MEM (
 			ertn_out <= ertn;
 		end
 	end
+
+    assign ertn_submit = in_valid && ertn;
 endmodule
