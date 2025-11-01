@@ -101,7 +101,7 @@ module MEM (
                              {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
                              result;
     
-    assign this_exception = has_exception || next_exception;
+    assign this_exception = has_exception && in_valid || next_exception;
 
     always @(posedge clk) begin
 		if (rst) begin

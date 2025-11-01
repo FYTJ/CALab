@@ -436,7 +436,7 @@ module mycpu_top(
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest),
         .this_exception(MEM_this_exception),
-        .next_exception(WB_has_exception),
+        .next_exception(WB_this_exception),
         .has_exception(MEM_has_exception),
         .ecode(MEM_ecode),
         .esubcode(MEM_esubcode),

@@ -68,7 +68,7 @@ module WB (
     assign debug_wb_rf_wnum  = dest;
     assign debug_wb_rf_wdata = final_result;
 
-    assign this_exception = 1'b0;
+    assign this_exception = in_valid && has_exception;
 
     assign exception_submit = in_valid && has_exception;
     assign ecode_submit = ecode;

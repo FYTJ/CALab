@@ -103,7 +103,7 @@ module EX (
 	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
-	assign this_exception = has_exception || next_exception || ALE;
+	assign this_exception = has_exception && in_valid || next_exception || ALE;
     
     always @(posedge clk) begin
 		if (rst) begin
