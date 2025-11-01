@@ -17,7 +17,7 @@ module IF (
     output [31:0] inst_sram_wdata,
     output reg [31: 0] PC_out,
     
-    input next_exception,
+    input next_flush,
 
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
@@ -46,7 +46,7 @@ module IF (
     assign seq_pc       = out_ready ? PC_out + 32'h4: PC_out;
     assign nextpc       = out_ready && ex_flush ? ex_entry : ertn_flush ? ertn_entry : br_taken ? br_target : seq_pc;
 
-    assign inst_sram_en    = !this_exception;
+    assign inst_sram_en    = !this_flush;
     assign inst_sram_we    = 4'b0;
     assign inst_sram_addr  = nextpc & ~32'b11;
     assign inst_sram_wdata = 32'b0;
@@ -54,8 +54,8 @@ module IF (
     wire ADEF;
     assign ADEF = nextpc[1: 0] != 0;
 
-    wire this_exception;
-    assign this_exception = next_exception || ADEF;
+    wire this_flush;
+    assign this_flush = next_flush || ADEF;
 
     always @(posedge clk) begin
 		if (rst) begin

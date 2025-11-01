@@ -24,7 +24,7 @@ module WB (
     output wire [ 4:0] debug_wb_rf_wnum,
     output wire [31:0] debug_wb_rf_wdata,
 
-    output this_exception,
+    output this_flush,
 
     input has_exception,
 	input [5: 0] ecode,
@@ -68,7 +68,7 @@ module WB (
     assign debug_wb_rf_wnum  = dest;
     assign debug_wb_rf_wdata = final_result;
 
-    assign this_exception = in_valid && has_exception;
+    assign this_flush = in_valid && has_exception;
 
     assign exception_submit = in_valid && has_exception;
     assign ecode_submit = ecode;
