@@ -1,7 +1,7 @@
-`include "../utils/decoder_2_4.v"
-`include "../utils/decoder_4_16.v"
-`include "../utils/decoder_5_32.v"
-`include "../utils/decoder_6_64.v"
+`include "./utils/decoder_2_4.v"
+`include "./utils/decoder_4_16.v"
+`include "./utils/decoder_5_32.v"
+`include "./utils/decoder_6_64.v"
 `include "../multiplier/multiplier.v"
 `include "../multiplier/booth.v"
 `include "../multiplier/wallace.v"
@@ -103,7 +103,6 @@ module mycpu_top(
     wire to_mul_req_valid;
     wire to_mul_resp_ready;
     wire from_mul_resp_valid;
-    wire [2: 0] mul_op;
     wire [31: 0] src1;
     wire [31: 0] src2;
 
@@ -184,7 +183,6 @@ module mycpu_top(
     wire [5: 0] EX_ecode;
     wire [8: 0] EX_esubcode;
     wire EX_ertn;
-    wire EX_ertn_submit;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -207,7 +205,6 @@ module mycpu_top(
     wire [8: 0] MEM_esubcode;
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
-    wire MEM_ertn_submit;
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
@@ -323,9 +320,7 @@ module mycpu_top(
         .has_exception_out(EX_has_exception),
         .ecode_out(EX_ecode),
         .esubcode_out(EX_esubcode),
-        .ertn_out(EX_ertn),
-        .MEM_ertn_submit(MEM_ertn_submit),
-        .EX_ertn_submit(EX_ertn_submit)
+        .ertn_out(EX_ertn)
     );
 
     EX EX_unit(
@@ -388,8 +383,7 @@ module mycpu_top(
         .ecode_out(MEM_ecode),
         .esubcode_out(MEM_esubcode),
         .exception_maddr_out(MEM_exception_maddr),
-        .ertn_out(MEM_ertn),
-        .ertn_submit(EX_ertn_submit)
+        .ertn_out(MEM_ertn)
     );
 
     MEM MEM_unit(
@@ -451,8 +445,7 @@ module mycpu_top(
         .ecode_out(WB_ecode),
         .esubcode_out(WB_esubcode),
         .exception_maddr_out(WB_exception_maddr),
-        .ertn_out(WB_ertn),
-        .ertn_submit(MEM_ertn_submit)
+        .ertn_out(WB_ertn)
     );
 
     WB WB_unit(
