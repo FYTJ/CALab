@@ -16,8 +16,6 @@ module IF (
     output [31:0] inst_sram_addr,
     output [31:0] inst_sram_wdata,
     output reg [31: 0] PC_out,
-    
-    input next_flush,
 
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
@@ -53,9 +51,6 @@ module IF (
 
     wire ADEF;
     assign ADEF = nextpc[1: 0] != 0;
-
-    wire this_flush;
-    assign this_flush = next_flush || ADEF;
 
     always @(posedge clk) begin
 		if (rst) begin

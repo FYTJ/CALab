@@ -155,7 +155,6 @@ module mycpu_top(
     wire ID_in_ready;
     wire ID_out_valid;
     wire [31: 0] ID_PC;
-    wire ID_this_flush;
     wire ID_has_exception;
     wire [5: 0] ID_ecode;
     wire [8: 0] ID_esubcode;
@@ -251,7 +250,6 @@ module mycpu_top(
         .inst_sram_addr(inst_sram_addr),
         .inst_sram_wdata(inst_sram_wdata),
         .PC_out(ID_PC),
-        .next_flush(ID_this_flush),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
         .esubcode_out(ID_esubcode)
@@ -321,7 +319,6 @@ module mycpu_top(
         .PC_out(EX_PC),
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value),
-        .this_flush(ID_this_flush),
         .next_flush(EX_this_flush),
         .has_interrupt(has_interrupt),
         .has_exception(ID_has_exception),
