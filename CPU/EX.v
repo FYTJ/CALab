@@ -61,7 +61,13 @@ module EX (
 	output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
 	output reg [31: 0] exception_maddr_out,
-	output reg ertn_out
+	output reg ertn_out,
+
+	input rdcntid,
+	output reg rdcntid_out,
+	input rdcntvl_w,
+	input rdcntvh_w,
+	input [63:0] count
 );
     wire ready_go;
     assign ready_go = !in_valid ||
@@ -103,14 +109,17 @@ module EX (
 	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
-	assign this_flush = has_exception && in_valid || next_flush || ALE;
+	assign this_flush = in_valid && (has_exception || next_flush || ALE);
     
     always @(posedge clk) begin
 		if (rst) begin
 			result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= res_from_csr ? result : alu_result;
+			result_out <= rdcntvl_w ? count[31:0] :
+						  rdcntvh_w ? count[63:32] :
+						  res_from_csr ? result :
+						  alu_result;
 		end
 	end
 
@@ -274,6 +283,15 @@ module EX (
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			ertn_out <= ertn;
+		end
+	end
+
+	always @(posedge clk) begin
+		if (rst) begin
+			rdcntid_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rdcntid_out <= rdcntid;
 		end
 	end
 endmodule

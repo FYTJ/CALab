@@ -61,7 +61,10 @@ module MEM (
 	output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
     output reg [31: 0] exception_maddr_out,
-    output reg ertn_out
+    output reg ertn_out,
+
+    input rdcntid,
+    output reg rdcntid_out
 );
     wire ready_go;
     assign ready_go = !in_valid ||
@@ -101,7 +104,7 @@ module MEM (
                              {32{res_from_mul}} & {32{mul_op[0]}} & mul_result[31: 0] |
                              result;
     
-    assign this_flush = has_exception && in_valid || next_flush;
+    assign this_flush = in_valid && (has_exception || next_flush);
 
     always @(posedge clk) begin
 		if (rst) begin
@@ -235,6 +238,15 @@ module MEM (
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			ertn_out <= ertn;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			rdcntid_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rdcntid_out <= rdcntid;
 		end
 	end
 endmodule

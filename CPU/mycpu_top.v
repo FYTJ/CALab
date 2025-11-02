@@ -79,6 +79,9 @@ module mycpu_top(
     wire [31:0] exception_maddr_submit;
     wire        ertn_submit;
 
+    wire [31:0] csr_tid;  // for rdcntid instruction
+    wire [63:0] count;
+
     csr u_csr(
         .clk(clk),
         .rst(reset),
@@ -96,7 +99,9 @@ module mycpu_top(
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
         .ertn_entry(ertn_entry),
-        .has_int(has_interrupt)
+        .has_int(has_interrupt),
+        .tid(csr_tid),
+        .count(count)
     );
 
     wire from_mul_req_ready;
@@ -183,6 +188,9 @@ module mycpu_top(
     wire [5: 0] EX_ecode;
     wire [8: 0] EX_esubcode;
     wire EX_ertn;
+    wire EX_rdcntid;
+    wire EX_rdcntvl_w;
+    wire EX_rdcntvh_w;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -205,6 +213,7 @@ module mycpu_top(
     wire [8: 0] MEM_esubcode;
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
+    wire MEM_rdcntid;
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
@@ -223,6 +232,7 @@ module mycpu_top(
     wire [8: 0] WB_esubcode;
     wire [31: 0] WB_exception_maddr;
     wire WB_ertn;
+    wire WB_rdcntid;
 
 
     IF IF_unit(
@@ -320,7 +330,10 @@ module mycpu_top(
         .has_exception_out(EX_has_exception),
         .ecode_out(EX_ecode),
         .esubcode_out(EX_esubcode),
-        .ertn_out(EX_ertn)
+        .ertn_out(EX_ertn),
+        .rdcntid_out(EX_rdcntid),
+        .rdcntvl_w_out(EX_rdcntvl_w),
+        .rdcntvh_w_out(EX_rdcntvh_w)
     );
 
     EX EX_unit(
@@ -383,7 +396,12 @@ module mycpu_top(
         .ecode_out(MEM_ecode),
         .esubcode_out(MEM_esubcode),
         .exception_maddr_out(MEM_exception_maddr),
-        .ertn_out(MEM_ertn)
+        .ertn_out(MEM_ertn),
+        .rdcntid(EX_rdcntid),
+        .rdcntid_out(MEM_rdcntid),
+        .rdcntvl_w(EX_rdcntvl_w),
+        .rdcntvh_w(EX_rdcntvh_w),
+        .count(count)
     );
 
     MEM MEM_unit(
@@ -445,7 +463,9 @@ module mycpu_top(
         .ecode_out(WB_ecode),
         .esubcode_out(WB_esubcode),
         .exception_maddr_out(WB_exception_maddr),
-        .ertn_out(WB_ertn)
+        .ertn_out(WB_ertn),
+        .rdcntid(MEM_rdcntid),
+        .rdcntid_out(WB_rdcntid)
     );
 
     WB WB_unit(
@@ -480,6 +500,8 @@ module mycpu_top(
         .esubcode_submit(esubcode_submit),
         .exception_pc_submit(exception_pc_submit),
         .exception_maddr_submit(exception_maddr_submit),
-        .ertn_submit(ertn_submit)
+        .ertn_submit(ertn_submit),
+        .csr_tid(csr_tid),
+        .rdcntid(WB_rdcntid)
     );
 endmodule

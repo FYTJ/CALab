@@ -16,7 +16,10 @@ module csr(
     input  wire        ertn_flush,
     output wire [31:0] ex_entry,
     output wire        has_int,
-    output wire [31:0] ertn_entry
+    output wire [31:0] ertn_entry,
+
+    output wire [31:0] tid,
+    output reg  [63:0] count
 );
     //TICLR
     `define CSR_TICLR_CLR 0
@@ -376,5 +379,17 @@ module csr(
 
     // to ID
     assign has_int = ((csr_estat_is[12:0] & csr_ecfg_lie[12:0]) != 13'b0) && (csr_crmd_ie == 1'b1);
+
+    // for rdcntid instruction
+    assign tid = csr_tid_rvalue;
+
+    // independent stable counter
+    always @(posedge clk) begin
+        if(rst) begin
+            count <= 64'd0;
+        end else begin
+            count <= count + 1;
+        end
+    end
 
 endmodule

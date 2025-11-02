@@ -36,7 +36,10 @@ module WB (
     output [8: 0] esubcode_submit,
     output [31: 0] exception_pc_submit,
     output [31: 0] exception_maddr_submit,
-    output ertn_submit
+    output ertn_submit,
+
+    input [31:0] csr_tid,   // for rdcntid instruction
+    input rdcntid
 );
     wire ready_go;
     assign ready_go = 1'b1;
@@ -56,7 +59,9 @@ module WB (
 			({32{result[1: 0] == 2'b00}} & {{16{mem_op[1] & data_sram_rdata[15]}}, data_sram_rdata[15: 0]} |
 			{32{result[1: 0] == 2'b10}} & {{16{mem_op[1] & data_sram_rdata[31]}}, data_sram_rdata[31: 16]}) |
 	 	{32{mem_op[2]}} & data_sram_rdata;  // LW
-    assign final_result = res_from_mem ? mem_result : result;
+    assign final_result = rdcntid ? csr_tid :
+                          res_from_mem ? mem_result :
+                          result;
 
     assign rf_we    = gr_we && valid && in_valid && !has_exception;
     assign rf_waddr = dest;

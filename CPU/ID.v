@@ -79,7 +79,11 @@ module ID (
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
-    output reg ertn_out
+    output reg ertn_out,
+
+	output reg rdcntid_out,
+    output reg rdcntvl_w_out,
+    output reg rdcntvh_w_out
 );
 
     wire ready_go;
@@ -205,7 +209,7 @@ module ID (
     wire        inst_ertn;
     wire        inst_syscall;
     wire        inst_break;
-    wire        inst_rdcntid_w;
+    wire        inst_rdcntid;
     wire        inst_rdcntvl_w;
     wire        inst_rdcntvh_w;
 
@@ -294,7 +298,7 @@ module ID (
     assign inst_ertn      = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'b0] & op_19_15_d[5'h10] & op_14_10_d[5'h0e] &   op_09_05_d[5'h00] & op_04_00_d[5'h00];
     assign inst_syscall   = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h16];
     assign inst_break     = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h2] & op_19_15_d[5'h14];
-    assign inst_rdcntid_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_04_00_d[5'h00];
+    assign inst_rdcntid = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_04_00_d[5'h00];
     assign inst_rdcntvl_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h18] & op_09_05_d[5'h00];
     assign inst_rdcntvh_w = op_31_26_d[6'h00] & op_25_22_d[4'h0] & op_21_20_d[2'h0] & op_19_15_d[5'h00] & op_14_10_d[5'h19] & op_09_05_d[5'h00];
 
@@ -368,7 +372,9 @@ module ID (
 
     assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu;
     assign mem_we        = inst_st_b | inst_st_h | inst_st_w;
-    assign dest          = dst_is_r1 ? 5'd1 : rd;
+    assign dest          = dst_is_r1 ? 5'd1 :
+                           inst_rdcntid ? rj :
+                           rd;
 
     assign rf_raddr1 = rj;
     assign rf_raddr2 = src_reg_is_rd ? rd :rk;
@@ -440,10 +446,10 @@ module ID (
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;
-    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid_w || inst_rdcntvl_w || inst_rdcntvh_w);
+    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w);
     assign INT = has_interrupt;
 
-    assign this_flush = has_exception && in_valid || next_flush || SYSCALL || BRK || INE || INT || inst_ertn;
+    assign this_flush = in_valid && (has_exception || next_flush || SYSCALL || BRK || INE || INT || inst_ertn);
 
 
     always @(posedge clk) begin
@@ -681,4 +687,31 @@ module ID (
         rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && WB_res_from_csr && WB_valid ||
         rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && WB_res_from_csr && WB_valid
     );
+
+    always @(posedge clk) begin
+		if (rst) begin
+			rdcntid_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rdcntid_out <= inst_rdcntid;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			rdcntvl_w_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rdcntvl_w_out <= inst_rdcntvl_w;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			rdcntvh_w_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rdcntvh_w_out <= inst_rdcntvh_w;
+		end
+	end
 endmodule
