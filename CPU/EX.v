@@ -34,7 +34,7 @@ module EX (
     input [31: 0] rkd_value,
 	output [31: 0] src1_wire,
 	output [31: 0] src2_wire,
-	output [31: 0] alu_result,
+	output [31: 0] result_out_wire,
     
     output reg [31: 0] result_out,
     output reg [31: 0] PC_out,
@@ -92,6 +92,7 @@ module EX (
 
 	wire [31: 0] src1;
     wire [31: 0] src2;
+	wire [31: 0] alu_result;
 
 	alu u_alu(
         .alu_op     (alu_op    ),
@@ -110,16 +111,17 @@ module EX (
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
 	assign this_flush = in_valid && (has_exception || next_flush || ALE || ertn);
-    
+
+	assign result_out_wire = rdcntvl_w ? count[31:0] :
+						  	 rdcntvh_w ? count[63:32] :
+						  	 res_from_csr ? result :
+						  	 alu_result;
     always @(posedge clk) begin
 		if (rst) begin
 			result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= rdcntvl_w ? count[31:0] :
-						  rdcntvh_w ? count[63:32] :
-						  res_from_csr ? result :
-						  alu_result;
+			result_out <= result_out_wire;
 		end
 	end
 

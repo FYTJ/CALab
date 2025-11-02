@@ -181,7 +181,7 @@ module mycpu_top(
     wire [31: 0] EX_imm;
     wire [31: 0] EX_rj_value;
     wire [31: 0] EX_rkd_value;
-    wire [31: 0] EX_alu_result;
+    wire [31:0] EX_result_out_wire;
     wire EX_this_flush;
     wire EX_has_exception;
     wire [5: 0] EX_ecode;
@@ -266,24 +266,25 @@ module mycpu_top(
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
 
-        .EX_alu_result(EX_alu_result),
+        .EX_result_out_wire(EX_result_out_wire),
         .MEM_valid(EX_out_valid),
         .MEM_gr_we(MEM_gr_we),
         .MEM_dest(MEM_dest),
         .MEM_res_from_mul(MEM_res_from_mul),
         .MEM_res_from_div(MEM_res_from_div),
         .MEM_res_from_mem(MEM_res_from_mem),
-        .MEM_res_from_csr(MEM_res_from_csr),
         .MEM_result(MEM_result),
+        .MEM_rdcntid(MEM_rdcntid),
+        
         .WB_valid(MEM_out_valid),
         .WB_gr_we(WB_gr_we),
         .WB_res_from_mul(WB_res_from_mul),
         .WB_res_from_div(WB_res_from_div),
         .WB_res_from_mem(WB_res_from_mem),
-        .WB_res_from_csr(WB_res_from_csr),
         .WB_dest(WB_dest),
         .WB_data_sram_rdata(data_sram_rdata),
         .WB_result(WB_result_bypass),
+        .WB_rdcntid(WB_rdcntid),
         
         .inst(inst_sram_rdata),
         .PC(ID_PC),
@@ -369,7 +370,7 @@ module mycpu_top(
         .rkd_value(EX_rkd_value),
         .src1_wire(src1),
         .src2_wire(src2),
-        .alu_result(EX_alu_result),
+        .result_out_wire(EX_result_out_wire),
         .result_out(MEM_result),
         .PC_out(MEM_PC),
         .mem_op_out(MEM_mem_op),

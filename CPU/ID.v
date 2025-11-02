@@ -13,25 +13,25 @@ module ID (
     input ex_flush,
     input ertn_flush,
 
-    input [31: 0] EX_alu_result,
+    input [31: 0] EX_result_out_wire,
     input MEM_valid,
     input MEM_gr_we,
     input [4: 0] MEM_dest,
     input MEM_res_from_mul,
     input MEM_res_from_div,
     input MEM_res_from_mem,
-    input MEM_res_from_csr,
     input [31: 0] MEM_result,
+    input MEM_rdcntid,
 
     input WB_valid,
     input WB_gr_we,
     input WB_res_from_mul,
     input WB_res_from_div,
     input WB_res_from_mem,
-    input WB_res_from_csr,
     input [4: 0] WB_dest,
     input [31: 0] WB_data_sram_rdata,
     input [31: 0] WB_result,
+    input WB_rdcntid,
 
     input [31: 0] inst,
 	input [31: 0] PC,
@@ -87,11 +87,11 @@ module ID (
     wire ready_go;
     wire mul_div_stall;
     wire load_use_stall;
-    wire csr_stall;
+    wire rdcntid_stall;
     assign ready_go = !in_valid ||
                       ex_flush || ertn_flush ||
                       this_flush ||
-                      !load_use_stall && !mul_div_stall && !csr_stall;
+                      !load_use_stall && !mul_div_stall && !rdcntid_stall;
 
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
 
@@ -382,7 +382,7 @@ module ID (
 			rj_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr1 == dest_out) && (dest_out != 5'b0)) begin
-            rj_value = EX_alu_result;
+            rj_value = EX_result_out_wire;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr1 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rj_value = MEM_result;
@@ -400,7 +400,7 @@ module ID (
 			rkd_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr2 == dest_out) && (dest_out != 5'b0)) begin
-            rkd_value = EX_alu_result;
+            rkd_value = EX_result_out_wire;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr2 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rkd_value = MEM_result;
@@ -445,15 +445,14 @@ module ID (
         rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid
     );
 
-    assign csr_stall = in_valid & (
-        rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && res_from_csr_out && out_valid ||
-        rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && res_from_csr_out && out_valid ||
-        rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && MEM_res_from_csr && MEM_valid ||
-        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_csr && MEM_valid ||
-        rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && WB_res_from_csr && WB_valid ||
-        rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && WB_res_from_csr && WB_valid
+    assign rdcntid_stall = in_valid & (
+        rf_raddr1 == dest_out && !src1_is_pc && gr_we_out && rdcntid_out && out_valid ||
+        rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && rdcntid_out && out_valid ||
+        rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && MEM_rdcntid && MEM_valid ||
+        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_rdcntid && MEM_valid ||
+        rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && WB_rdcntid && WB_valid ||
+        rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && WB_rdcntid && WB_valid
     );
-    
 
     wire this_flush;
     assign this_flush = in_valid && (has_exception || next_flush || SYSCALL || BRK || INE || INT || inst_ertn);
