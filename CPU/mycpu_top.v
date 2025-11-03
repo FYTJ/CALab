@@ -153,8 +153,8 @@ module mycpu_top(
     wire IF_out_valid;
 
     wire IW_in_ready;
-    wire IW_in_valid;
-    wire IW_out_ready;
+    //wire IW_in_valid;
+    //wire IW_out_ready;
     wire IW_out_valid;
     wire [31: 0] IW_PC;
     wire [31: 0] IW_inst;
@@ -269,7 +269,6 @@ module mycpu_top(
         .rst(reset),
         .out_valid(IF_out_valid),
         .out_ready(IW_in_ready),
-        .out_valid(IW_in_valid),
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
@@ -297,17 +296,17 @@ module mycpu_top(
         .inst_valid_out(IW_inst_valid),
         .has_exception_out(IW_has_exception),
         .ecode_out(IW_ecode),
-        .esubcode_out(IW_esubcode)
+        .esubcode_out(IW_esubcode),
 
-        .discard(IW_discard),
+        .discard(IW_discard)
     );
 
     IW IW_unit(
         .clk(clk),
         .rst(reset),
 
-        .in_valid(IW_in_valid),
-        .out_ready(IW_out_ready),
+        .in_valid(IF_out_valid),
+        .out_ready(ID_in_ready),
         .in_ready(IW_in_ready),
         .out_valid(IW_out_valid),
 
@@ -337,7 +336,7 @@ module mycpu_top(
         .clk(clk),
         .rst(reset),
 
-        .in_valid(IF_out_valid),
+        .in_valid(IW_out_valid),
         .out_ready(EX_in_ready),
         .in_ready(ID_in_ready),
         .out_valid(ID_out_valid),
