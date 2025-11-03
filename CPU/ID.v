@@ -81,7 +81,9 @@ module ID (
 
 	output reg rdcntid_out,
     output reg rdcntvl_w_out,
-    output reg rdcntvh_w_out
+    output reg rdcntvh_w_out,
+
+    output br_stall
 );
 
     wire ready_go;
@@ -428,6 +430,7 @@ module ID (
     ) && in_valid;
     assign br_target = (inst_beq || inst_bne || inst_bl || inst_b || inst_blt || inst_bltu || inst_bge || inst_bgeu) ? (PC + br_offs) :
          /*inst_jirl*/ (rj_value + jirl_offs);
+    assign br_stall = (inst_beq || inst_bne || inst_bl || inst_b || inst_blt || inst_bltu || inst_bge || inst_bgeu || inst_jirl) && load_use_stall;
 
     assign load_use_stall = in_valid & (
 		rf_raddr1 == dest_out && !src1_is_pc &&  gr_we_out && res_from_mem_out && out_valid ||

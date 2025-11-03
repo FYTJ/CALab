@@ -152,9 +152,22 @@ module mycpu_top(
 
     wire IF_out_valid;
 
+    wire IW_in_ready;
+    wire IW_in_valid;
+    wire IW_out_ready;
+    wire IW_out_valid;
+    wire [31: 0] IW_PC;
+    wire [31: 0] IW_inst;
+    wire IW_inst_valid;
+    wire IW_has_exception;
+    wire [5: 0] IW_ecode;
+    wire [8: 0] IW_esubcode;
+    wire IW_discard;
+
     wire ID_in_ready;
     wire ID_out_valid;
     wire [31: 0] ID_PC;
+    wire [31: 0] ID_inst;
     wire ID_has_exception;
     wire [5: 0] ID_ecode;
     wire [8: 0] ID_esubcode;
@@ -190,6 +203,7 @@ module mycpu_top(
     wire EX_rdcntid;
     wire EX_rdcntvl_w;
     wire EX_rdcntvh_w;
+    wire EX_br_stall;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -234,22 +248,86 @@ module mycpu_top(
     wire WB_rdcntid;
 
 
+    // temporary
+    wire wr;
+    wire [1:0] size;
+    wire [3:0] wstrb;
+    wire addr_ok = 1'b1;
+    reg data_ok;
+    assign inst_sram_we = {4{wr}};
+    always @(posedge clk) begin
+        if(reset) begin
+            data_ok <= 1'b0;
+        end
+        else begin
+            data_ok <= inst_sram_en;
+        end
+    end
+
     IF IF_unit(
         .clk(clk),
         .rst(reset),
         .out_valid(IF_out_valid),
-        .out_ready(ID_in_ready),
+        .out_ready(IW_in_ready),
+        .out_valid(IW_in_valid),
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
         .ertn_entry(ertn_entry),
         .br_taken(EX_br_taken),
         .br_target(EX_br_target),
-        .inst_sram_en(inst_sram_en),
-        .inst_sram_we(inst_sram_we),
-        .inst_sram_addr(inst_sram_addr),
-        .inst_sram_wdata(inst_sram_wdata),
+        .br_stall(EX_br_stall),
+        // .inst_sram_en(inst_sram_en),
+        // .inst_sram_we(inst_sram_we),
+        // .inst_sram_addr(inst_sram_addr),
+        // .inst_sram_wdata(inst_sram_wdata),
+
+        .req(inst_sram_en),
+        .wr(wr),
+        .size(size),
+        .addr(inst_sram_addr),
+        .wstrb(wstrb),
+        .wdata(inst_sram_wdata),
+        .addr_ok(addr_ok),
+        .data_ok(data_ok),
+        .rdata(inst_sram_rdata),
+
+        .PC_out(IW_PC),
+        .inst_out(IW_inst),
+        .inst_valid_out(IW_inst_valid),
+        .has_exception_out(IW_has_exception),
+        .ecode_out(IW_ecode),
+        .esubcode_out(IW_esubcode)
+
+        .discard(IW_discard),
+    );
+
+    IW IW_unit(
+        .clk(clk),
+        .rst(reset),
+
+        .in_valid(IW_in_valid),
+        .out_ready(IW_out_ready),
+        .in_ready(IW_in_ready),
+        .out_valid(IW_out_valid),
+
+        .PC_from_IF(IW_PC),
+        .inst_from_IF(IW_inst),
+        .inst_valid_from_IF(IW_inst_valid),
+        .discard_from_IF(IW_discard),
+
+        .data_ok(data_ok),
+        .rdata(inst_sram_rdata),
+
+        .inst_out(ID_inst),
         .PC_out(ID_PC),
+
+        .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
+
+        .has_exception(IW_has_exception),
+        .ecode(IW_has_exception),
+        .esubcode(IW_esubcode),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
         .esubcode_out(ID_esubcode)
@@ -286,7 +364,7 @@ module mycpu_top(
         .WB_result(WB_result_bypass),
         .WB_rdcntid(WB_rdcntid),
         
-        .inst(inst_sram_rdata),
+        .inst(ID_inst),
         .PC(ID_PC),
         .rf_raddr1(rf_raddr1),
         .rf_raddr2(rf_raddr2),
@@ -331,7 +409,9 @@ module mycpu_top(
         .ertn_out(EX_ertn),
         .rdcntid_out(EX_rdcntid),
         .rdcntvl_w_out(EX_rdcntvl_w),
-        .rdcntvh_w_out(EX_rdcntvh_w)
+        .rdcntvh_w_out(EX_rdcntvh_w),
+
+        .br_stall(EX_br_stall)
     );
 
     EX EX_unit(
