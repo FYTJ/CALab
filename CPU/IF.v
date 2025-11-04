@@ -42,7 +42,7 @@ module IF (
     wire [31:0] nextpc;
 
     assign seq_pc       = out_ready ? PC_out + 32'h4: PC_out;
-    assign nextpc       = out_ready && ex_flush ? ex_entry : ertn_flush ? ertn_entry : br_taken ? br_target : seq_pc;
+    assign nextpc       = ex_flush ? ex_entry : ertn_flush ? ertn_entry : out_ready && br_taken ? br_target : seq_pc;
 
     assign inst_sram_en    = !ADEF;
     assign inst_sram_we    = 4'b0;
