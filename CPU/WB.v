@@ -73,7 +73,7 @@ module WB (
     assign debug_wb_rf_wnum  = dest;
     assign debug_wb_rf_wdata = final_result;
 
-    assign this_flush = in_valid && has_exception;
+    assign this_flush = in_valid && (has_exception || ertn);
 
     assign exception_submit = in_valid && has_exception;
     assign ecode_submit = ecode;

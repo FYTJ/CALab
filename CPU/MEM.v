@@ -67,11 +67,8 @@ module MEM (
     output reg rdcntid_out
 );
     wire ready_go;
-    assign ready_go = !in_valid ||
-                      ex_flush || ertn_flush ||
-                      this_flush ||
-                      !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
-                      !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
+    assign ready_go = !in_valid  ||
+                      this_flush || !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) && !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
     
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
     assign to_mul_resp_ready = in_valid && res_from_mul;
@@ -87,7 +84,7 @@ module MEM (
     end
 
     assign data_sram_en = !this_flush;
-    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_flush && !ex_flush && !ertn_flush}} & (
+    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_flush}} & (
                                 ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
                                 ({4{mem_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
                                 ({4{mem_op[7]}} & 4'b1111)  // SW;

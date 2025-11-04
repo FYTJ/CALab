@@ -71,15 +71,13 @@ module EX (
 );
     wire ready_go;
     assign ready_go = !in_valid ||
-					  ex_flush || ertn_flush ||
-					  this_flush||
-					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) &&
-					  !(res_from_div && !(from_div_req_ready && to_div_req_valid));
+		      this_flush||
+		      !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) && !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush && !ex_flush && !ertn_flush;
-	assign to_div_req_valid = in_valid && res_from_div && !this_flush && !ex_flush && !ertn_flush;
+	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush;
+	assign to_div_req_valid = in_valid && res_from_div && !this_flush;
 
     always @(posedge clk) begin
         if (rst) begin

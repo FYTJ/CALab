@@ -88,8 +88,7 @@ module ID (
     wire mul_div_stall;
     wire load_use_stall;
     wire rdcntid_stall;
-    assign ready_go = !in_valid ||
-                      ex_flush || ertn_flush ||
+    assign ready_go = !in_valid  ||
                       this_flush ||
                       !load_use_stall && !mul_div_stall && !rdcntid_stall;
 
@@ -460,7 +459,7 @@ module ID (
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && !ex_flush && !ertn_flush && !this_flush;
+    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && !this_flush;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 
