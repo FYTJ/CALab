@@ -459,7 +459,7 @@ module ID (
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && !this_flush;
+    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 
