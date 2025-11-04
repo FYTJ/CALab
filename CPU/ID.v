@@ -654,8 +654,11 @@ module ID (
             ecode_out <= 6'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            if (!has_exception) begin
-                ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd | {6{INT}} & 6'h0;
+            if(INT) begin
+                ecode_out <= 6'h0;
+            end
+            else if (!has_exception) begin
+                ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd;
             end
             else begin
                 ecode_out <= ecode;
@@ -668,7 +671,10 @@ module ID (
             esubcode_out <= 9'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            if (!has_exception) begin
+            if(INT) begin
+                esubcode_out <= 9'b0;
+            end
+            else if (!has_exception) begin
                 esubcode_out <= 9'b0;
             end
             else begin
