@@ -13,24 +13,22 @@ module ID (
     input ex_flush,
     input ertn_flush,
 
-    input [31: 0] EX_result_out_wire,
+    input [31: 0] EX_result_bypass,
     input MEM_valid,
     input MEM_gr_we,
     input [4: 0] MEM_dest,
     input MEM_res_from_mul,
     input MEM_res_from_div,
     input MEM_res_from_mem,
-    input [31: 0] MEM_result,
+    input [31: 0] MEM_result_bypass,
     input MEM_rdcntid,
 
     input WB_valid,
     input WB_gr_we,
     input WB_res_from_mul,
     input WB_res_from_div,
-    input WB_res_from_mem,
     input [4: 0] WB_dest,
-    input [31: 0] WB_data_sram_rdata,
-    input [31: 0] WB_result,
+    input [31: 0] WB_result_bypass,
     input WB_rdcntid,
 
     input [31: 0] inst,
@@ -63,7 +61,7 @@ module ID (
     output reg mem_we_out,
     output reg [4: 0] dest_out,
     output reg [31:0] imm_out,
-    output reg [31: 0] result_out,
+    output reg [31: 0] csr_result_out,
     output reg [31: 0] PC_out,
     output reg [31: 0] rj_value_out,
     output reg [31: 0] rkd_value_out,
@@ -381,13 +379,13 @@ module ID (
 			rj_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr1 == dest_out) && (dest_out != 5'b0)) begin
-            rj_value = EX_result_out_wire;
+            rj_value = EX_result_bypass;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr1 == MEM_dest) && (MEM_dest != 5'b0)) begin
-            rj_value = MEM_result;
+            rj_value = MEM_result_bypass;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr1 == WB_dest) && (WB_dest != 5'b0)) begin
-            rj_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
+            rj_value = WB_result_bypass;
         end
         else begin
             rj_value = rf_rdata1;
@@ -399,13 +397,13 @@ module ID (
 			rkd_value = 32'b0;
 		end
         else if (out_valid && gr_we_out && !res_from_mem_out && (rf_raddr2 == dest_out) && (dest_out != 5'b0)) begin
-            rkd_value = EX_result_out_wire;
+            rkd_value = EX_result_bypass;
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr2 == MEM_dest) && (MEM_dest != 5'b0)) begin
-            rkd_value = MEM_result;
+            rkd_value = MEM_result_bypass;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr2 == WB_dest) && (WB_dest != 5'b0)) begin
-            rkd_value = WB_res_from_mem ? WB_data_sram_rdata : WB_result;
+            rkd_value = WB_result_bypass;
         end
         else begin
             rkd_value = rf_rdata2;
@@ -476,10 +474,10 @@ module ID (
 
     always @(posedge clk) begin
 		if (rst) begin
-			result_out <= 32'b0;
+			csr_result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= res_from_csr ? csr_rvalue : rkd_value;
+			csr_result_out <= csr_rvalue;
 		end
 	end
 

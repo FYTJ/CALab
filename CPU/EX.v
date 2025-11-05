@@ -14,7 +14,7 @@ module EX (
 	input from_div_req_ready,
 	output to_div_req_valid,
 
-	input [31: 0] result,
+	input [31: 0] csr_result,
     input [31: 0] PC,
 	input [7: 0] mem_op,
 	input [11: 0] alu_op,
@@ -34,9 +34,11 @@ module EX (
     input [31: 0] rkd_value,
 	output [31: 0] src1_wire,
 	output [31: 0] src2_wire,
-	output [31: 0] result_out_wire,
-    
-    output reg [31: 0] result_out,
+	
+	output [31: 0] result_bypass,
+	
+	output reg [31: 0] csr_result_out,
+    output reg [31: 0] alu_result_out,
     output reg [31: 0] PC_out,
 	output reg [7: 0] mem_op_out,
 	output reg [2: 0] mul_op_out,
@@ -104,22 +106,31 @@ module EX (
 	assign src1_wire = src1;
 	assign src2_wire = src2;
 
+	assign result_bypass = res_from_csr ? (rdcntvl_w ? count[31:0] : rdcntvh_w ? count[63:32] : csr_result) : alu_result;
+
 	wire ALE;
 	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
 	assign this_flush = in_valid && (has_exception || next_flush || ALE || ertn);
 
-	assign result_out_wire = rdcntvl_w ? count[31:0] :
-						  	 rdcntvh_w ? count[63:32] :
-						  	 res_from_csr ? result :
-						  	 alu_result;
     always @(posedge clk) begin
 		if (rst) begin
-			result_out <= 32'b0;
+			csr_result_out <= 32'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
-			result_out <= result_out_wire;
+			csr_result_out <= rdcntvl_w ? count[31:0] :
+							  rdcntvh_w ? count[63:32] :
+							  csr_result;
+		end
+	end
+
+	always @(posedge clk) begin
+		if (rst) begin
+			alu_result_out <= 32'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			alu_result_out <= alu_result;
 		end
 	end
 

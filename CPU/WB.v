@@ -8,12 +8,20 @@ module WB (
     input valid,
 
     input [31: 0] data_sram_rdata,
-    input [31: 0] result,
+    input [31: 0] csr_result,
+    input [31: 0] alu_result,
+    input [31: 0] mul_result,
+    input [31: 0] div_result,
     input [31: 0] PC,
     input [7: 0] mem_op,
+    input res_from_mul,
+	input res_from_div,
     input res_from_mem,
+    input res_from_csr,
     input gr_we,
     input [4: 0] dest,
+
+    output [31: 0] result_bypass,
 
     output rf_we,
     output [4: 0] rf_waddr,
@@ -48,20 +56,27 @@ module WB (
     
     wire [31: 0] mem_result;
     wire [31: 0] final_result;
+
     // mem_op为1时符号扩展，mem_op为0时0扩展
     assign mem_result   = 
         {32{mem_op[0] | mem_op[3]}} &   // LB & LBU
-            ({32{result[1: 0] == 2'b00}} & {{24{mem_op[0] & data_sram_rdata[7]}}, data_sram_rdata[7: 0]} | 
-    		{32{result[1: 0] == 2'b01}} & {{24{mem_op[0] & data_sram_rdata[15]}}, data_sram_rdata[15: 8]} | 
-			{32{result[1: 0] == 2'b10}} & {{24{mem_op[0] & data_sram_rdata[23]}}, data_sram_rdata[23: 16]} | 
-			{32{result[1: 0] == 2'b11}} & {{24{mem_op[0] & data_sram_rdata[31]}}, data_sram_rdata[31: 24]}) |
+            ({32{alu_result[1: 0] == 2'b00}} & {{24{mem_op[0] & data_sram_rdata[7]}}, data_sram_rdata[7: 0]} | 
+    		{32{alu_result[1: 0] == 2'b01}} & {{24{mem_op[0] & data_sram_rdata[15]}}, data_sram_rdata[15: 8]} | 
+			{32{alu_result[1: 0] == 2'b10}} & {{24{mem_op[0] & data_sram_rdata[23]}}, data_sram_rdata[23: 16]} | 
+			{32{alu_result[1: 0] == 2'b11}} & {{24{mem_op[0] & data_sram_rdata[31]}}, data_sram_rdata[31: 24]}) |
 		{32{mem_op[1] | mem_op[4]}} &   // LH & LHU
-			({32{result[1: 0] == 2'b00}} & {{16{mem_op[1] & data_sram_rdata[15]}}, data_sram_rdata[15: 0]} |
-			{32{result[1: 0] == 2'b10}} & {{16{mem_op[1] & data_sram_rdata[31]}}, data_sram_rdata[31: 16]}) |
+			({32{alu_result[1: 0] == 2'b00}} & {{16{mem_op[1] & data_sram_rdata[15]}}, data_sram_rdata[15: 0]} |
+			{32{alu_result[1: 0] == 2'b10}} & {{16{mem_op[1] & data_sram_rdata[31]}}, data_sram_rdata[31: 16]}) |
 	 	{32{mem_op[2]}} & data_sram_rdata;  // LW
+
+    assign result_bypass = res_from_mem ? mem_result : res_from_csr ? csr_result : alu_result;
+
     assign final_result = rdcntid ? csr_tid :
                           res_from_mem ? mem_result :
-                          result;
+                          res_from_csr ? csr_result :
+                          res_from_mul ? mul_result :
+                          res_from_div ? div_result :
+                          alu_result;
 
     assign rf_we    = gr_we && valid && in_valid && !has_exception;
     assign rf_waddr = dest;
