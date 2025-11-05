@@ -12,6 +12,7 @@ module IF (
     input br_taken,
     input [31: 0] br_target,
     input br_stall,
+    input ID_in_valid,
 
     // sram-loke interface
     output req,
@@ -55,33 +56,26 @@ module IF (
         if(rst) begin
             handshake_done <= 1'b0;
         end
-        else if(in_valid && ready_go && out_ready) begin
-            handshake_done <= 1'b0;
-        end
-        else if(req && addr_ok) begin
-            handshake_done <= 1'b1;
+        else if((req && addr_ok) || out_ready) begin
+            handshake_done <= !out_ready;
         end
     end
 
     reg inst_valid;
     reg [31:0] inst;
-    assign ready_go = ex_flush || ertn_flush ||
-                      req && addr_ok || handshake_done;
-    assign req = !handshake_done && !br_stall; // ADEF???
-
-    //wire [31:0] inst_out_wire = inst_valid ? inst : data_ok ? rdata : 32'd0;
-
-    assign discard = (ex_flush || ertn_flush) && ready_go; // discard the first instruction after exception flush
-
+    assign ready_go = req && addr_ok || handshake_done;
+    assign req = !handshake_done && !(br_stall && ID_in_valid && !ex_flush && !ertn_flush);
+    
+    // discard the first instruction after exception flush
+    assign discard = (ex_flush || ertn_flush) && (req && addr_ok || handshake_done);
 
     wire [31:0] seq_pc;
     wire [31:0] nextpc;
 
-    assign seq_pc       = out_ready ? PC_out + 32'h4: PC_out;  //???
-    assign nextpc       = out_ready && ex_flush ? ex_entry : ertn_flush ? ertn_entry : br_taken ? br_target : seq_pc; //???
+    assign seq_pc       = PC_out + 32'h4;
+    assign nextpc       = ex_flush ? ex_entry : ertn_flush ? ertn_entry : br_taken ? br_target : seq_pc;
 
     assign addr  = nextpc & ~32'b11;
-
 
     always @(posedge clk) begin
         if(rst) begin
@@ -104,7 +98,7 @@ module IF (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= !rst && ready_go && !ex_flush && !ertn_flush;
+            out_valid <= !rst && ready_go;
         end
     end
 
@@ -125,14 +119,15 @@ module IF (
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
 		end
+        else if (ex_flush || ertn_flush) begin
+            inst_valid_out <= 1'b0;
+			inst_out <= 32'd0;
+        end
 		else if (in_valid && ready_go && out_ready) begin
 			inst_valid_out <= inst_valid;
             inst_out <= inst;
 		end
 	end
-
-
-
 
     // exception handle
     always @(posedge clk) begin

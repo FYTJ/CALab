@@ -153,8 +153,6 @@ module mycpu_top(
     wire IF_out_valid;
 
     wire IW_in_ready;
-    //wire IW_in_valid;
-    //wire IW_out_ready;
     wire IW_out_valid;
     wire [31: 0] IW_PC;
     wire [31: 0] IW_inst;
@@ -168,13 +166,14 @@ module mycpu_top(
     wire ID_out_valid;
     wire [31: 0] ID_PC;
     wire [31: 0] ID_inst;
+    wire ID_this_flush;
     wire ID_has_exception;
     wire [5: 0] ID_ecode;
     wire [8: 0] ID_esubcode;
 
     wire EX_in_ready;
     wire EX_out_valid;
-    wire [31: 0] EX_result;
+    wire [31: 0] EX_csr_result;
     wire [31: 0] EX_PC;
     wire EX_br_taken;
     wire [31: 0] EX_br_target;
@@ -194,7 +193,7 @@ module mycpu_top(
     wire [31: 0] EX_imm;
     wire [31: 0] EX_rj_value;
     wire [31: 0] EX_rkd_value;
-    wire [31:0] EX_result_out_wire;
+    wire [31:0] EX_result_bypass;
     wire EX_this_flush;
     wire EX_has_exception;
     wire [5: 0] EX_ecode;
@@ -207,7 +206,8 @@ module mycpu_top(
 
     wire MEM_in_ready;
     wire MEM_out_valid;
-    wire [31: 0] MEM_result;
+    wire [31: 0] MEM_csr_result;
+    wire [31: 0] MEM_alu_result;
     wire [31: 0] MEM_PC;
     wire [7: 0] MEM_mem_op;
     wire [2: 0] MEM_mul_op;
@@ -220,6 +220,7 @@ module mycpu_top(
     wire MEM_mem_we;
     wire [4: 0] MEM_dest;
     wire [31: 0] MEM_rkd_value;
+    wire [31: 0] MEM_result_bypass;
     wire MEM_this_flush;
     wire MEM_has_exception;
     wire [5: 0] MEM_ecode;
@@ -230,7 +231,10 @@ module mycpu_top(
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
-    wire [31: 0] WB_result;
+    wire [31: 0] WB_csr_result;
+    wire [31: 0] WB_alu_result;
+    wire [31: 0] WB_mul_result;
+    wire [31: 0] WB_div_result;
     wire [31: 0] WB_result_bypass;
     wire [7: 0] WB_mem_op;
     wire WB_res_from_mul;
@@ -276,10 +280,7 @@ module mycpu_top(
         .br_taken(EX_br_taken),
         .br_target(EX_br_target),
         .br_stall(EX_br_stall),
-        // .inst_sram_en(inst_sram_en),
-        // .inst_sram_we(inst_sram_we),
-        // .inst_sram_addr(inst_sram_addr),
-        // .inst_sram_wdata(inst_sram_wdata),
+        .ID_in_valid(IW_out_valid),
 
         .req(inst_sram_en),
         .wr(wr),
@@ -315,6 +316,8 @@ module mycpu_top(
         .inst_valid_from_IF(IW_inst_valid),
         .discard_from_IF(IW_discard),
 
+        .br_flush(EX_br_taken),
+
         .data_ok(data_ok),
         .rdata(inst_sram_rdata),
 
@@ -323,9 +326,10 @@ module mycpu_top(
 
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
+        .next_flush(ID_this_flush),
 
         .has_exception(IW_has_exception),
-        .ecode(IW_has_exception),
+        .ecode(IW_ecode),
         .esubcode(IW_esubcode),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
@@ -343,24 +347,22 @@ module mycpu_top(
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
 
-        .EX_result_out_wire(EX_result_out_wire),
+        .EX_result_bypass(EX_result_bypass),
         .MEM_valid(EX_out_valid),
         .MEM_gr_we(MEM_gr_we),
         .MEM_dest(MEM_dest),
         .MEM_res_from_mul(MEM_res_from_mul),
         .MEM_res_from_div(MEM_res_from_div),
         .MEM_res_from_mem(MEM_res_from_mem),
-        .MEM_result(MEM_result),
+        .MEM_result_bypass(MEM_result_bypass),
         .MEM_rdcntid(MEM_rdcntid),
         
         .WB_valid(MEM_out_valid),
         .WB_gr_we(WB_gr_we),
         .WB_res_from_mul(WB_res_from_mul),
         .WB_res_from_div(WB_res_from_div),
-        .WB_res_from_mem(WB_res_from_mem),
         .WB_dest(WB_dest),
-        .WB_data_sram_rdata(data_sram_rdata),
-        .WB_result(WB_result_bypass),
+        .WB_result_bypass(WB_result_bypass),
         .WB_rdcntid(WB_rdcntid),
         
         .inst(ID_inst),
@@ -393,11 +395,12 @@ module mycpu_top(
         .mem_we_out(EX_mem_we),
         .dest_out(EX_dest),
         .imm_out(EX_imm),
-        .result_out(EX_result),
+        .csr_result_out(EX_csr_result),
         .PC_out(EX_PC),
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value),
         .next_flush(EX_this_flush),
+        .this_flush(ID_this_flush),
         .has_interrupt(has_interrupt),
         .has_exception(ID_has_exception),
         .ecode(ID_ecode),
@@ -429,7 +432,7 @@ module mycpu_top(
         .from_div_req_ready(from_div_req_ready),
         .to_div_req_valid(to_div_req_valid),
 
-        .result(EX_result),
+        .csr_result(EX_csr_result),
         .PC(EX_PC),
         .mem_op(EX_mem_op),
         .alu_op(EX_alu_op),
@@ -449,8 +452,9 @@ module mycpu_top(
         .rkd_value(EX_rkd_value),
         .src1_wire(src1),
         .src2_wire(src2),
-        .result_out_wire(EX_result_out_wire),
-        .result_out(MEM_result),
+        .result_bypass(EX_result_bypass),
+        .alu_result_out(MEM_alu_result),
+        .csr_result_out(MEM_csr_result),
         .PC_out(MEM_PC),
         .mem_op_out(MEM_mem_op),
         .mul_op_out(MEM_mul_op),
@@ -502,7 +506,8 @@ module mycpu_top(
         .div_quotient(div_quotient),
         .div_remainder(div_remainder),
 
-        .result(MEM_result),
+        .alu_result(MEM_alu_result),
+        .csr_result(MEM_csr_result),
         .PC(MEM_PC),
         .mem_op(MEM_mem_op),
         .mul_op(MEM_mul_op),
@@ -519,8 +524,11 @@ module mycpu_top(
         .data_sram_we(data_sram_we),
         .data_sram_addr(data_sram_addr),
         .data_sram_wdata(data_sram_wdata),
-        .result_out(WB_result),
-        .result_bypass_out(WB_result_bypass),
+        .result_bypass(MEM_result_bypass),
+        .csr_result_out(WB_csr_result),
+        .alu_result_out(WB_alu_result),
+        .mul_result_out(WB_mul_result),
+        .div_result_out(WB_div_result),
         .PC_out(WB_PC),
         .mem_op_out(WB_mem_op),
         .res_from_mul_out(WB_res_from_mul),
@@ -553,12 +561,19 @@ module mycpu_top(
         .valid(valid),
 
         .data_sram_rdata(data_sram_rdata),
-        .result(WB_result),
+        .csr_result(WB_csr_result),
+        .alu_result(WB_alu_result),
+        .mul_result(WB_mul_result),
+        .div_result(WB_div_result),
         .PC(WB_PC),
         .mem_op(WB_mem_op),
         .res_from_mem(WB_res_from_mem),
+        .res_from_csr(WB_res_from_csr),
+        .res_from_mul(WB_res_from_mul),
+        .res_from_div(WB_res_from_div),
         .gr_we(WB_gr_we),
         .dest(WB_dest),
+        .result_bypass(WB_result_bypass),
         .rf_we(rf_we),
         .rf_waddr(rf_waddr),
         .rf_wdata(rf_wdata),
