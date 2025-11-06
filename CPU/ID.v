@@ -23,6 +23,15 @@ module ID (
     input [31: 0] MEM_result_bypass,
     input MEM_rdcntid,
 
+    input RDW_valid,
+    input RDW_gr_we,
+    input [4: 0] RDW_dest,
+    input RDW_res_from_mul,
+    input RDW_res_from_div,
+    input RDW_res_from_mem,
+    input [31: 0] RDW_result_bypass,
+    input RDW_rdcntid,
+
     input WB_valid,
     input WB_gr_we,
     input WB_res_from_mul,
@@ -66,8 +75,11 @@ module ID (
     output reg [31: 0] rj_value_out,
     output reg [31: 0] rkd_value_out,
 
-    input next_flush,
     output this_flush,
+    input EX_flush,
+    input MEM_flush,
+    input RDW_flush,
+    input WB_flush,
 
     input has_interrupt,
     input has_exception,
@@ -387,6 +399,9 @@ module ID (
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr1 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rj_value = MEM_result_bypass;
         end
+        else if (RDW_valid && RDW_gr_we && !RDW_res_from_mem && (rf_raddr1 == RDW_dest) && (RDW_dest != 5'b0)) begin
+            rj_value = RDW_result_bypass;
+        end
         else if (WB_valid && WB_gr_we && (rf_raddr1 == WB_dest) && (WB_dest != 5'b0)) begin
             rj_value = WB_result_bypass;
         end
@@ -404,6 +419,9 @@ module ID (
         end
         else if (MEM_valid && MEM_gr_we && !MEM_res_from_mem && (rf_raddr2 == MEM_dest) && (MEM_dest != 5'b0)) begin
             rkd_value = MEM_result_bypass;
+        end
+        else if (RDW_valid && RDW_gr_we && !RDW_res_from_mem && (rf_raddr2 == RDW_dest) && (RDW_dest != 5'b0)) begin
+            rkd_value = RDW_result_bypass;
         end
         else if (WB_valid && WB_gr_we && (rf_raddr2 == WB_dest) && (WB_dest != 5'b0)) begin
             rkd_value = WB_result_bypass;
@@ -434,7 +452,9 @@ module ID (
 		rf_raddr1 == dest_out && !src1_is_pc &&  gr_we_out && res_from_mem_out && out_valid ||
         rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && res_from_mem_out && out_valid ||
         rf_raddr1 == MEM_dest && !src1_is_pc &&  MEM_gr_we && MEM_res_from_mem && MEM_valid ||
-        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_mem && MEM_valid
+        rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_res_from_mem && MEM_valid ||
+        rf_raddr1 == RDW_dest && !src1_is_pc &&  RDW_gr_we && RDW_res_from_mem && RDW_valid ||
+        rf_raddr2 == RDW_dest && !src2_is_imm && RDW_gr_we && RDW_res_from_mem && RDW_valid
     );
 
     assign mul_div_stall = in_valid & (
@@ -442,6 +462,8 @@ module ID (
         rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && (res_from_mul_out || res_from_div_out) && out_valid ||
         rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
         rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && (MEM_res_from_mul || MEM_res_from_div) && MEM_valid ||
+        rf_raddr1 == RDW_dest && !src1_is_pc && RDW_gr_we && (RDW_res_from_mul || RDW_res_from_div) && RDW_valid ||
+        rf_raddr2 == RDW_dest && !src2_is_imm && RDW_gr_we && (RDW_res_from_mul || RDW_res_from_div) && RDW_valid ||
         rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid ||
         rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && (WB_res_from_mul || WB_res_from_div) && WB_valid
     );
@@ -451,11 +473,18 @@ module ID (
         rf_raddr2 == dest_out && !src2_is_imm && gr_we_out && rdcntid_out && out_valid ||
         rf_raddr1 == MEM_dest && !src1_is_pc && MEM_gr_we && MEM_rdcntid && MEM_valid ||
         rf_raddr2 == MEM_dest && !src2_is_imm && MEM_gr_we && MEM_rdcntid && MEM_valid ||
+        rf_raddr1 == RDW_dest && !src1_is_pc && RDW_gr_we && RDW_rdcntid && RDW_valid ||
+        rf_raddr2 == RDW_dest && !src2_is_imm && RDW_gr_we && RDW_rdcntid && RDW_valid ||
         rf_raddr1 == WB_dest && !src1_is_pc && WB_gr_we && WB_rdcntid && WB_valid ||
         rf_raddr2 == WB_dest && !src2_is_imm && WB_gr_we && WB_rdcntid && WB_valid
     );
 
-    assign this_flush = in_valid && (has_exception || next_flush || SYSCALL || BRK || INE || INT || inst_ertn);
+    wire SYSCALL;
+    wire BRK;
+    wire INE;
+    wire INT;
+
+    assign this_flush = in_valid && (has_exception || EX_flush || MEM_flush || RDW_flush || WB_flush || SYSCALL || BRK || INE || INT || inst_ertn);
 
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
@@ -463,12 +492,6 @@ module ID (
     assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
-
-
-    wire SYSCALL;
-    wire BRK;
-    wire INE;
-    wire INT;
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;

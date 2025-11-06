@@ -8,7 +8,7 @@ module IW (
     output in_ready,
     output reg out_valid,
 
-    input br_flush,
+    input br_taken,
 
     // input from IF
     input [31:0] PC_from_IF,
@@ -24,10 +24,17 @@ module IW (
     output reg [31:0] inst_out,
     output reg [31:0] PC_out,
 
+    output reg [1:0] discard,
+    output reg inst_valid,
+
     // exception
     input ex_flush,
     input ertn_flush,
-    input next_flush,
+    input ID_flush,
+    input EX_flush,
+    input MEM_flush,
+    input RDW_flush,
+    input WB_flush,
 
     input has_exception,
     input [5: 0] ecode,
@@ -36,16 +43,16 @@ module IW (
     output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out
 );
-    wire this_flush = in_valid && (has_exception || next_flush);
+    wire this_flush = in_valid && (has_exception || ID_flush || EX_flush || MEM_flush || RDW_flush || WB_flush);
     wire ready_go;
-    reg inst_valid;
     reg [31:0] inst;
-    reg discard;
+    
+    wire br_flush = br_taken && !this_flush;
 
     assign ready_go = !in_valid ||
-                      this_flush ||
+                      ex_flush || ertn_flush ||
                       br_flush ||
-                      !discard && (inst_valid_from_IF || data_ok || inst_valid);
+                      (~(|discard)) && (inst_valid_from_IF || data_ok || inst_valid);
 
     
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
@@ -55,7 +62,7 @@ module IW (
                                 data_ok ? rdata :
                                 32'd0;
 
-    wire discard_from_IW = (ex_flush || ertn_flush) && !(inst_valid_from_IF || data_ok || inst_valid);
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
 
     always @(posedge clk) begin
         if (rst) begin
@@ -109,13 +116,16 @@ module IW (
 
     always @(posedge clk) begin
         if(rst) begin
-            discard <= 1'b0;
+            discard <= 2'd0;
         end
-        else if(data_ok) begin
-            discard <= 1'b0;
+        else if((|discard) && data_ok) begin
+            discard <= discard - 2'b01;
         end
-        else if(discard_from_IF || discard_from_IW) begin
-            discard <= 1'b1;
+        else if(discard_from_IF ^ discard_from_IW) begin
+            discard <= discard + 2'b01;
+        end
+        else if(discard_from_IF && discard_from_IW) begin
+            discard <= discard + 2'b10;
         end
     end
 

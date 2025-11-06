@@ -18,29 +18,34 @@ module multiplier (
     wire [13:0] cin_cout [64:0];
     wire [63:0] S, C;
 
+    reg M1_in_valid;
     reg M1_out_valid;
     wire M1_out_ready;
     wire M1_ready_go;
+
+    always @(posedge mul_clk) begin
+        M1_in_valid <= !reset;
+    end
 
     wire M2_in_valid;
     wire M2_in_ready;
     wire M2_ready_go;
 
     assign M1_out_ready = M2_in_ready;
-    assign M1_ready_go = to_mul_req_valid & from_mul_req_ready;
+    assign M1_ready_go = to_mul_req_valid && from_mul_req_ready;
 
-    wire M1_out_valid_next = M1_ready_go & M1_out_ready;
     always @(posedge mul_clk) begin
         if(reset) begin
             M1_out_valid <= 1'b0;
-        end else begin
-            M1_out_valid <= M1_out_valid_next;
+        end 
+        else if(M1_out_ready) begin
+            M1_out_valid <= !reset && M1_ready_go;
         end
     end
 
     assign M2_in_valid = M1_out_valid;
     assign M2_in_ready = !(M2_in_valid) || M2_ready_go;
-    assign M2_ready_go = to_mul_resp_ready & from_mul_resp_valid;
+    assign M2_ready_go = !M2_in_valid || to_mul_resp_ready && from_mul_resp_valid;
 
     assign from_mul_req_ready = M1_out_ready;
     assign from_mul_resp_valid = M2_in_valid;

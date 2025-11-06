@@ -11,17 +11,25 @@
 module mycpu_top(
     input  wire        clk,
     input  wire        resetn,
-    // inst sram interface
-    output wire        inst_sram_en,
-    output wire [3: 0] inst_sram_we,
+    // inst sram-like interface
+    output wire        inst_sram_req,
+    output wire        inst_sram_wr,
+    output wire [1 :0] inst_sram_size,
+    output wire [3 :0] inst_sram_wstrb,
     output wire [31:0] inst_sram_addr,
     output wire [31:0] inst_sram_wdata,
+    input  wire        inst_sram_addr_ok,
+    input  wire        inst_sram_data_ok,
     input  wire [31:0] inst_sram_rdata,
-    // data sram interface
-    output wire        data_sram_en,
-    output wire [3: 0] data_sram_we,
+    // data sram-like interface
+    output wire        data_sram_req,
+    output wire        data_sram_wr,
+    output wire [1 :0] data_sram_size,
+    output wire [3 :0] data_sram_wstrb,
     output wire [31:0] data_sram_addr,
     output wire [31:0] data_sram_wdata,
+    input  wire        data_sram_addr_ok,
+    input  wire        data_sram_data_ok,
     input  wire [31:0] data_sram_rdata,
     // trace debug interface
     output wire [31:0] debug_wb_pc,
@@ -150,7 +158,10 @@ module mycpu_top(
         .io_out_bits_remainder(div_remainder)
     );
 
+    wire [1:0] discard;
+
     wire IF_out_valid;
+    wire IF_discard;
 
     wire IW_in_ready;
     wire IW_out_valid;
@@ -160,7 +171,8 @@ module mycpu_top(
     wire IW_has_exception;
     wire [5: 0] IW_ecode;
     wire [8: 0] IW_esubcode;
-    wire IW_discard;
+    wire IW_inst_valid_out;
+    
 
     wire ID_in_ready;
     wire ID_out_valid;
@@ -228,6 +240,34 @@ module mycpu_top(
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
     wire MEM_rdcntid;
+
+    wire RDW_in_ready;
+    wire RDW_out_valid;
+    wire RDW_data_valid;
+    //wire RDW_discard;
+    wire [31:0] RDW_PC;
+    wire [31:0] RDW_data;
+    wire [31:0] RDW_csr_result;
+    wire [31:0] RDW_alu_result;
+    wire [31:0] RDW_mul_result;
+    wire [31:0] RDW_div_result;
+    wire [7:0] RDW_mem_op;
+    wire RDW_res_from_mul;
+	wire RDW_res_from_div;
+    wire RDW_res_from_mem;
+    wire RDW_res_from_csr;
+    wire RDW_gr_we;
+    wire RDW_mem_we;
+    wire [4:0] RDW_dest;
+    wire [31:0] RDW_result_bypass;
+    wire RDW_this_flush;
+    wire RDW_has_exception;
+    wire [5:0] RDW_ecode;
+    wire [8:0] RDW_esubcode;
+    wire [31:0] RDW_exception_maddr;
+    wire RDW_ertn;
+    wire RDW_rdcntid;
+    wire RDW_data_valid_out;
     
     wire WB_in_ready;
     wire [31: 0] WB_PC;
@@ -250,23 +290,24 @@ module mycpu_top(
     wire [31: 0] WB_exception_maddr;
     wire WB_ertn;
     wire WB_rdcntid;
+    wire [31:0] WB_data;
 
 
-    // temporary
-    wire wr;
-    wire [1:0] size;
-    wire [3:0] wstrb;
-    wire addr_ok = 1'b1;
-    reg data_ok;
-    assign inst_sram_we = {4{wr}};
-    always @(posedge clk) begin
-        if(reset) begin
-            data_ok <= 1'b0;
-        end
-        else begin
-            data_ok <= inst_sram_en;
-        end
-    end
+    // // temporary
+    // wire inst_wr;
+    // wire [1:0] inst_size;
+    // wire [3:0] inst_wstrb;
+    // wire inst_addr_ok = 1'b1;
+    // reg inst_data_ok;
+    // assign inst_sram_we = {4{inst_wr}};
+    // always @(posedge clk) begin
+    //     if(reset) begin
+    //         inst_data_ok <= 1'b0;
+    //     end
+    //     else begin
+    //         inst_data_ok <= inst_sram_en;
+    //     end
+    // end
 
     IF IF_unit(
         .clk(clk),
@@ -281,15 +322,17 @@ module mycpu_top(
         .br_target(EX_br_target),
         .br_stall(EX_br_stall),
         .ID_in_valid(IW_out_valid),
+        .discard(discard),
+        .IW_inst_valid(IW_inst_valid_out),
 
-        .req(inst_sram_en),
-        .wr(wr),
-        .size(size),
+        .req(inst_sram_req),
+        .wr(inst_sram_wr),
+        .size(inst_sram_size),
         .addr(inst_sram_addr),
-        .wstrb(wstrb),
+        .wstrb(inst_sram_wstrb),
         .wdata(inst_sram_wdata),
-        .addr_ok(addr_ok),
-        .data_ok(data_ok),
+        .addr_ok(inst_sram_addr_ok),
+        .data_ok(inst_sram_data_ok),
         .rdata(inst_sram_rdata),
 
         .PC_out(IW_PC),
@@ -299,7 +342,7 @@ module mycpu_top(
         .ecode_out(IW_ecode),
         .esubcode_out(IW_esubcode),
 
-        .discard(IW_discard)
+        .discard_out_wire(IF_discard)
     );
 
     IW IW_unit(
@@ -314,19 +357,25 @@ module mycpu_top(
         .PC_from_IF(IW_PC),
         .inst_from_IF(IW_inst),
         .inst_valid_from_IF(IW_inst_valid),
-        .discard_from_IF(IW_discard),
+        .discard_from_IF(IF_discard),
 
-        .br_flush(EX_br_taken),
+        .br_taken(EX_br_taken),
 
-        .data_ok(data_ok),
+        .data_ok(inst_sram_data_ok),
         .rdata(inst_sram_rdata),
 
         .inst_out(ID_inst),
         .PC_out(ID_PC),
+        .discard(discard),
+        .inst_valid(IW_inst_valid_out),
 
         .ex_flush(exception_submit),
         .ertn_flush(ertn_submit),
-        .next_flush(ID_this_flush),
+        .ID_flush(ID_this_flush),
+        .EX_flush(EX_this_flush),
+        .MEM_flush(MEM_this_flush),
+        .RDW_flush(RDW_this_flush),
+        .WB_flush(WB_this_flush),
 
         .has_exception(IW_has_exception),
         .ecode(IW_ecode),
@@ -356,8 +405,17 @@ module mycpu_top(
         .MEM_res_from_mem(MEM_res_from_mem),
         .MEM_result_bypass(MEM_result_bypass),
         .MEM_rdcntid(MEM_rdcntid),
+
+        .RDW_valid(MEM_out_valid),
+        .RDW_gr_we(RDW_gr_we),
+        .RDW_dest(RDW_dest),
+        .RDW_res_from_mul(RDW_res_from_mul),
+        .RDW_res_from_div(RDW_res_from_div),
+        .RDW_res_from_mem(RDW_res_from_mem),
+        .RDW_result_bypass(RDW_result_bypass),
+        .RDW_rdcntid(RDW_rdcntid),
         
-        .WB_valid(MEM_out_valid),
+        .WB_valid(RDW_out_valid),
         .WB_gr_we(WB_gr_we),
         .WB_res_from_mul(WB_res_from_mul),
         .WB_res_from_div(WB_res_from_div),
@@ -399,8 +457,11 @@ module mycpu_top(
         .PC_out(EX_PC),
         .rj_value_out(EX_rj_value),
         .rkd_value_out(EX_rkd_value),
-        .next_flush(EX_this_flush),
         .this_flush(ID_this_flush),
+        .EX_flush(EX_this_flush),
+        .MEM_flush(MEM_this_flush),
+        .RDW_flush(RDW_this_flush),
+        .WB_flush(WB_this_flush),
         .has_interrupt(has_interrupt),
         .has_exception(ID_has_exception),
         .ecode(ID_ecode),
@@ -468,7 +529,9 @@ module mycpu_top(
         .dest_out(MEM_dest),
         .rkd_value_out(MEM_rkd_value),
         .this_flush(EX_this_flush),
-        .next_flush(MEM_this_flush),
+        .MEM_flush(MEM_this_flush),
+        .RDW_flush(RDW_this_flush),
+        .WB_flush(WB_this_flush),
         .has_exception(EX_has_exception),
         .ecode(EX_ecode),
         .esubcode(EX_esubcode),
@@ -485,12 +548,32 @@ module mycpu_top(
         .count(count)
     );
 
+
+
+    // // temporary
+    // wire data_req;
+    // wire data_wr;
+    // wire [1:0] data_size;
+    // wire [3:0] data_wstrb;
+    // wire data_addr_ok = 1'b1;
+    // reg data_data_ok;
+    // assign data_sram_en = data_req;
+    // assign data_sram_we = {4{data_req}} & data_wstrb;
+    // always @(posedge clk) begin
+    //     if(reset) begin
+    //         data_data_ok <= 1'b0;
+    //     end
+    //     else begin
+    //         data_data_ok <= data_req;
+    //     end
+    // end
+
     MEM MEM_unit(
         .clk(clk),
         .rst(reset),
 
         .in_valid(EX_out_valid),
-        .out_ready(WB_in_ready),
+        .out_ready(RDW_in_ready),
         .in_ready(MEM_in_ready),
         .out_valid(MEM_out_valid),
         .valid(valid),
@@ -520,11 +603,91 @@ module mycpu_top(
         .mem_we(MEM_mem_we),
         .dest(MEM_dest),
         .rkd_value(MEM_rkd_value),
-        .data_sram_en(data_sram_en),
-        .data_sram_we(data_sram_we),
-        .data_sram_addr(data_sram_addr),
-        .data_sram_wdata(data_sram_wdata),
+        .RDW_data_valid(RDW_data_valid_out),
+
+        .req(data_sram_req),
+        .wr(data_sram_wr),
+        .size(data_sram_size),
+        .addr(data_sram_addr),
+        .wstrb(data_sram_wstrb),
+        .wdata(data_sram_wdata),
+        .addr_ok(data_sram_addr_ok),
+        .data_ok(data_sram_data_ok),
+        .rdata(data_sram_rdata),
+
         .result_bypass(MEM_result_bypass),
+        .csr_result_out(RDW_csr_result),
+        .alu_result_out(RDW_alu_result),
+        .mul_result_out(RDW_mul_result),
+        .div_result_out(RDW_div_result),
+        .PC_out(RDW_PC),
+        .mem_op_out(RDW_mem_op),
+        .res_from_mul_out(RDW_res_from_mul),
+        .res_from_div_out(RDW_res_from_div),
+        .res_from_mem_out(RDW_res_from_mem),
+        .res_from_csr_out(RDW_res_from_csr),
+        .gr_we_out(RDW_gr_we),
+        .mem_we_out(RDW_mem_we),
+        .dest_out(RDW_dest),
+        .data_valid_out(RDW_data_valid),
+        .data_out(RDW_data),
+        .this_flush(MEM_this_flush),
+        .RDW_flush(RDW_this_flush),
+        .WB_flush(WB_this_flush),
+        .has_exception(MEM_has_exception),
+        .ecode(MEM_ecode),
+        .esubcode(MEM_esubcode),
+        .exception_maddr(MEM_exception_maddr),
+        .ertn(MEM_ertn),
+        .has_exception_out(RDW_has_exception),
+        .ecode_out(RDW_ecode),
+        .esubcode_out(RDW_esubcode),
+        .exception_maddr_out(RDW_exception_maddr),
+        .ertn_out(RDW_ertn),
+        .rdcntid(MEM_rdcntid),
+        .rdcntid_out(RDW_rdcntid)
+
+        //.discard(RDW_discard)
+    );
+
+    RDW RDW_unit(
+        .clk(clk),
+        .rst(reset),
+        
+        // pipeline control signals
+        .in_valid(MEM_out_valid),
+        .out_ready(WB_in_ready),
+        .in_ready(RDW_in_ready),
+        .out_valid(RDW_out_valid),
+
+        .ex_flush(exception_submit),
+        .ertn_flush(ertn_submit),
+
+        // input from MEM
+        .data_from_MEM(RDW_data),
+        .data_valid_from_MEM(RDW_data_valid),
+        //.discard_from_MEM(RDW_discard),
+
+        .csr_result(RDW_csr_result),
+        .alu_result(RDW_alu_result),
+        .mul_result(RDW_mul_result),
+        .div_result(RDW_div_result),
+        .PC(RDW_PC),
+        .mem_op(RDW_mem_op),
+        .res_from_mul(RDW_res_from_mul),
+        .res_from_div(RDW_res_from_div),
+        .res_from_mem(RDW_res_from_mem),
+        .res_from_csr(RDW_res_from_csr),
+        .gr_we(RDW_gr_we),
+        .mem_we(RDW_mem_we),
+        .dest(RDW_dest),
+        .result_bypass(RDW_result_bypass),
+
+        // sram-like interface
+        .data_ok(data_sram_data_ok),
+        .rdata(data_sram_rdata),
+
+        // output regs
         .csr_result_out(WB_csr_result),
         .alu_result_out(WB_alu_result),
         .mul_result_out(WB_mul_result),
@@ -537,30 +700,36 @@ module mycpu_top(
         .res_from_csr_out(WB_res_from_csr),
         .gr_we_out(WB_gr_we),
         .dest_out(WB_dest),
-        .this_flush(MEM_this_flush),
-        .next_flush(WB_this_flush),
-        .has_exception(MEM_has_exception),
-        .ecode(MEM_ecode),
-        .esubcode(MEM_esubcode),
-        .exception_maddr(MEM_exception_maddr),
-        .ertn(MEM_ertn),
+        .data_out(WB_data),
+        .data_valid(RDW_data_valid_out),
+
+        // exception handle
+        .this_flush(RDW_this_flush),
+        .WB_flush(WB_this_flush),
+
+        .has_exception(RDW_has_exception),
+        .ecode(RDW_ecode),
+        .esubcode(RDW_esubcode),
+        .exception_maddr(RDW_exception_maddr),
+        .ertn(RDW_ertn),
         .has_exception_out(WB_has_exception),
         .ecode_out(WB_ecode),
         .esubcode_out(WB_esubcode),
         .exception_maddr_out(WB_exception_maddr),
         .ertn_out(WB_ertn),
-        .rdcntid(MEM_rdcntid),
+
+        .rdcntid(RDW_rdcntid),
         .rdcntid_out(WB_rdcntid)
     );
 
     WB WB_unit(
         .clk(clk),
 		.rst(reset),
-		.in_valid(MEM_out_valid),
+		.in_valid(RDW_out_valid),
         .in_ready(WB_in_ready),
         .valid(valid),
 
-        .data_sram_rdata(data_sram_rdata),
+        .data_from_RDW(WB_data),
         .csr_result(WB_csr_result),
         .alu_result(WB_alu_result),
         .mul_result(WB_mul_result),

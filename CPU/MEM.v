@@ -34,11 +34,18 @@ module MEM (
     input mem_we,
     input [4: 0] dest,
     input [31: 0] rkd_value,
+    input RDW_data_valid,
 
-    output data_sram_en,
-    output [3: 0] data_sram_we,
-    output [31:0] data_sram_addr,
-    output [31:0] data_sram_wdata,
+    // sram-like interface
+    output req,
+    output wr,
+    output [1:0] size,
+    output [31:0] addr,
+    output [3:0] wstrb,
+    output [31:0] wdata,
+    input addr_ok,
+    input data_ok,
+    input [31:0] rdata,
     
     output [31: 0] result_bypass,
 
@@ -53,10 +60,14 @@ module MEM (
     output reg res_from_mem_out,
     output reg res_from_csr_out,
     output reg gr_we_out,
+    output reg mem_we_out,
     output reg [4: 0] dest_out,
+    output reg [31: 0] data_out,
+    output reg data_valid_out,
 
     output this_flush,
-    input next_flush,
+    input RDW_flush,
+    input WB_flush,
 
     input has_exception,
 	input [5: 0] ecode,
@@ -72,13 +83,28 @@ module MEM (
     input rdcntid,
     output reg rdcntid_out
 );
+
+    reg handshake_done;
+
+    always @(posedge clk) begin
+        if(rst) begin
+            handshake_done <= 1'b0;
+        end
+        else if((req && addr_ok) || out_ready) begin
+            handshake_done <= !out_ready;
+        end
+    end
+
+    reg data_valid;
+    reg [31:0] data;
     wire ready_go;
     assign ready_go = !in_valid  ||
-                      this_flush || !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) && !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
-    
+                      this_flush ||
+                      !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
+                      !(res_from_div && !(to_div_resp_ready && from_div_resp_valid)) &&
+                      !((res_from_mem || mem_we) && !(req && addr_ok || handshake_done));
+
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
-    assign to_mul_resp_ready = in_valid && res_from_mul;
-    assign to_div_resp_ready = in_valid && res_from_div;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -89,18 +115,56 @@ module MEM (
         end
     end
 
-    assign data_sram_en = !this_flush;
-    assign data_sram_we    = {4{mem_we && valid && in_valid && !this_flush}} & (
-                                ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
-                                ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
-                                ({4{mem_op[7]}} & 4'b1111)  // SW;
-                            );
-    assign data_sram_addr  = alu_result & ~32'b11;
-    assign data_sram_wdata = {32{mem_op[5]}} & {4{rkd_value[7:0]}} | 
-                             {32{mem_op[6]}} & {2{rkd_value[15: 0]}} |
-                             {32{mem_op[7]}} & rkd_value;
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we);
+    assign wr = (|wstrb);
+    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush}} & (
+                        ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
+                        ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
+                        ({4{mem_op[7]}} & 4'b1111)  // SW;
+                    );
+    assign addr  = alu_result;
+    assign wdata = {32{mem_op[5]}} & {4{rkd_value[7:0]}} | 
+                   {32{mem_op[6]}} & {2{rkd_value[15: 0]}} |
+                   {32{mem_op[7]}} & rkd_value;
+    assign size = {2{mem_op[0] | mem_op[3] | mem_op[5]}} & 2'b00 | 
+                  {2{mem_op[1] | mem_op[4] | mem_op[6]}} & 2'b01 |
+                  {2{mem_op[2] | mem_op[7]}} & 2'b10;
+
+    always @(posedge clk) begin
+        if(rst) begin
+            data_valid <= 1'b0;
+            data <= 32'd0;
+        end
+
+        else if(in_valid && ready_go && out_ready) begin
+            data_valid <= 1'b0;
+        end
+
+        else if(handshake_done && data_ok && !data_valid && (data_valid_out || RDW_data_valid) && !out_ready) begin
+            data_valid <= 1'b1;
+            data <= rdata;
+        end
+    end
+
+    always @(posedge clk) begin
+		if (rst) begin
+            data_valid_out <= 1'b0;
+			data_out <= 32'd0;
+		end
+        else if (ex_flush || ertn_flush) begin
+            data_valid_out <= 1'b0;
+			data_out <= 32'd0;
+        end
+		else if (in_valid && ready_go && out_ready) begin
+			data_valid_out <= data_valid;
+            data_out <= data;
+		end
+	end
     
-    assign this_flush = in_valid && (has_exception || next_flush || ertn);
+    assign to_mul_resp_ready = in_valid && res_from_mul;
+    assign to_div_resp_ready = in_valid && res_from_div;
+
+    assign this_flush = in_valid && (has_exception || RDW_flush || WB_flush || ertn);
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 
@@ -202,6 +266,15 @@ module MEM (
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			gr_we_out <= gr_we;
+		end
+	end
+
+    always @(posedge clk) begin
+		if (rst) begin
+			mem_we_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			mem_we_out <= mem_we;
 		end
 	end
 
