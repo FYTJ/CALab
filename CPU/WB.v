@@ -7,7 +7,7 @@ module WB (
 
     input valid,
 
-    input [31: 0] data_sram_rdata,
+    input [31: 0] data_from_RDW,
     input [31: 0] csr_result,
     input [31: 0] alu_result,
     input [31: 0] mul_result,
@@ -60,14 +60,14 @@ module WB (
     // mem_op为1时符号扩展，mem_op为0时0扩展
     assign mem_result   = 
         {32{mem_op[0] | mem_op[3]}} &   // LB & LBU
-            ({32{alu_result[1: 0] == 2'b00}} & {{24{mem_op[0] & data_sram_rdata[7]}}, data_sram_rdata[7: 0]} | 
-    		{32{alu_result[1: 0] == 2'b01}} & {{24{mem_op[0] & data_sram_rdata[15]}}, data_sram_rdata[15: 8]} | 
-			{32{alu_result[1: 0] == 2'b10}} & {{24{mem_op[0] & data_sram_rdata[23]}}, data_sram_rdata[23: 16]} | 
-			{32{alu_result[1: 0] == 2'b11}} & {{24{mem_op[0] & data_sram_rdata[31]}}, data_sram_rdata[31: 24]}) |
+            ({32{alu_result[1: 0] == 2'b00}} & {{24{mem_op[0] & data_from_RDW[7]}}, data_from_RDW[7: 0]} | 
+    		{32{alu_result[1: 0] == 2'b01}} & {{24{mem_op[0] & data_from_RDW[15]}}, data_from_RDW[15: 8]} | 
+			{32{alu_result[1: 0] == 2'b10}} & {{24{mem_op[0] & data_from_RDW[23]}}, data_from_RDW[23: 16]} | 
+			{32{alu_result[1: 0] == 2'b11}} & {{24{mem_op[0] & data_from_RDW[31]}}, data_from_RDW[31: 24]}) |
 		{32{mem_op[1] | mem_op[4]}} &   // LH & LHU
-			({32{alu_result[1: 0] == 2'b00}} & {{16{mem_op[1] & data_sram_rdata[15]}}, data_sram_rdata[15: 0]} |
-			{32{alu_result[1: 0] == 2'b10}} & {{16{mem_op[1] & data_sram_rdata[31]}}, data_sram_rdata[31: 16]}) |
-	 	{32{mem_op[2]}} & data_sram_rdata;  // LW
+			({32{alu_result[1: 0] == 2'b00}} & {{16{mem_op[1] & data_from_RDW[15]}}, data_from_RDW[15: 0]} |
+			{32{alu_result[1: 0] == 2'b10}} & {{16{mem_op[1] & data_from_RDW[31]}}, data_from_RDW[31: 16]}) |
+	 	{32{mem_op[2]}} & data_from_RDW;  // LW
 
     assign result_bypass = res_from_mem ? mem_result : res_from_csr ? csr_result : alu_result;
 

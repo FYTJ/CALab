@@ -53,7 +53,9 @@ module EX (
     output reg [31: 0] rkd_value_out,
 
 	output this_flush,
-    input next_flush,
+	input MEM_flush,
+    input RDW_flush,
+    input WB_flush,
 
 	input has_exception,
 	input [5: 0] ecode,
@@ -73,8 +75,8 @@ module EX (
 );
     wire ready_go;
     assign ready_go = !in_valid ||
-		      this_flush||
-		      !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) && !(res_from_div && !(from_div_req_ready && to_div_req_valid));
+					  this_flush ||
+					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) && !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
@@ -112,7 +114,7 @@ module EX (
 	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
-	assign this_flush = in_valid && (has_exception || next_flush || ALE || ertn);
+	assign this_flush = in_valid && (has_exception || MEM_flush || RDW_flush || WB_flush || ALE || ertn);
 
     always @(posedge clk) begin
 		if (rst) begin
