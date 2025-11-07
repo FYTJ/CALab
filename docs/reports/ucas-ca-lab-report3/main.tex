@@ -1,0 +1,641 @@
+% 这是中国科学院大学计算机科学与技术专业《计算机组成原理（研讨课）》使用的实验报告 Latex 模板
+% 本模板与 2024 年 2 月 Jun-xiong Ji 完成, 更改自由 Shing-Ho Lin 和 Jun-Xiong Ji 于 2022 年 9 月共同完成的基础物理实验模板
+% 如有任何问题, 请联系: jijunxoing21@mails.ucas.ac.cn
+% This is the LaTeX template for report of Experiment of Computer Organization and Design courses, based on its provided Word template. 
+% This template is completed on Febrary 2024, based on the joint collabration of Shing-Ho Lin and Junxiong Ji in September 2022. 
+% Adding numerous pictures and equations leads to unsatisfying experience in Word. Therefore LaTeX is better. 
+% Feel free to contact me via: jijunxoing21@mails.ucas.ac.cn
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper]{geometry}
+\geometry{left=2.0cm,right=2.0cm,top=2.5cm,bottom=2.5cm}
+
+\usepackage{ctex} % 支持中文的LaTeX宏包
+\usepackage{amsmath,amsfonts,graphicx,subfigure,amssymb,bm,amsthm,mathrsfs,mathtools,breqn} % 数学公式和符号的宏包集合
+\usepackage{algorithm,algorithmicx} % 算法和伪代码
+\usepackage[noend]{algpseudocode} % 算法和伪代码
+\usepackage{fancyhdr} % 自定义页眉页脚
+\usepackage[framemethod=TikZ]{mdframed} % 创建带边框的框架
+\usepackage{fontspec} % 字体设置
+\usepackage{adjustbox} % 调整盒子大小
+\usepackage{fontsize} % 设置字体大小
+\usepackage{tikz,xcolor} % 绘制图形和使用颜色
+\usepackage{multicol} % 多栏排版
+\usepackage{multirow} % 表格中合并单元格
+\usepackage{pdfpages} % 插入PDF文件
+\usepackage{listings} % 在文档中插入源代码
+\usepackage{wrapfig} % 文字绕排图片
+\usepackage{bigstrut,multirow,rotating} % 支持在表格中使用特殊命令
+\usepackage{booktabs} % 创建美观的表格
+\usepackage{circuitikz} % 绘制电路图
+\usepackage{zhnumber} % 中文序号（用于标题）
+\usepackage{tabularx} % 表格折行
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+% \lstset{
+%   frame=tb,
+%   aboveskip=3mm,
+%   belowskip=3mm,
+%   showstringspaces=false,
+%   columns=flexible,
+%   framerule=1pt,
+%   rulecolor=\color{gray!35},
+%   backgroundcolor=\color{gray!5},
+%   basicstyle={\small\ttfamily},
+%   numbers=none,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   tabsize=3,
+% }
+
+
+
+\lstset{
+    % basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single,
+}
+
+\lstdefinelanguage{Verilog}{
+    morekeywords={always, and, assign, attribute, begin, buf, bufif0, bufif1, case, casex, casez, 
+                 cmos, deassign, default, defparam, disable, edge, else, end, endattribute, 
+                 endcase, endfunction, endmodule, endprimitive, endspecify, endtable, endtask, 
+                 event, for, force, forever, fork, function, highz0, highz1, if, ifnone, initial, 
+                 inout, input, integer, join, large, macromodule, medium, module, nand, negedge, 
+                 nmos, nor, not, notif0, notif1, or, output, parameter, pmos, posedge, primitive, 
+                 pull0, pull1, pulldown, pullup, rcmos, real, realtime, reg, release, repeat, 
+                 rnmos, rpmos, rtran, rtranif0, rtranif1, scalared, signed, small, specify, 
+                 specparam, strong0, strong1, supply0, supply1, table, task, time, tran, tranif0, 
+                 tranif1, tri, tri0, tri1, triand, trior, trireg, unsigned, vectored, wait, wand, 
+                 weak0, weak1, while, wire, wor, xnor, xor},
+    morekeywords=[2]{`define, `undef, `ifdef, `ifndef, `else, `elsif, `endif, `include, 
+                    `resetall, `timescale, `celldefine, `endcelldefine, `default_nettype, 
+                    `unconnected_drive, `nounconnected_drive},
+    morekeywords=[3]{\$display, \$write, \$strobe, \$monitor, \$time, \$stime, \$realtime, 
+                    \$finish, \$stop, \$dumpfile, \$dumpvars, \$dumpon, \$dumpoff, \$dumpall, 
+                    \$dumpflush, \$dumplimit, \$random, \$readmemb, \$readmemh},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    sensitive=true,
+    keywordstyle=\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple}\bfseries,
+    keywordstyle=[3]\color{orange}\bfseries,
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    title=\lstname,
+    escapeinside={\%*}{*},
+    morekeywords={*,...}
+}
+
+
+
+
+
+
+
+
+
+% 轻松引用, 可以用\cref{}指令直接引用, 自动加前缀. 
+% 例: 图片label为fig:1
+% \cref{fig:1} => Figure.1
+% \ref{fig:1}  => 1
+\usepackage[capitalize]{cleveref}
+% \crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Table.}{Tabs.}
+
+% \setmainfont{Palatino Linotype.ttf}
+% \setCJKmainfont{SimHei.ttf}
+% \setCJKsansfont{Songti.ttf}
+% \setCJKmonofont{SimSun.ttf}
+\punctstyle{kaiming}
+% 偏好的几个字体, 可以根据需要自行加入字体ttf文件并调用
+
+\renewcommand{\emph}[1]{\begin{kaishu}#1\end{kaishu}}
+
+% 对 section 等环境的序号使用中文
+% \renewcommand \thesection{\zhnum{section}、}
+% \renewcommand \thesubsection{\arabic{section}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%改这里可以修改实验报告表头的信息
+\newcommand{\name}{裴晨皓\ 竹彦博\ 纪弘璐}
+\newcommand{\studentNum}{2023K8009916003\ \ \ \ 2023K8009916001\ \ \ \ 2023K8009916002}
+\newcommand{\major}{计算机科学与技术}
+\newcommand{\labNum}{Project 4}
+\newcommand{\labName}{异常与中断设计专题实验}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input{tex_file/head.tex}
+
+\section{实验简介}
+简而言之，这次实验的内容是在已有的流水线处理器中添加异常与中断的支持，以及实现3条CSR指令和3条计时器相关指令。
+
+\section{设计方案介绍}
+下图是完成本次实验后的处理器结构框图：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/clq框图.png}
+    \caption{处理器结构框图}
+\end{figure}
+
+
+\subsection{总体思路}
+
+首先，我们按照教材的提示，阅读指令集手册，完成了CSR模块的设计。然后我们又对已有的流水线处理器进行修改，使之具备检测异常、标记异常、传递异常信息、最终报出异常并进行冲刷的功能，还能够在执行完异常处理程序后顺利回到异常发生前的位置继续执行——为了达到这一目的并实现精确异常，我们又对处理器的控制信号进行了反复修改。
+
+我们还使处理器具备了完成csr指令和计时器相关指令的能力，完成了本次实验。
+
+
+\subsection{CSR模块设计}
+
+\subsubsection{接口定义}
+根据教材的建议，我们把CSR实现为一个单独的module，下面是其接口定义：
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{cccc}
+        \hline
+        名称        & 方向与类型 & 位宽 & 含义                                              \\\hline
+        clk         & in(wire)   & 1    & 时钟信号                                          \\
+        rst         & in(wire)   & 1    & 复位信号                                          \\\hline
+        csr_re      & in(wire)   & 1    & csr寄存器写使能                                   \\
+        csr_num     & in(wire)   & 14   & csr寄存器地址(编号)                               \\
+        csr_rvalue  & out(wire)  & 32   & csr寄存器读出值                                   \\
+        csr_we      & in(wire)   & 1    & csr寄存器写使能                                   \\
+        csr_wmask   & in(wire)   & 32   & csr寄存器写掩码                                   \\
+        csr_wvalue  & in(wire)   & 32   & csr寄存器写入值                                   \\\hline
+        wb_ex       & in(wire)   & 1    & 处理器在WB阶段是否报出异常                        \\
+        wb_ecode    & in(wire)   & 6    & 例外类型一级编码                                  \\
+        wb_esubcode & in(wire)   & 9    & 例外类型二级编码                                  \\
+        wb_pc       & in(wire)   & 32   & 报出异常的指令的pc                                \\
+        wb_vaddr    & in(wire)   & 32   & 出现异常的地址                                    \\
+        ertn_flush  & in(wire)   & 1    & 接收处理器执行ertn指令时报出的flush信号           \\
+        ex_entry    & out(wire)  & 32   & 例外处理程序入口地址                              \\
+        has_int     & out(wire)  & 1    & 向处理器报告有无中断                              \\
+        ertn_entry  & out(wire)  & 32   & 例外处理完毕后的返回地址                          \\\hline
+        tid         & out(wire)  & 32   & 专用于rdcntid指令读取tid寄存器值                  \\
+        count       & out(reg)   & 64   & 计时器(不是产生定时器中断时所用的那个倒计时计数器)\\\hline
+    \end{tabular}
+    \caption{CSR模块接口定义}
+\end{table}
+
+这些接口中，除了clk和rst信号外，可以分为三类：
+
+\begin{enumerate}
+    \item CSR指令访问的接口(以csr_为开头命名的信号)：我们把csr指令对csr寄存器的读写都放在ID阶段进行，这些接口专用于“集中实现”本次实验3条csr指令的这部分需求。
+    \item 与硬件电路逻辑直接交互的接口(包括wb_开头的、ertn_开头的以及ex_entry、has_int信号)：接收处理器(WB阶段)报出的异常、向处理器提供异常处理程序入口(IF)、报告中断(ID)，以及接收处理器报出的ertn(WB)并提供ertn后的返回地址(IF)——这些功能分散在流水线处理器的不同阶段，一方面为了界面清晰、便于增量式开发，另一方面为了避免与csr指令出现结构冲突(争用csr模块接口)，我们把用于这些功能的信号单独“分散实现”以更方便地解决需求。
+    \item (3条)计时器相关指令的接口：rdcntvl.w、rdcntvh.w 这两条指令的“读取”任务在流水线的EX阶段完成， rdcntid在WB阶段完成，同样为了避免与正常的csr指令读取操作结构冲突，单设tid和count接口服务于这三者。
+\end{enumerate}
+
+\subsubsection{模块内部实现}
+我们采用把各个csr寄存器的各个字段单独实现的方式进行设计，根据每个字段修改的不同条件对它们进行赋值，以PRMD的PIE和PPLV字段为例：
+
+\begin{lstlisting}[language=Verilog, caption={PRMD的赋值逻辑}]
+always @(posedge clk) begin
+    if (wb_ex) begin
+        csr_prmd_pplv <= csr_crmd_plv;
+        csr_prmd_pie <= csr_crmd_ie;
+    end
+    else if (csr_we && csr_num==`CSR_PRMD) begin
+        csr_prmd_pplv <= csr_wmask[`CSR_PRMD_PPLV] & csr_wvalue[`CSR_PRMD_PPLV]
+                      | ~csr_wmask[`CSR_PRMD_PPLV] & csr_prmd_pplv;
+        csr_prmd_pie  <= csr_wmask[`CSR_PRMD_PIE]  & csr_wvalue[`CSR_PRMD_PIE]
+                      | ~csr_wmask[`CSR_PRMD_PIE]  & csr_prmd_pie;
+    end
+end
+\end{lstlisting}
+
+当WB阶段报出异常时(wb_ex)，把CRMD的PLV和IE字段分别写入PRMD的PPLV和PIE字段。遇到涉及写PRMD寄存器的csr指令时(csr_we拉高、csr_num对应PRMD)，将掩码与写入值“与”，得到被改写的部分内容；将取反后的掩码与原值“与”，得到未被改写的部分，最后将两部分合(“或”)在一起作为新值赋给相应字段。
+
+把多个字段进行拼接，就能得出一个完整csr寄存器的读取数据值：
+
+\begin{lstlisting}[language=Verilog, caption={csr寄存器读出值(以PRMD为例)}]
+assign csr_prmd_rvalue = {29'b0, csr_prmd_pie, csr_prmd_pplv};
+\end{lstlisting}
+
+之后，根据输入的csr_num在“拼接好”的各csr寄存器当中进行选择，就可以得到csr_rvalue；同样，ex_entry、ertn_entry和tid也利用这些“拼接好”的向量即可。
+
+在形成中断标志时，要注意相应中断状态位(IS)和中断使能位(LIE)同时为1，且全局中断使能(IE)为1时才可报告中断：
+\begin{lstlisting}[language=Verilog, caption={中断标志}]
+assign has_int = ((csr_estat_is[12:0] & csr_ecfg_lie[12:0]) != 13'b0) && (csr_crmd_ie == 1'b1);
+\end{lstlisting}
+
+此外，计时器count只需要在复位时初始为0，每个上升沿增加1即可。
+
+
+
+% \subsection{流水线CPU的修改}
+
+\subsection{流水线中异常的检测与异常信息的传递}
+由于不同类型的异常可能发生在不同的流水级，所以我们在各级模块内都添加了以异常类型命名的异常判定的逻辑：
+
+\begin{enumerate}
+    \item IF：
+    
+          取指地址错异常(ADEF)，在取指地址nextpc不满足4字节对齐(末两位不为0)时发生。
+          \begin{lstlisting}[language=Verilog, caption={ADEF的检测}]
+          assign ADEF = nextpc[1: 0] != 0;
+          \end{lstlisting}
+          异常的PC不应该被用来取指，故这时把指令sram的读使能置为0：
+          \begin{lstlisting}[language=Verilog, caption={ADEF异常时停止取指}]
+          assign inst_sram_en    = !ADEF;
+          \end{lstlisting}
+
+    \item ID(由于这部分信号产生逻辑较为直白，故此处不作代码展示)：
+          \begin{enumerate}
+            \item 在译码后，根据得到的具体指令(inst_xxx信号)，可以直接地判断系统调用异常(SYS)和断点异常(BRK)；
+            \item 对于指令不存在异常(INE)，我们选择把所有指令类型的信号“或”在一起再取反，即判定当前inst是否不属于任何一条已经实现的指令；
+            \item 此外，本阶段还根据CSR模块传来的has_int(has_interrupt)信号对中断(INT)进行检测。
+          \end{enumerate}
+
+    \item EX:
+    
+          经过ALU的运算，可以得到load/store的访存地址(alu_result)。类似ADEF的判定，在访存地址不满足对齐要求时，发生地址非对齐异常(ALE)。在访问字节时，不存在这类异常，但在访问半字或全字时，不满足2或4字节对齐(不满足地址末1位或2位为0)，就出现这类异常：
+
+          \begin{lstlisting}[language=Verilog, caption={ALE的检测(mem_op是用于区分不同类型访存指令的独热码)}]
+          assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
+		               (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
+          \end{lstlisting}
+    
+
+        %   \begin{lstlisting}[language=Verilog, caption={INE的检测}]
+        %   assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w);
+        %   \end{lstlisting}
+
+\end{enumerate}
+
+在我们的设计中，发生异常的指令进入WB，才会报出异常，因此要修改流水线的数据通路，使异常信息随指令一起流动。我们在各阶段定义了“has_exception_out”信号，用于标明当前的指令从进入IF到当前阶段完成是否发生异常(每一级的has_exception_out是下一级的has_exception)：
+
+\begin{lstlisting}[language=Verilog, caption={has_exception_out信号(以ID阶段为例)}]
+always @(posedge clk) begin
+    if (rst) begin
+        has_exception_out <= 1'b0;
+    end
+    else if (in_valid && ready_go && out_ready) begin
+        has_exception_out <= has_exception || SYSCALL || BRK || INE || INT;
+    end
+end
+\end{lstlisting}
+
+流水线流动时，每一级需要把本级可能产生的异常标志，合并(逻辑“或”)到从上一级“继承”来的异常标记has_exception中，作为has_exception_out传递下去，成为下一级的has_exception。
+
+此外，例外类型的编码(ecode和esubcode)也需要随指令流动，在WB报出异常的同时传给csr。同样以ID阶段为例：
+\begin{lstlisting}[language=Verilog, caption={ecode信号(以ID阶段为例)}]
+always @(posedge clk) begin
+    if (rst) begin
+        ecode_out <= 6'b0;
+    end
+    else if (in_valid && ready_go && out_ready) begin
+        if(INT) begin
+            ecode_out <= 6'h0;
+        end
+        else if (!has_exception) begin
+            ecode_out <= {6{SYSCALL}} & 6'hb | {6{BRK}} & 6'hc | {6{INE}} & 6'hd;
+        end
+        else begin
+            ecode_out <= ecode;
+        end
+    end
+end
+\end{lstlisting}
+在流入下一级时，把中断作为最高优先级，如果有中断，就置INT对应的ecode，否则看当前指令在前面所有阶段是否已经发生异常(has_exception为1还是0)：
+
+\begin{enumerate}
+    \item 未在前面发生异常，则根据当前阶段的各种异常标志给ecode_out赋值，传给下一级。
+    \item 前面阶段已发生异常，即IF发生取指地址错异常，既然取指地址出现问题，自然也不会取出指令，所以更不必谈指令本身是否存在异常，于是不用顾及本阶段的异常标志，直接把上一级IF传来的ecode向下传递。
+
+
+\end{enumerate}
+
+    EX到MEM的ecode传递也类似，如果EX阶段指令在EX前发生异常，则一定不是一条正常取出的访存指令，也就必不可能出现ALE异常，所以直接传递上一级的ecode是正确的；MEM由于没有新的异常检测逻辑，所以直接把ecode传给WB即可。
+
+% 如果当前指令在ID前面的所有流水级都没有发生异常(has_exception为0)，那就根据当前阶段各种异常的标志对ecode_out进行赋值(成为下一级的ecode)，这里要注意优先判断是否有中断信号，优先处理中断，如果没有中断再看是否为系统调用、断点或指令不存在异常。如果当前阶段指令在前面的阶段已经发生异常，则不再考虑本阶段，而是将前面发来的ecode直接传递——这是因为在实现的所有异常中：
+
+\begin{lstlisting}[language=Verilog, caption={esubcode信号(以ID阶段为例)}]
+always @(posedge clk) begin
+    if (rst) begin
+        esubcode_out <= 9'b0;
+    end
+    else if (in_valid && ready_go && out_ready) begin
+        if(INT) begin
+            esubcode_out <= 9'b0;
+        end
+        else if (!has_exception) begin
+            esubcode_out <= 9'b0;
+        end
+        else begin
+            esubcode_out <= esubcode;
+        end
+    end
+end
+\end{lstlisting}
+esubcode与ecode类似，依旧是中断优先级最高，其他情况依旧按照进入当前流水级之前是否发生异常进行选择。
+
+除了例外标志和例外类型的编码，还要传递ADEF异常的错误PC、ALE异常的错误访存地址(exception_maddr)，在WB报出异常时一起传给CSR模块。
+
+\subsection{处理器控制信号的修改(精确异常/异常返回的实现)}
+
+\begin{enumerate}
+    \item 
+    
+    为了实现精确异常，需要让报出异常的指令之后的指令全都“好像未执行过”一样，在完成异常处理后才去执行它们。
+    \item 由于ertn指令在WB阶段才将下一条指令的地址改为异常处理完毕后的返回地址，所以在给出返回地址前，ertn指令“之前”的流水级中的指令都不应该被执行(ertn在流水线中流动时，后续还会有顺序取指得到的指令进入流水线，但这些指令是“误入”流水线的，甚至可能是根本没有实现的指令)。
+\end{enumerate}
+
+其实，上面提到的两种情况都可以理解为有指令“误入”流水线，它们不应该被执行，不能影响体系状态——我们采取冲刷的方式以应对之，即把异常指令/ertn指令以及前面流水级的指令都冲刷掉。(实际上，ertn并非被冲刷，而是从流水线中流出，但为了信号方面便于复用，也可将其视为(流出的同时)冲刷——这与流出是等效的)
+
+% 其实，上面提到的情况可以理解为有指令“误入”流水线；此外，ertn指令进入流水线后，在到达WB把PC设为异常返回地址前，可能会有顺序取指的PC被发送给指令内存，取出不该被执行的指令，或者可能取出不存在的指令——我们采取冲刷的方式以应对这两种情况，即把异常指令/ertn指令以及前面流水级的指令都冲刷掉。(实际上，ertn并非被冲刷，而是从流水线中流出，但为了信号方面便于复用，也可将其视为冲刷——这与流出是等效的)
+
+\subsubsection{阻止“误入”指令执行的控制信号this_flush}
+
+如果误入流水线的指令对整个体系的状态产生影响(比如修改了CSR寄存器、内存等)，那么我们冲刷时还需要把产生的这些影响还原，产生额外的开销。所以我们在每一流水级内引入控制信号this_flush，用于标记当前流水级的指令是否在接下来的某一刻被冲刷，阻止这些会被冲刷的指令改变体系状态：
+
+\begin{lstlisting}[language=Verilog, caption={this_flush信号(以EX阶段为例)}]
+assign this_flush = in_valid && (has_exception || next_flush || ALE || ertn);
+\end{lstlisting}
+以EX阶段为例，首先要求EX阶段有效，否则也不必谈及阻止指令行为或冲刷。在这一基础上，如果当前指令在前面流水级出现异常(has_exception)或在当前流水级出现异常(ALE)，亦或是当前指令是ertn，那么当前指令就不能被执行，会被冲刷。此外，next_flush是下一级MEM的this_flush信号，由于异常/ertn指令所在流水级之前的连续多个流水级的指令都需要被取消掉，即“下一级冲刷(被取消、不能执行)，当前级指令也一定要冲刷(被取消、不能执行)”，所以要把next_flush也纳入this_flush的逻辑。
+
+this_flush在多处使用，例如只有当this_flush为0，当前阶段的指令不是“误入”指令时，才可以与乘除法器模块握手：
+\begin{lstlisting}[language=Verilog, caption={EX阶段与乘法器的握手请求信号}]
+assign to_mul_req_valid = in_valid && res_from_mul && !this_flush;
+assign to_div_req_valid = in_valid && res_from_div && !this_flush;
+\end{lstlisting}
+
+再比如，只有this_flush为0时，才允许拉高数据内存的写使能：
+\begin{lstlisting}[language=Verilog, caption={数据内存写使能信号}]
+assign data_sram_we = {4{mem_we && valid && in_valid && !this_flush}} & (
+                        ({4{mem_op[5]}} & (4'b0001 << result[1: 0])) |  // SB
+                        ({4{mem_op[6]}} & (4'b0011 << result[1: 0])) |  // SH
+                        ({4{mem_op[7]}} & 4'b1111)  // SW;
+                    );
+\end{lstlisting}
+
+\subsubsection{“冲刷”行为的进行}
+\begin{lstlisting}[language=Verilog, caption={WB报告异常(报告ertn的逻辑类似)}]
+assign exception_submit = in_valid && has_exception; //exception_submit即ex_flush
+\end{lstlisting}
+
+当ertn指令或是异常指令在WB报出时，会给出ertn_flush或是ex_flush信号，通知各流水级进行冲刷，各流水级把本级内的有效信息变成“空泡”(给out_valid赋值为0作为下级的in_valid)，流入下一级，完成冲刷。
+\begin{lstlisting}[language=Verilog, caption={冲刷时对valid的赋值逻辑(以MEM级为例)}]
+always @(posedge clk) begin
+    if (rst) begin
+        out_valid <= 1'b0;
+    end
+    else if (out_ready) begin
+        out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
+    end
+end
+\end{lstlisting}
+在具体设计中，我们运用this_flush信号，使每一级在冲刷时的ready_go都为1，进而使得每一级的out_ready都为1，从而使得冲刷过程可以1拍完成(且由于需要被冲刷的指令功能受到抑制，也不会因自身功能未完成而被阻塞，故对ready_go如此处理是合理的):
+
+\begin{lstlisting}[language=Verilog, caption={ready_go信号(以MEM级为例)}]
+assign ready_go = !in_valid  ||
+                  this_flush || 
+                  !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) && 
+                  !(res_from_div && !(to_div_resp_ready && from_div_resp_valid));
+\end{lstlisting}
+\begin{lstlisting}[language=Verilog, caption={in_ready信号(以MEM级为例(MEM的in_ready即为EX的out_ready))}]
+assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+\end{lstlisting}
+
+\subsection{处理器中CSR指令的实现}
+为了减少不必要的阻塞，我们把对CSR寄存器的读写操作全部放在ID完成，下面是CSR指令与CSR寄存器交互的信号实现：
+
+\begin{lstlisting}[language=Verilog, caption={CSR指令与CSR寄存器的交互信号}]
+assign csr_num = inst[23: 10];
+assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush;
+assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
+assign csr_wvalue = rkd_value;
+\end{lstlisting}
+
+\begin{enumerate}
+    \item csr_num：根据指令码的10到23位，选择要访问的CSR寄存器。
+    \item csr_we：当前ID阶段是有效的改写CSR寄存器的CSR指令，且当前阶段工作完成并能进入下一级(ready_go和out_ready同时为1)，并且不是“误入”流水线的指令(this_flush为0)，则可以拉高写使能。
+    
+    这里要尤其注意，csr_we必须在ID与EX握手成功(ready_go和out_ready同时为1)时才能拉高，即进入EX前的那一拍拉高。否则：如果ID为被阻塞的csrxchg指令(需要向目标csr写入新值，并读取其旧值)，那么它在被阻塞期间的第一个上升沿就会把新值写入目标csr，从而使得读出值变成写入后的新值，出现错误。
+
+    \item csr_mask：遇到改写csr寄存器的两条指令时，写掩码置为rj寄存器的值。
+    \item csr_wvalue：遇到改写csr寄存器的两条指令时，写入值为rd寄存器的值。
+\end{enumerate}
+
+涉及读取csr寄存器值的csr指令，要把读出值逐级传递到WB，写入目的通用寄存器。在我们的实现中，如果csr指令遇到关于通用寄存器的写后读相关，仍使用前递的方式解决。
+
+\subsection{处理器中计时器相关指令的实现}
+
+为了减少不必要的阻塞，rdcntvl.w 和 rdcntvh.w这两条指令在EX阶段读取计时器的值(分别读低32位和高32位)，把读取的结果逐级传递到WB，写入目的通用寄存器。
+
+按照教材的提示，rdcntid指令读取的tid寄存器会被CSR指令修改，故不能在ID阶段读取，为简单起见，将其放在写回级读取。由于CSR是异步读，所以读取后可以马上写入目标通用寄存器。
+
+与load-use情况类似，rdcntid遇到“写后读”相关时，“写”值在WB阶段才被确定，所以采取与load-use情况类似的方式把发生相关的“读者”阻塞在ID，我们等rdcntid完成WB再对被阻塞者予以放行。具体实现方法与阻塞load-use情况、阻塞与乘除法指令数据相关的指令的方式类似，不再占用篇幅展示代码。
+
+% 具体方法为：把阻塞标记rdcntid_stall引入ID阶段的ready_go，表示在
+
+% \begin{lstlisting}[language=Verilog, caption={引入对rdcntvl.w 和 rdcntvh.w的写后读阻塞后的ID阶段ready_go}]
+% assign ready_go = !in_valid  ||
+%                   this_flush ||
+%                   !load_use_stall && !mul_div_stall && !rdcntid_stall;
+% \end{lstlisting}
+
+此外，由于我们把计时器实现在了csr模块里，为了保证设计的一致性，rdcntvl.w 和 rdcntvh.w读出的数据向下一流水级传递时复用csr读取值传递的数据通路：
+
+\begin{lstlisting}[language=Verilog, caption={rdcntvl.w 和 rdcntvh.w向下级传递时复用csr读取值的数据通路}]
+always @(posedge clk) begin
+	if (rst) begin
+		csr_result_out <= 32'b0;
+	end
+	else if (in_valid && ready_go && out_ready) begin
+		csr_result_out <= rdcntvl_w ? count[31:0] :
+						  rdcntvh_w ? count[63:32] :
+						  csr_result;
+	end
+end
+\end{lstlisting}
+在前递时这两条指令则与其他读取csr的指令以及alu_result指令共用数据通路。
+
+% \subsection{各阶段result与final_result的产生与传递}
+
+% 不同类型指令(需要写回目标通用寄存器)的结果产生在不同流水级，需要借助数据选择逻辑，在每一级内把多个可能的结果源进行选择，把选出的一个作为本级的result传给下一级，最终在WB形成final_result。随着实现的指令种类越来越多，“选择”的情况也越来越复杂，为了清晰呈现，这里作示意图以展示，正所谓“一图胜千言”：
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{fig/final_result的产生逻辑.png}
+%     \caption{final_result的产生逻辑示意图}
+% \end{figure}
+
+
+
+
+\section{Debug记录}
+下面展示本组同学在Debug过程中遇到的一些印象深刻的bug。
+
+（由于debug时我们对部分设计进行了调整，部分信号名称难免与最终版本有所出入）
+
+\subsection{csr_we过早拉高导致csrxchg指令的csr读错误}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/csr_we过早拉高.png}
+    \caption{csr_we过早拉高导致csrxchg指令的csr读错误示意图}
+\end{figure}
+
+在最初的实现中，我们把csr指令关于通用寄存器的写后读冲突全都采取阻塞处理。如上图所示：红框圈出的两个周期内，一条csrxchg指令因为写后读冲突(csr_stall，图中橙色方框所示)被阻塞在ID阶段，但csr_we信号持续处于拉高状态(图中蓝色方框所示)，导致在第一个周期结束的那个上升沿，目标csr寄存器的末三位被置为了0b011，导致目标csr的读出值从0x8变成了0xb，导致这条指令无法把csr的旧值随流水传递下去，而是错误地把写入后的新值传递下去。
+
+修改方式是，在ID与EX握手成功的那一拍，即ID进入EX前的最后一拍拉高csr_we，在ID流入EX的那个上升沿使得csr寄存器的旧值传入ID与EX间的流水寄存器，并且完成新值写入。代码在前文中已展示，此处不在重复。
+
+\subsection{顶层模块对各子模块的连线出错}
+
+在设计过程中，由于各模块有较多信号需要输入或输出，而这些输入输出线与其他模块的连接都要依靠顶层模块mycpu_top。如此多的接口难免连线混乱，出现一些错误，比如：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/顶层接线错.png}
+    \caption{顶层模块接线错误示例(WB_has_exception信号接错)}
+\end{figure}
+回顾前面的描述：has_exception这一寄存器信号描述了当前阶段的指令在前面的所有流水级中是否出现异常。
+
+红色方框标注的部分展示了PC为0x1c058248的指令在ID阶段译码，被判定为一条syscall指令，它随着流水线逐级流动，应当在WB报出异常。但如白色方框所示，实际行为却是：这条syscall进入EX后，has_exception的确被拉高，但接下来流入MEM后，MEM和WB的has_exception同时拉高，导致前面一条非异常指令(PC为0x1c058244)在WB错误地拿到异常信息(如黄色方框所示)——导致错误地发生冲刷行为，使syscall没能进入WB报出异常(本应在蓝色方框所示位置报异常)。蓝色方框上方的红色方框处虽然PC对应这条syscall指令，但实际上它已经被冲刷，通过蓝框所标注周期的ID阶段PC(clk下方的那个PC信号)可以看出，在这一周期时，ID阶段已经是异常处理程序的入口指令。
+
+通过波形也不难猜到，这一问题是由于把EX阶段传出的has_exception错误地同时接到了MEM和WB，而非只接入MEM。在修复这一bug的同时，我们重新检查了顶层的所有接线逻辑，并完善了顶层线路命名的规范。
+
+\subsection{nextpc选择逻辑错误(优先级考虑不周)}
+
+next_pc有4种情况，顺序取指、分支跳转、异常入口、异常返回，最后两者应当优先级最高，其次是分支跳转目标，再次是顺序取指。
+
+前面的实验中只有顺序取指和分支目标两种选择，不涉及优先级的问题，而加入新的两种情况后，我们忘记考虑优先级问题，把它们随意放在了优先级低于分支跳转的位置：
+
+\begin{lstlisting}[language=Verilog, caption={错误的nextpc选择逻辑}]
+assign nextpc = out_ready && br_taken ? br_target : ex_flush ? ex_entry : ertn_flush ? ertn_entry : seq_pc;
+\end{lstlisting}
+
+导致了如下情况：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{fig/跳转与异常.png}
+    \caption{某条异常(syscall)指令及其后的指令序列}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/next_pc优先级.png}
+    \caption{图4指令序列执行时因nextpc选择逻辑错误导致的错误情况波形}
+\end{figure}
+
+红框圈出的位置，ID阶段是PC为1c0582a4的分支指令bne，它报出了分支跳转信号br_taken，而这时PC为1c058298的syscall指令位于WB，报出了异常冲刷信号ex_flush。由于分支跳转优先级高，所以这时的nextpc被设置成了跳转目标1c05835c，也就是inst_error的位置，而非异常处理程序入口。
+
+改成正确的nextpc选择逻辑，代码变为：
+
+\begin{lstlisting}[language=Verilog, caption={正确的nextpc选择逻辑}]
+assign nextpc = ex_flush ? ex_entry : ertn_flush ? ertn_entry : out_ready && br_taken ? br_target : seq_pc;
+\end{lstlisting}
+
+\subsection{WB执行ertn指令时忘记冲刷流水线}
+
+由于ertn指令在WB阶段才把PC设为异常返回地址，在此之前可能会有“意外”的PC因顺序取指而“误入”流水线，这些PC甚至可能没有指令，它们进入流水线后会报出指令不存在异常，并向下传递。
+
+我们最初只把ertn_flush信号交给了csr模块，忘记利用这一信号对流水线进行冲刷：
+
+下图包含exp12的test.s文件中异常返回指令ertn，其PC为0x1c00f078：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{fig/异常返回反汇编.png}
+    \caption{异常返回指令-反汇编}
+\end{figure}
+
+做ertn时，忘记冲刷导致如下波形：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/ertn后续错误顺序取指.png}
+    \caption{做ertn指令时忘记冲刷前面的流水级}
+\end{figure}
+
+如蓝框所示，ertn异常返回指令进入WB，报出ertn_flush，同时nextpc置为异常返回地址。由于ertn进入WB前，没有跳转和异常/异常返回，所以PC顺序取指，遂在PC为0x1c00f07c以及后续地址尝试取指，并随流水线一直流动至WB(如红色方框所示)。因为这些PC的指令不存在，所以ID阶段判定指令不存在后传给EX的has_exception为1，使这条不存在的指令带上异常标记(如白色框所示)。不存在的指令进入WB便报出异常ex_flush，使得取指next_pc又被设置成异常处理入口(黄色方框所示)，刚离开异常处理程序就又回去，进入死循环。
+
+把ertn_flush纳入各模块有效信号(valid)的赋值逻辑，实现ertn在WB时对流水线的冲刷后，由于不存在的指令被冲掉(无效)，自然也就不再会报出异常。具体代码见前文“‘冲刷’行为的进行”部分。
+
+
+\subsection{冲刷后各流水级未清除异常标志}
+
+最初我们忘记给this_exception(后来把ertn合并其中并改名为this_flush)信号加上valid的限制，使得被冲刷后的流水级仍保持着this_exception。又由于前文提到this_exception为1时，ready_go一定为1，就会导致一些本该被阻塞的情况因ready_go为1而被错误地放行。
+
+比如前文中的图4所示的指令序列，PC为1c0582a0和1c0582a4的两条相邻指令存在写后读数据相关，读者需要被阻塞，但是因为错误的this_exception而被放行：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/异常标志.png}
+    \caption{冲刷后各流水级未清除异常标志导致的错误阻塞示例}
+\end{figure}
+
+上图红框内的PC为1c00f078后面的顺序PC(相应的指令不存在)，会报出异常。如白色方框所示，ertn在WB报出冲刷并开始取异常返回地址的指令，下一拍这条指令就进入ID。而冲刷后虽然EX、MEM、WB的valid都变成0，this_exception却为1，后续虽然有新的无异常指令进入ID、EX和MEM，使得本级的has_exception为0，但由于WB仍然无效，仍有has_exception(也是WB的this_exception)为1，它再通过next_exception传给前面各级，使得各级的this_exception都为1。如蓝色框所示，由于ID的this_exception为1，所以ready_go为1，所以本应阻塞在ID的0x1c0582a4指令错误进入了EX并继续流动(图中靠右的三段黄色箭头)。
+
+所以我们采用valid信号对本级的this_exception进行限制，使无效流水级的异常标记不会传递到前面的流水级(具体代码引入valid的方式参见前文this_flush信号)。
+
+
+\subsection{未阻止ertn后面误入流水线的指令发挥作用}
+
+上面一个bug描述中的this/next_exception后来被我们改造成了this/next_flush，就是因为我们发现，ertn后面的顺序取指不一定会取出不存在的指令，也有可能取出当前CPU支持的指令，如下图反汇编文件的片段所示：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/异常返回的反汇编取出正常指令.png}
+    \caption{ertn指令后的顺序PC存在已实现的指令}
+\end{figure}
+图中的这条csrwr指令会在ertn进入流水线后被顺序取出，由于它不会导致异常，且后续流水级也没有异常，所以功能正常进行，在(下图所示的光标位置处)ID阶段对csr进行写入(csr_we被拉高)，写入了b088f329：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/ertn后的csr写发挥作用.png}
+    \caption{ertn后的顺序指令csrwr改写了CSR寄存器值}
+\end{figure}
+
+在后来真正需要读取csr寄存器的值时，也就顺理成章地读出了被误写入的值，进而在写入目标通用寄存器时，与golden_trace不一致，报错，暴露bug:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/读出csr被误写入的值.png}
+    \caption{因ertn后误入流水线的指令发挥作用(改写csr寄存器)导致的csr读错误，进而导致的报错}
+\end{figure}
+
+所以我们把ertn的情况也合并到了this_exception里，形成了前文所说的this_flush，用来限制ertn/异常指令前面流水级的指令发挥作用。
+
+后续我们试图简化设计逻辑，想把ertn和异常的逻辑基本完全合并，但很快意识到这是不可行的：只有冲刷本身的逻辑两者可以共用，但冲刷后的PC设置以及csr寄存器的修改逻辑完全不同。
+
+\section{合作说明}
+
+本实验由本组成员共同合作完成，组内同学同等贡献。
+
+
+
+\end{document}

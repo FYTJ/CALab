@@ -1,0 +1,56 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}实验简介}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}设计方案介绍}{1}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 处理器结构框图}}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}总体思路}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}CSR模块设计}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}接口定义}{2}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces CSR模块接口定义}}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}模块内部实现}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}PRMD的赋值逻辑}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}csr寄存器读出值(以PRMD为例)}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}中断标志}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}流水线中异常的检测与异常信息的传递}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}ADEF的检测}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}ADEF异常时停止取指}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}ALE的检测(mem_op是用于区分不同类型访存指令的独热码)}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7}has_exception_out信号(以ID阶段为例)}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8}ecode信号(以ID阶段为例)}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9}esubcode信号(以ID阶段为例)}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}处理器控制信号的修改(精确异常/异常返回的实现)}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}阻止“误入”指令执行的控制信号this_flush}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10}this_flush信号(以EX阶段为例)}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11}EX阶段与乘法器的握手请求信号}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12}数据内存写使能信号}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}“冲刷”行为的进行}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {13}WB报告异常(报告ertn的逻辑类似)}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14}冲刷时对valid的赋值逻辑(以MEM级为例)}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15}ready_go信号(以MEM级为例)}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {16}in_ready信号(以MEM级为例(MEM的in_ready即为EX的out_ready))}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}处理器中CSR指令的实现}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {17}CSR指令与CSR寄存器的交互信号}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.6}处理器中计时器相关指令的实现}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18}rdcntvl.w 和 rdcntvh.w向下级传递时复用csr读取值的数据通路}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Debug记录}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}csr_we过早拉高导致csrxchg指令的csr读错误}{8}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces csr_we过早拉高导致csrxchg指令的csr读错误示意图}}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}顶层模块对各子模块的连线出错}{9}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 顶层模块接线错误示例(WB_has_exception信号接错)}}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}nextpc选择逻辑错误(优先级考虑不周)}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {19}错误的nextpc选择逻辑}{9}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 某条异常(syscall)指令及其后的指令序列}}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 图4指令序列执行时因nextpc选择逻辑错误导致的错误情况波形}}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {20}正确的nextpc选择逻辑}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}WB执行ertn指令时忘记冲刷流水线}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces 异常返回指令-反汇编}}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces 做ertn指令时忘记冲刷前面的流水级}}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}冲刷后各流水级未清除异常标志}{11}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces 冲刷后各流水级未清除异常标志导致的错误阻塞示例}}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}未阻止ertn后面误入流水线的指令发挥作用}{12}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces ertn指令后的顺序PC存在已实现的指令}}{12}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces ertn后的顺序指令csrwr改写了CSR寄存器值}}{13}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces 因ertn后误入流水线的指令发挥作用(改写csr寄存器)导致的csr读错误，进而导致的报错}}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}合作说明}{13}{}\protected@file@percent }
+\gdef \@abspage@last{13}
