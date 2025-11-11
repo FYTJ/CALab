@@ -4,8 +4,8 @@
 `include "B.v"
 
 module AXI_bridge (
-    input clk,
-    input resetn,
+    input aclk,
+    input aresetn,
 
     // SRAM side
     // Inst-RAM
@@ -124,8 +124,8 @@ module AXI_bridge (
     end
 
     AR AR_Channel(
-        .clk(clk),
-        .resetn(resetn),
+        .clk(aclk),
+        .resetn(aresetn),
         .id(ar_id),
         .addr(ar_addr),
         .size(ar_size),
@@ -146,8 +146,8 @@ module AXI_bridge (
     );
 
     R R_Channel(
-        .clk(clk),
-        .resetn(resetn),
+        .clk(aclk),
+        .resetn(aresetn),
 
         .id(r_id),
         .data_ok(r_data_ok),
@@ -162,8 +162,8 @@ module AXI_bridge (
     );
 
     AW W_Channel(
-        .clk(clk),
-        .resetn(resetn),
+        .clk(aclk),
+        .resetn(aresetn),
 
         .id(aw_id),
         .addr(aw_addr),
@@ -192,8 +192,8 @@ module AXI_bridge (
     );
 
     B B_Channel(
-        .clk(clk),
-        .resetn(resetn),
+        .clk(aclk),
+        .resetn(aresetn),
 
         .id(b_id),
         .data_ok(b_data_ok),

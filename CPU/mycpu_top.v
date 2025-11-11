@@ -14,6 +14,9 @@ module mycpu_top(
     input  wire        resetn,
 
     // AXI interface
+    input aclk,
+    input aresetn,
+
     // AR channel
     output [3: 0] arid,
     output [31: 0] araddr,
@@ -101,8 +104,8 @@ module mycpu_top(
     wire [31:0] data_sram_rdata;
 
     AXI_bridge u_AXI_bridge (
-        .clk            (clk),
-        .resetn         (resetn),
+        .clk            (aclk),
+        .resetn         (aresetn),
 
         .sram_req_1     (inst_sram_req),
         .sram_wr_1      (inst_sram_wr),
