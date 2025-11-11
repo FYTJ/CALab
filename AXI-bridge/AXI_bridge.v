@@ -1,3 +1,8 @@
+`include "AR.v"
+`include "R.v"
+`include "AW.v"
+`include "B.v"
+
 module AXI_bridge (
     input clk,
     input resetn,

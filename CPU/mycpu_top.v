@@ -7,30 +7,59 @@
 `include "../multiplier/wallace.v"
 `include "../multiplier/full_adder.v"
 `include "../divider/Div.v"
+`include "../AXI-bridge/AXI_bridge.v"
 
 module mycpu_top(
     input  wire        clk,
     input  wire        resetn,
-    // inst sram-like interface
-    output wire        inst_sram_req,
-    output wire        inst_sram_wr,
-    output wire [1 :0] inst_sram_size,
-    output wire [3 :0] inst_sram_wstrb,
-    output wire [31:0] inst_sram_addr,
-    output wire [31:0] inst_sram_wdata,
-    input  wire        inst_sram_addr_ok,
-    input  wire        inst_sram_data_ok,
-    input  wire [31:0] inst_sram_rdata,
-    // data sram-like interface
-    output wire        data_sram_req,
-    output wire        data_sram_wr,
-    output wire [1 :0] data_sram_size,
-    output wire [3 :0] data_sram_wstrb,
-    output wire [31:0] data_sram_addr,
-    output wire [31:0] data_sram_wdata,
-    input  wire        data_sram_addr_ok,
-    input  wire        data_sram_data_ok,
-    input  wire [31:0] data_sram_rdata,
+
+    // AXI interface
+    // AR channel
+    output [3: 0] arid,
+    output [31: 0] araddr,
+    output [7: 0] arlen,
+    output [2: 0] arsize,
+    output [1: 0] arburst,
+    output [1: 0] arlock,
+    output [3: 0] arcache,
+    output [2: 0] arprot,
+    output arvalid,
+    input arready,
+
+    // R channel
+    input [3: 0] rid,
+    input [31: 0] rdata,
+    input [1: 0] rresp,
+    input rlast,
+    input rvalid,
+    output rready,
+
+    // AW channel
+    output [3: 0] awid,
+    output [31: 0] awaddr,
+    output [7: 0] awlen,
+    output [2: 0] awsize,
+    output [1: 0] awburst,
+    output [1: 0] awlock,
+    output [3: 0] awcache,
+    output [2: 0] awprot,
+    output awvalid,
+    input awready,
+
+    // W channel
+    output [3: 0] wid,
+    output [31: 0] wdata,
+    output [3: 0] wstrb,
+    output wlast,
+    output wvalid,
+    input wready,
+
+    // B channel
+    input [3: 0] bid,
+    input [1: 0] bresp,
+    input bvalid,
+    output bready,
+
     // trace debug interface
     output wire [31:0] debug_wb_pc,
     output wire [ 3:0] debug_wb_rf_we,
@@ -49,6 +78,94 @@ module mycpu_top(
             valid <= 1'b1;
         end
     end
+
+    // inst sram-like interface
+    wire        inst_sram_req;
+    wire        inst_sram_wr;
+    wire [1 :0] inst_sram_size;
+    wire [3 :0] inst_sram_wstrb;
+    wire [31:0] inst_sram_addr;
+    wire [31:0] inst_sram_wdata;
+    wire        inst_sram_addr_ok;
+    wire        inst_sram_data_ok;
+    wire [31:0] inst_sram_rdata;
+    // data sram-like interface
+    wire        data_sram_req;
+    wire        data_sram_wr;
+    wire [1 :0] data_sram_size;
+    wire [3 :0] data_sram_wstrb;
+    wire [31:0] data_sram_addr;
+    wire [31:0] data_sram_wdata;
+    wire        data_sram_addr_ok;
+    wire        data_sram_data_ok;
+    wire [31:0] data_sram_rdata;
+
+    AXI_bridge u_AXI_bridge (
+        .clk            (clk),
+        .resetn         (resetn),
+
+        .sram_req_1     (inst_sram_req),
+        .sram_wr_1      (inst_sram_wr),
+        .sram_size_1    (inst_sram_size),
+        .sram_addr_1    (inst_sram_addr),
+        .sram_wstrb_1   (inst_sram_wstrb),
+        .sram_wdata_1   (inst_sram_wdata),
+        .sram_addr_ok_1 (inst_sram_addr_ok),
+        .sram_data_ok_1 (inst_sram_data_ok),
+        .sram_rdata_1   (inst_sram_rdata),
+
+        .sram_req_2     (data_sram_req),
+        .sram_wr_2      (data_sram_wr),
+        .sram_size_2    (data_sram_size),
+        .sram_addr_2    (data_sram_addr),
+        .sram_wstrb_2   (data_sram_wstrb),
+        .sram_wdata_2   (data_sram_wdata),
+        .sram_addr_ok_2 (data_sram_addr_ok),
+        .sram_data_ok_2 (data_sram_data_ok),
+        .sram_rdata_2   (data_sram_rdata),
+
+        .arid           (arid),
+        .araddr         (araddr),
+        .arlen          (arlen),
+        .arsize         (arsize),
+        .arburst        (arburst),
+        .arlock         (arlock),
+        .arcache        (arcache),
+        .arprot         (arprot),
+        .arvalid        (arvalid),
+        .arready        (arready),
+
+        .rid            (rid),
+        .rdata          (rdata),
+        .rresp          (rresp),
+        .rlast          (rlast),
+        .rvalid         (rvalid),
+        .rready         (rready),
+
+        .awid           (awid),
+        .awaddr         (awaddr),
+        .awlen          (awlen),
+        .awsize         (awsize),
+        .awburst        (awburst),
+        .awlock         (awlock),
+        .awcache        (awcache),
+        .awprot         (awprot),
+        .awvalid        (awvalid),
+        .awready        (awready),
+
+        .wid            (wid),
+        .wdata          (wdata),
+        .wstrb          (wstrb),
+        .wlast          (wlast),
+        .wvalid         (wvalid),
+        .wready         (wready),
+
+        .bid            (bid),
+        .bresp          (bresp),
+        .bvalid         (bvalid),
+        .bready         (bready)
+    );
+
 
     wire [ 4:0] rf_raddr1;
     wire [31:0] rf_rdata1;
