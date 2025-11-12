@@ -43,8 +43,6 @@ module AW (
 
     reg [3: 0] current_state;
     reg [3: 0] next_state;
-    reg aw_fire;
-    reg w_fire;
 
     reg [31: 0] addr_reg;
     reg [1: 0] size_reg;
@@ -53,10 +51,10 @@ module AW (
 
     assign awaddr = addr_reg;
     assign awsize = {1'b0, size_reg};
-    assign awvalid = current_state == BUSY;
+    assign awvalid = current_state == BUSY || current_state == W_FIRE;
     assign wdata = data_reg;
     assign wstrb = strb_reg;
-    assign wvalid = current_state == BUSY;
+    assign wvalid = current_state == BUSY || current_state == AW_FIRE;
 
     assign addr_ok = current_state == IDLE;
 
@@ -72,31 +70,6 @@ module AW (
             size_reg <= size;
             strb_reg <= strb;
             data_reg <= data;
-        end
-    end
-
-    // 注意此处逻辑的顺序，地址和数据握手均成功时应该还原fire寄存器
-    always @(posedge clk) begin
-        if (!resetn) begin
-            aw_fire <= 1'b0;
-        end
-        else if ((awready && awvalid || aw_fire) && (wready && wvalid || w_fire)) begin
-            aw_fire <= 1'b0;
-        end
-        else if (awready && awvalid) begin
-            aw_fire <= 1'b1;
-        end
-    end
-
-    always @(posedge clk) begin
-        if (!resetn) begin
-            w_fire <= 1'b0;
-        end
-        else if ((awready && awvalid || aw_fire) && (wready && wvalid || w_fire)) begin
-            w_fire <= 1'b0;
-        end
-        else if (wready && wvalid) begin
-            w_fire <= 1'b1;
         end
     end
 
@@ -125,12 +98,33 @@ module AW (
                     end
                 end
                 BUSY: begin
-                    if ((awready && awvalid || aw_fire) && (wready && wvalid || w_fire)) begin
-                        // 需要考虑AW和W握手同时满足和不同时满足的情况(aw_fire和w_fire不会同时为1)
+                    if (awready && awvalid && wready && wvalid) begin
                         next_state = IDLE;
+                    end
+                    else if (awready && awready) begin
+                        next_state = AW_FIRE;
+                    end
+                    else if (wready && wvalid) begin
+                        next_state = W_FIRE;
                     end
                     else begin
                         next_state = BUSY;
+                    end
+                end
+                AW_FIRE: begin
+                    if (wready && wvalid) begin
+                        next_state = IDLE;
+                    end
+                    else begin
+                        next_state = AW_FIRE;
+                    end
+                end
+                W_FIRE: begin
+                    if (awready && awvalid) begin
+                        next_state = IDLE;
+                    end
+                    else begin
+                        next_state = W_FIRE;
                     end
                 end
                 default: begin
