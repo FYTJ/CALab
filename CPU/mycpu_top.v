@@ -10,12 +10,8 @@
 `include "../AXI-bridge/AXI_bridge.v"
 
 module mycpu_top(
-    input  wire        clk,
-    input  wire        resetn,
-
-    // AXI interface
-    input aclk,
-    input aresetn,
+    input  wire        aclk,
+    input  wire        aresetn,
 
     // AR channel
     output [3: 0] arid,
@@ -69,8 +65,10 @@ module mycpu_top(
     output wire [ 4:0] debug_wb_rf_wnum,
     output wire [31:0] debug_wb_rf_wdata
 );
+    wire clk = aclk;
     reg         reset;
-    always @(posedge clk) reset <= ~resetn;
+    wire resetn = ~reset;
+    always @(posedge clk) reset <= ~aresetn;
 
     reg         valid;
     always @(posedge clk) begin
@@ -104,8 +102,8 @@ module mycpu_top(
     wire [31:0] data_sram_rdata;
 
     AXI_bridge u_AXI_bridge (
-        .clk            (aclk),
-        .resetn         (aresetn),
+        .clk            (clk),
+        .resetn         (resetn),
 
         .sram_req_1     (inst_sram_req),
         .sram_wr_1      (inst_sram_wr),

@@ -4,8 +4,8 @@
 `include "B.v"
 
 module AXI_bridge (
-    input aclk,
-    input aresetn,
+    input clk,
+    input resetn,
 
     // SRAM side
     // Inst-RAM
@@ -96,18 +96,19 @@ module AXI_bridge (
     // 注意此处顺序：data-req优先级大于inst-req
     assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
     assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
-    assign ar_size = sram_req_2 ? sram_size_2 : sram_size_1;
+    assign ar_size = ~sram_wr_2 && sram_req_2 ? sram_size_2 : sram_size_1;
     assign aw_size = sram_size_2;
-    assign ar_addr = sram_req_2 ? sram_addr_2 : sram_addr_1;
+    assign ar_addr = ~sram_wr_2 && sram_req_2 ? sram_addr_2 : sram_addr_1;
     assign aw_addr = sram_addr_2;
     assign strb = sram_wstrb_2;
-    assign write_data =sram_wdata_2;
+    assign write_data = sram_wdata_2;
     assign sram_rdata_1 = read_data;
     assign sram_rdata_2 = read_data;
-    assign sram_addr_ok_1 = ar_addr_ok;
+    // 如果同时存在读内存和取指请求，优先选择了MEM，则此时addr_ok_1不能拉高
+    assign sram_addr_ok_1 = ar_id[0] ? ar_addr_ok : 1'b0;
     // WARNING: MEM的addr_ok是否应该依赖wr？
     // RAW阻塞：当内存写忙时，禁止接收内存读请求
-    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : writing ? 1'b0 : ar_addr_ok;
+    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : writing ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
     assign sram_data_ok_1 = r_id[0] && r_data_ok;
     assign sram_data_ok_2 = r_id[1] && r_data_ok || b_data_ok;
 
@@ -124,8 +125,8 @@ module AXI_bridge (
     end
 
     AR AR_Channel(
-        .clk(aclk),
-        .resetn(aresetn),
+        .clk(clk),
+        .resetn(resetn),
         .id(ar_id),
         .addr(ar_addr),
         .size(ar_size),
@@ -146,8 +147,8 @@ module AXI_bridge (
     );
 
     R R_Channel(
-        .clk(aclk),
-        .resetn(aresetn),
+        .clk(clk),
+        .resetn(resetn),
 
         .id(r_id),
         .data_ok(r_data_ok),
@@ -162,8 +163,8 @@ module AXI_bridge (
     );
 
     AW W_Channel(
-        .clk(aclk),
-        .resetn(aresetn),
+        .clk(clk),
+        .resetn(resetn),
 
         .id(aw_id),
         .addr(aw_addr),
@@ -192,8 +193,8 @@ module AXI_bridge (
     );
 
     B B_Channel(
-        .clk(aclk),
-        .resetn(aresetn),
+        .clk(clk),
+        .resetn(resetn),
 
         .id(b_id),
         .data_ok(b_data_ok),

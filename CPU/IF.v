@@ -38,11 +38,9 @@ module IF (
     output discard_out_wire
 );
     wire ready_go;
-    reg in_valid;
+    wire in_valid;
 
-    always @(posedge clk) begin
-        in_valid <= !rst;
-    end
+    assign in_valid = !rst;
 
     // common values
     assign wr = 1'b0;
@@ -76,8 +74,8 @@ module IF (
 
     reg inst_valid;
     reg [31:0] inst;
-    assign ready_go = req && addr_ok || (handshake_done && !ex_entry_preserved && !ertn_entry_preserved);
-    assign req = !handshake_done && !(br_stall && ID_in_valid) || ex_entry_preserved || ertn_entry_preserved;
+    assign ready_go = req && addr_ok || (handshake_done && !ex_flush_preserved && !ertn_flush_preserved);
+    assign req = !handshake_done && !(br_stall && ID_in_valid) || ex_flush_preserved || ertn_flush_preserved;
     
     // discard the first instruction after exception flush
     assign discard_out_wire = (ex_flush || ertn_flush || br_taken) && handshake_done && !inst_valid;
@@ -125,7 +123,7 @@ module IF (
 
     always @(posedge clk) begin
 		if (rst) begin
-			PC_out <= 32'h1c000000;
+			PC_out <= 32'h1bfffffc;
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			PC_out <= nextpc;

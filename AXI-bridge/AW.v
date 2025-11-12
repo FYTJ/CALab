@@ -27,8 +27,10 @@ module AW (
     output wvalid,
     input wready
 );
-    localparam IDLE = 2'b01;
-    localparam BUSY = 2'b10;
+    localparam IDLE = 4'b0001;
+    localparam BUSY = 4'b0010;
+    localparam AW_FIRE = 4'b0100;
+    localparam W_FIRE = 4'b1000;
 
     assign awid = 4'b1;
     assign awlen = 8'b0;
@@ -39,8 +41,8 @@ module AW (
     assign wid = 4'b1;
     assign wlast = 1'b1;
 
-    reg [1: 0] current_state;
-    reg [1: 0] next_state;
+    reg [3: 0] current_state;
+    reg [3: 0] next_state;
     reg aw_fire;
     reg w_fire;
 
