@@ -59,6 +59,9 @@ module IF (
         else if((req && addr_ok) || out_ready) begin
             handshake_done <= !out_ready;
         end
+        else if(ex_flush || ertn_flush || br_taken) begin
+            handshake_done <= 1'b0;
+        end
     end
 
     reg br_taken_reg;
@@ -74,10 +77,12 @@ module IF (
     wire ertn_flush_preserved = ertn_flush | ertn_flush_reg;
     wire [31:0] ertn_entry_preserved = ertn_flush ? ertn_entry : ertn_entry_reg;
 
+    wire handshake_done_wire = handshake_done && !ex_flush && !ertn_flush && !br_taken;
+
     reg inst_valid;
     reg [31:0] inst;
-    assign ready_go = req && addr_ok || (handshake_done && !ex_entry_preserved && !ertn_entry_preserved);
-    assign req = !handshake_done && !(br_stall && ID_in_valid) || ex_entry_preserved || ertn_entry_preserved;
+    assign ready_go = req && addr_ok || handshake_done_wire;
+    assign req = !handshake_done_wire && !(br_stall && ID_in_valid);
     
     // discard the first instruction after exception flush
     assign discard_out_wire = (ex_flush || ertn_flush || br_taken) && handshake_done && !inst_valid;
@@ -97,7 +102,7 @@ module IF (
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(ex_flush || ertn_flush) begin
+        else if(ex_flush || ertn_flush || br_taken) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
@@ -105,7 +110,7 @@ module IF (
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(handshake_done && data_ok && !inst_valid && !out_ready && (inst_valid_out || IW_inst_valid) && (~(|discard))) begin
+        else if(handshake_done_wire && data_ok && !inst_valid && !out_ready && (inst_valid_out || IW_inst_valid) && (~(|discard))) begin
             inst_valid <= 1'b1;
             inst <= rdata;
         end
@@ -137,7 +142,7 @@ module IF (
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
 		end
-        else if (ex_flush || ertn_flush) begin
+        else if (ex_flush || ertn_flush || br_taken) begin
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
         end
