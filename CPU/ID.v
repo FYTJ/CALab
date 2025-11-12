@@ -534,7 +534,7 @@ module ID (
 		end
 	end
 
-    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken;
+    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken & !this_flush;
     assign br_target_out = {32{(~rst) & in_valid && ready_go && out_ready}} & br_target;
 
     always @(posedge clk) begin
