@@ -7,7 +7,7 @@ module AR (
     input [1: 0] size,
     output addr_ok,
 
-    input writing,
+    input [4: 0] writing,
 
     output [3: 0] arid,
     output [31: 0] araddr,
@@ -72,7 +72,7 @@ module AR (
         else begin
             case (current_state)
                 IDLE: begin
-                    if (id == 2'b01 || id == 2'b10 && !writing) begin
+                    if (id == 2'b01 || id == 2'b10 && writing == 5'b0) begin
                         // 此处使用wire而非reg的目的是立即响应cpu的请求
                         next_state = BUSY;
                     end

@@ -91,7 +91,7 @@ module AXI_bridge (
     wire [31: 0] read_data;
     wire [1: 0] r_id;
     wire [1: 0] b_id;
-    reg writing;
+    reg  [4: 0] writing;
 
     // 注意此处顺序：data-req优先级大于inst-req
     assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
@@ -108,19 +108,19 @@ module AXI_bridge (
     assign sram_addr_ok_1 = ar_id[0] ? ar_addr_ok : 1'b0;
     // WARNING: MEM的addr_ok是否应该依赖wr？
     // RAW阻塞：当内存写忙时，禁止接收内存读请求
-    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : writing ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
+    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : (writing != 0) ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
     assign sram_data_ok_1 = r_id[0] && r_data_ok;
     assign sram_data_ok_2 = r_id[1] && r_data_ok || b_data_ok;
 
     always @(posedge clk) begin
         if (!resetn) begin
-            writing <= 1'b0;
+            writing <= 5'b0;
         end
         else if (sram_wr_2 && aw_addr_ok && sram_req_2) begin
-            writing <= 1'b1;
+            writing <= writing + 1;
         end
         else if (b_data_ok) begin
-            writing <= 1'b0;
+            writing <= writing - 1;
         end
     end
 
