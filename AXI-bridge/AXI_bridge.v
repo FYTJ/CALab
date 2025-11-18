@@ -116,6 +116,9 @@ module AXI_bridge (
         if (!resetn) begin
             writing <= 5'b0;
         end
+        else if (sram_wr_2 && aw_addr_ok && sram_req_2 && b_data_ok) begin
+            writing <= writing;
+        end
         else if (sram_wr_2 && aw_addr_ok && sram_req_2) begin
             writing <= writing + 1;
         end
