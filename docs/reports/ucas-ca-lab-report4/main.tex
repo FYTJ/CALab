@@ -1,0 +1,749 @@
+% 这是中国科学院大学计算机科学与技术专业《计算机组成原理（研讨课）》使用的实验报告 Latex 模板
+% 本模板与 2024 年 2 月 Jun-xiong Ji 完成, 更改自由 Shing-Ho Lin 和 Jun-Xiong Ji 于 2022 年 9 月共同完成的基础物理实验模板
+% 如有任何问题, 请联系: jijunxoing21@mails.ucas.ac.cn
+% This is the LaTeX template for report of Experiment of Computer Organization and Design courses, based on its provided Word template.
+% This template is completed on Febrary 2024, based on the joint collabration of Shing-Ho Lin and Junxiong Ji in September 2022.
+% Adding numerous pictures and equations leads to unsatisfying experience in Word. Therefore LaTeX is better.
+% Feel free to contact me via: jijunxoing21@mails.ucas.ac.cn
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper]{geometry}
+\geometry{left=2.0cm,right=2.0cm,top=2.5cm,bottom=2.5cm}
+
+\usepackage{ctex} % 支持中文的LaTeX宏包
+\usepackage{amsmath,amsfonts,graphicx,subfigure,amssymb,bm,amsthm,mathrsfs,mathtools,breqn} % 数学公式和符号的宏包集合
+\usepackage{algorithm,algorithmicx} % 算法和伪代码
+\usepackage[noend]{algpseudocode} % 算法和伪代码
+\usepackage{fancyhdr} % 自定义页眉页脚
+\usepackage[framemethod=TikZ]{mdframed} % 创建带边框的框架
+\usepackage{fontspec} % 字体设置
+\usepackage{adjustbox} % 调整盒子大小
+\usepackage{fontsize} % 设置字体大小
+\usepackage{tikz,xcolor} % 绘制图形和使用颜色
+\usepackage{multicol} % 多栏排版
+\usepackage{multirow} % 表格中合并单元格
+\usepackage{pdfpages} % 插入PDF文件
+\usepackage{listings} % 在文档中插入源代码
+\usepackage{wrapfig} % 文字绕排图片
+\usepackage{bigstrut,multirow,rotating} % 支持在表格中使用特殊命令
+\usepackage{booktabs} % 创建美观的表格
+\usepackage{circuitikz} % 绘制电路图
+\usepackage{zhnumber} % 中文序号（用于标题）
+\usepackage{tabularx} % 表格折行
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+% \lstset{
+%   frame=tb,
+%   aboveskip=3mm,
+%   belowskip=3mm,
+%   showstringspaces=false,
+%   columns=flexible,
+%   framerule=1pt,
+%   rulecolor=\color{gray!35},
+%   backgroundcolor=\color{gray!5},
+%   basicstyle={\small\ttfamily},
+%   numbers=none,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   tabsize=3,
+% }
+
+
+
+\lstset{
+    % basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single,
+}
+
+\lstdefinelanguage{Verilog}{
+    morekeywords={always, and, assign, attribute, begin, buf, bufif0, bufif1, case, casex, casez,
+                 cmos, deassign, default, defparam, disable, edge, else, end, endattribute,
+                 endcase, endfunction, endmodule, endprimitive, endspecify, endtable, endtask,
+                 event, for, force, forever, fork, function, highz0, highz1, if, ifnone, initial,
+                 inout, input, integer, join, large, macromodule, medium, module, nand, negedge,
+                 nmos, nor, not, notif0, notif1, or, output, parameter, pmos, posedge, primitive,
+                 pull0, pull1, pulldown, pullup, rcmos, real, realtime, reg, release, repeat,
+                 rnmos, rpmos, rtran, rtranif0, rtranif1, scalared, signed, small, specify,
+                 specparam, strong0, strong1, supply0, supply1, table, task, time, tran, tranif0,
+                 tranif1, tri, tri0, tri1, triand, trior, trireg, unsigned, vectored, wait, wand,
+                 weak0, weak1, while, wire, wor, xnor, xor},
+    morekeywords=[2]{`define, `undef, `ifdef, `ifndef, `else, `elsif, `endif, `include,
+                    `resetall, `timescale, `celldefine, `endcelldefine, `default_nettype,
+                    `unconnected_drive, `nounconnected_drive},
+    morekeywords=[3]{\$display, \$write, \$strobe, \$monitor, \$time, \$stime, \$realtime,
+                    \$finish, \$stop, \$dumpfile, \$dumpvars, \$dumpon, \$dumpoff, \$dumpall,
+                    \$dumpflush, \$dumplimit, \$random, \$readmemb, \$readmemh},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    sensitive=true,
+    keywordstyle=\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple}\bfseries,
+    keywordstyle=[3]\color{orange}\bfseries,
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    title=\lstname,
+    escapeinside={\%*}{*},
+    morekeywords={*,...}
+}
+
+
+
+
+
+
+
+
+
+% 轻松引用, 可以用\cref{}指令直接引用, 自动加前缀.
+% 例: 图片label为fig:1
+% \cref{fig:1} => Figure.1
+% \ref{fig:1}  => 1
+\usepackage[capitalize]{cleveref}
+% \crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Table.}{Tabs.}
+
+% \setmainfont{Palatino Linotype.ttf}
+% \setCJKmainfont{SimHei.ttf}
+% \setCJKsansfont{Songti.ttf}
+% \setCJKmonofont{SimSun.ttf}
+\punctstyle{kaiming}
+% 偏好的几个字体, 可以根据需要自行加入字体ttf文件并调用
+
+\renewcommand{\emph}[1]{\begin{kaishu}#1\end{kaishu}}
+
+% 对 section 等环境的序号使用中文
+% \renewcommand \thesection{\zhnum{section}、}
+% \renewcommand \thesubsection{\arabic{section}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%改这里可以修改实验报告表头的信息
+\newcommand{\name}{裴晨皓\ 竹彦博\ 纪弘璐}
+\newcommand{\studentNum}{2023K8009916003\ \ \ \ 2023K8009916001\ \ \ \ 2023K8009916002}
+\newcommand{\major}{计算机科学与技术}
+\newcommand{\labNum}{Project 5}
+\newcommand{\labName}{AXI 总线接口设计专题实验}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input{tex_file/head.tex}
+
+\section{实验简介与总体思路}
+本实验中，我们首先对流水线CPU进行改造，把访存接口改为类SRAM接口，并将五级流水线改为七级以实现请求和数据响应分离(利于并行处理提高性能)，然后按照教材提示设计了具有四个状态机的类 SRAM-AXI 转接桥，最终完成了本次实验。
+
+
+\section{设计方案介绍}
+下图是完成本次实验后的处理器结构框图：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/结构框图.jpg}
+    \caption{处理器结构框图}
+\end{figure}
+
+\subsection{流水线处理器本身的进一步改进}
+
+\subsubsection{五级流水线拆分为七级流水线}
+进入本次实验，访存操作引入了握手机制，一次访存操作要分为发送请求和等待数据这两次握手(实际上用类SRAM接口的CPU的第2次“握手”为单向的data_ok，并非严格意义的握手)。为了提高流水线效率，我们将访存的流水级都拆成两级，一级用于请求，一级用于等待数据，具体表现为：IF级拆分为IF(相当于讲义的pre-IF)和IW(Instruction Waiting，相当于讲义的IF)，MEM级拆分为MEM和RDW(Read Data Waiting，这是组成原理研讨课时使用的名称，实际上由于load/store操作都要等待data_ok，故不仅是Read Data，Write Data时也要在这一级等待)。
+
+\subsubsection{IF阶段的取指请求设计}
+
+% 根据类SRAM接口的定义，由于指令内存不涉及写操作，所以wr置为0，与写相关的信号也置为全0即可；指令长度为4字节，所以size恒置为2'b10。这部分代码逻辑直白，不在此处展示。
+
+% 接下来关注req信号的问题：对同一个PC而言，在没完成取指令请求握手时，req要一直拉高；完成握手后，req要拉低，避免重复取指。为此，我们设置了handshake_done信号，用于记录当前IF阶段的指令是否已经完成取指请求握手：
+这部分要重点关注req信号的问题：对同一个PC而言，在没完成取指令请求握手时，req要一直拉高；完成握手后，req要拉低，避免重复取指。为此，我们设置了handshake_done信号，用于记录当前IF阶段的指令是否已经完成取指请求握手：
+
+% \begin{lstlisting}[language=Verilog, caption={handshake_done信号的定义}]
+%     always @(posedge clk) begin
+%         if(rst) begin
+%             handshake_done <= 1'b0;
+%         end
+%         else if((req && addr_ok) || out_ready) begin
+%             handshake_done <= !out_ready;
+%         end
+%         else if(ex_flush || ertn_flush || br_taken) begin
+%             handshake_done <= 1'b0;
+%         end
+%     end
+% \end{lstlisting}
+% 考虑以下情况：
+% \begin{enumerate}
+%     \item IF当前PC取指请求握手成功(req && addr_ok)：若下一级IW允许流入(out_ready为1)，则IF将会把PC改为下一条指令的PC并发送取指请求，handshake_done自然也对应下一条指令的握手情况，所以这时应赋值为0；若IW不允许流入(out_ready为0)，则handshake_done应该拉高，表示当前指令的握手已经完成。
+%     \item IF当前PC取指请求未握手成功，但IW允许流入
+% \end{enumerate}
+
+\begin{lstlisting}[language=Verilog, caption={handshake_done信号的定义}]
+    always @(posedge clk) begin
+        if(rst) begin
+            handshake_done <= 1'b0;
+        end
+        else if(ready_go) begin
+            handshake_done <= !out_ready;
+        end
+        else if(ex_flush || ertn_flush || br_taken) begin
+            handshake_done <= 1'b0;
+        end
+    end
+\end{lstlisting}
+
+考虑以下情况：
+\begin{enumerate}
+    \item 在IF阶段工作完成(完成取指，ready_go为1)后，若IW不允许流入(out_ready为0)，则要把handshake_done拉高，记录当前指令的取指请求握手已完成；若IW允许流入(out_ready为1)，则接下来应当发下一条指令的取指请求，故handshake_done应该重置为0。
+    \item 出现冲刷情况时，由于IF在当拍就把PC改为冲刷后的新PC，故handshake_done也应重置为0。
+\end{enumerate}
+
+到上面这步还不够，因为若出现冲刷，那么IF会在同一周期改为新的PC，它不能被冲刷前PC的握手情况干扰；此外，若冲刷前的PC对应请求已经握手成功，在执行流的角度看，这条指令将不会在后续的阶段被执行——根据这两点可以想到：这时的handshake_done是无效的。故结合三类冲刷情况，我们另设handshake_done_effective信号：
+
+\begin{lstlisting}[language=Verilog, caption={handshake_done_effective信号}]
+    wire handshake_done_effective = handshake_done && !ex_flush && !ertn_flush && !br_taken;
+\end{lstlisting}
+
+此外，对于分支指令跳转冲刷的情况，由于ID阶段分支指令可能存在load-to-branch情况(br_stall，在ID根据指令类型和已有的load_use_stall信号得出)，分支判定结果无法立即得出，所以这时需要暂停取指请求，直到得到分支结果。
+
+进一步地，req信号也就能得到定义：
+\begin{lstlisting}[language=Verilog, caption={req信号定义}]
+    assign req = !handshake_done_effective && !(br_stall && ID_in_valid);
+\end{lstlisting}
+从自然语言角度讲，即：当前PC没有有效的握手完成行为，且没有未完成的分支判断，就可以发取指请求。
+
+除了req，取指PC也需要更多考虑。原先不存在握手和延迟的取指请求一拍就能完成，但现在大多数时候都需要多拍；又因为取指有时依赖冲刷信号，而WB阶段报出的异常冲刷和ID给出的分支跳转冲刷有时只能维持一拍，所以要把报出的异常信号暂存下来。以异常冲刷信号为例：
+
+\begin{lstlisting}[language=Verilog, caption={异常冲刷信号暂存}]
+    always @(posedge clk) begin
+        if(rst) begin
+            ex_flush_reg <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            ex_flush_reg <= 1'b0;
+        end
+        else if(ex_flush) begin
+            ex_flush_reg <= 1'b1;
+        end
+    end
+\end{lstlisting}
+在当前指令流入IW时，重置ex_flush_reg为0；在WB报出异常时，把ex_flush_reg拉高，即暂存异常信号。这样一来，在报出冲刷的当拍可以依赖ex_flush本身，下一拍则借助ex_flush_reg，把二者结合得到：
+\begin{lstlisting}[language=Verilog, caption={IF最终使用的异常冲刷信号}]
+    wire ex_flush_preserved = ex_flush | ex_flush_reg;
+\end{lstlisting}
+下面是异常冲刷情况下，对异常处理入口PC的生成(也是按照上面的逻辑设计)：
+\begin{lstlisting}[language=Verilog, caption={IF异常处理入口PC}]
+    wire [31:0] ex_entry_preserved = ex_flush ? ex_entry : ex_entry_reg;
+\end{lstlisting}
+
+其他信号也与上面类似——把nextpc生成逻辑中涉及的冲刷信号和冲刷后重新取指的PC，都暂存为xxx_preserved信号，也就保证了取指PC在发请求的过程中始终保持正确：
+\begin{lstlisting}[language=Verilog, caption={nextpc}]
+    assign nextpc       = ex_flush_preserved ? ex_entry_preserved :
+                          ertn_flush_preserved ? ertn_entry_preserved :
+                          br_taken_preserved ? br_target_preserved : seq_pc;
+\end{lstlisting}
+
+% \subsubsection{对“PC未流入IW就已收到data_ok”情况的处理}
+
+\subsubsection{指令的接收与传递}
+
+正常情况应为位于IW的PC收到data_ok和指令，这与“Instruction Waiting”的含义一致。若IW收到指令后被阻塞，根据教材的提示：若选择暂停IF的取指请求的方式，则性能较差，故我们选择另一种方式——IF正常发取指请求，若IF的PC在进入IW前就已经收到data_ok，则把它暂存下来，待IW允许流入时再传递下去。
+
+% \begin{enumerate}
+%     \item IW阶段收到data_ok信号，获得IW的PC对应的指令。
+%     \item IW阶段早已收到指令，但由于阻塞，未能流入ID，
+% \end{enumerate}
+
+因此，IW向ID传递的指令可分为三种情况(在流入ID的那个上升沿把下面的wire信号赋给ID的流水寄存器)：
+
+\begin{lstlisting}[language=Verilog, caption={IW向ID传递的指令}]
+    wire [31:0] inst_out_wire = inst_valid_from_IF ? inst_from_IF :
+                                inst_valid ? inst :
+                                data_ok ? rdata :
+                                32'd0;
+\end{lstlisting}
+
+\begin{enumerate}
+    \item IW的PC对应的指令在IF阶段就已经收到(inst_valid_from_IF)，后来它又被传给IW，故IW要把它(inst_from_IF)继续传递;
+    \item IW之前已经收到过data_ok并把指令暂存了下来(inst_valid)，则传递这条暂存的指令(inst)。
+    \item 当前这一拍收到data_ok，则直接把当前访存得到的指令(rdata)传递下去。
+\end{enumerate}
+
+IF阶段暂存指令的逻辑如下：
+\begin{lstlisting}[language=Verilog, caption={IF对指令的暂存}]
+    always @(posedge clk) begin
+        if(rst) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+        else if(ex_flush || ertn_flush || br_taken) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+        else if(data_ok && !out_ready && (inst_valid_out || IW_inst_valid) && (~(|discard))) begin
+            inst_valid <= 1'b1;
+            inst <= rdata;
+        end
+    end
+\end{lstlisting}
+\begin{enumerate}
+    \item 有冲刷时，要把暂存的指令清空；当前流水级向后流动时，也应如此。
+    \item 当IF被阻塞(!out_ready)，且IW已经收到过来自IF或是直接来自内存的指令(inst_valid_out || IW_inst_valid)时，若没有因冲刷而需要丢弃的指令(\textasciitilde(|discard))，则说明马上/现在来的data_ok对应于当前IF的PC，故把指令暂存下来。
+\end{enumerate}
+% 然后在流入IW时，把inst随流水线流动传递给IW即可，不再赘述。
+然后在流入IW时，把inst传递下去即可。
+
+% 然后在流入IW时，把inst随流水线流动传递给IW即可，不再赘述。
+% 然后在流入IW时，把inst随流水线流动传递给IW即可，不再赘述。
+% 然后在流入IW时，把inst随流水线流动传递给IW即可，不再赘述。
+
+IW阶段保存取回指令的逻辑如下：
+
+\begin{lstlisting}[language=Verilog, caption={IW阶段保存取回指令}]
+    always @(posedge clk) begin
+        if(rst) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+        else if(ex_flush || ertn_flush || br_flush) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+        else if(data_ok && out_ready && (inst_valid_from_IF || inst_valid) && (~(|discard))) begin
+            inst_valid <= 1'b1;
+            inst <= rdata;
+        end
+        else if(data_ok && !out_ready && !(inst_valid_from_IF || inst_valid) && (~(|discard))) begin
+            inst_valid <= 1'b1;
+            inst <= rdata;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            inst_valid <= 1'b0;
+            inst <= 32'd0;
+        end
+    end
+\end{lstlisting}
+除了冲刷和指令流动后进行重置以外，可以分成以下两种情况来看：
+
+\begin{enumerate}
+    \item IW的PC对应的指令已经收到(inst_valid_from_IF || inst_valid)，且这一拍能够流入ID(out_ready)：若这时data_ok为1，说明这是当前IF的PC对应的指令，则在下一个上升沿保存下来，同时IF的PC进入IW，正好对应这条指令。
+    \item IW的PC对应指令尚未收到(!(inst_valid_from_IF || inst_valid))，且这一拍不能流入ID(!out_ready)：若这时data_ok为1，说明这是IW的PC对应的指令，则在下一个上升沿保存下来，等待流入ID。
+\end{enumerate}
+(注意：上述情况都是在没有需要因冲刷而丢弃指令的情况下(\textasciitilde(|discard))描述的。)
+
+\subsubsection{冲刷流水线时，对异常前已握手成功的取指请求的处理}
+
+我们的设计中，冲刷行为报出时，IF级PC会在同一个周期被设为冲刷后的新值，但此时冲刷前IF可能已经取指请求握手成功，IW可能还未等到冲刷前的请求的data_ok返回——也就是说，接下来会有0到2条应该被冲刷的指令返回，我们需要把它们丢弃掉。discard计数器用于记录还要丢弃的指令数目：
+
+\begin{lstlisting}[language=Verilog, caption={discard计数器更新逻辑}]
+    always @(posedge clk) begin
+        if(rst) begin
+            discard <= 2'd0;
+        end
+        else if((|discard) && data_ok) begin
+            discard <= discard - 2'b01;
+        end
+        else if(discard_from_IF ^ discard_from_IW) begin
+            discard <= discard + 2'b01;
+        end
+        else if(discard_from_IF && discard_from_IW) begin
+            discard <= discard + 2'b10;
+        end
+    end
+\end{lstlisting}
+
+\begin{enumerate}
+    \item 若当前还有需要丢弃的指令((|discard))，且收到data_ok，则把discard减1。
+    \item 若IF和IW中只有一个阶段报出需要丢弃指令(discard_from_IF ^ discard_from_IW)，则把discard加1。
+    \item 若IF和IW都报出需要丢弃指令(discard_from_IF \&\& discard_from_IW)，则把discard加2。
+\end{enumerate}
+
+IF遇到冲刷时，如果之前的请求已经握手成功(handshake_done)，且没有返回指令(!inst_valid)，则要等这条指令返回后丢弃：
+
+\begin{lstlisting}[language=Verilog, caption={IF阶段-冲刷丢弃指令-控制信号}]
+    assign discard_out_wire = (ex_flush || ertn_flush || br_taken) && handshake_done && !inst_valid;
+\end{lstlisting}
+
+IW遇到冲刷时，如果冲刷前的PC对应的指令不是从IF传来的(inst_valid_from_IF)，也不是之前暂存下来的(inst_valid)，并且也没有在报出冲刷的这个周期收到当前PC的data_ok(data_ok \&\& (\textasciitilde(|discard))，其中\textasciitilde(|discard)为1表示这个data_ok不是需要丢弃的，而是恰好对应当前IW的PC)，那么这条指令也应该被丢弃：
+
+\begin{lstlisting}[language=Verilog, caption={IW阶段-冲刷丢弃指令-控制信号}]
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+\end{lstlisting}
+
+\subsubsection{MEM级和RDW级访存设计}
+
+% 与IF和IW类似，MEM为了防止重复发取指请求，也引入了handshake_done信号，逻辑与IF类似，不再赘述。对于类SRAM接口新引入的size信号，只需要根据具体访存行为是byte/halfword/word来设置即可，也不再赘述。
+
+与IF和IW类似，MEM为了防止重复发取指请求，也引入了handshake_done信号，逻辑与IF类似，不再赘述。
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 我们在设计wr信号时，结合了写掩码wstrb：写操作时把要改写的字节对应位置1，读操作时全0——这样根据wstrb是否全0就可以设计wr。
+
+% \begin{lstlisting}[language=Verilog, caption={wr信号}]
+%     assign wr = (|wstrb);
+% \end{lstlisting}
+
+req信号与IF略有不同：
+
+\begin{lstlisting}[language=Verilog, caption={MEM阶段的访存请求IF信号}]
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we);
+\end{lstlisting}
+在MEM级是有效的访存指令时，若请求没有握手成功(!handshake_done)，并且MEM及以后的阶段不存在异常指令(!this_flush)，则应当发出访存请求。与IF的区别在于：无论后面的阶段有没有异常/跳转指令，IF都应该持续发取指请求，收到冲刷信号时利用handshake_done_effective信号处理“无效握手”；而MEM及以后的阶段如果存在异常指令，this_flush会被拉高，抑制MEM级访存指令发挥作用，即不允许req拉高、不发请求，所以也就不存在握手成功后收到冲刷信号导致“无效握手”的情况，所以这里也就不必引入handshake_done_effective信号。
+
+也正是因为上述原因，MEM和RDW级不存在“丢弃”操作。
+
+对于load得到的数据的接受与传递，与取指时类似，如果在MEM级收到数据且MEM的指令下一个上升沿无法流入RDW，就在MEM暂存，待RDW允许时流入RDW；RDW也同样设置寄存器保存取回的数据——这方面的设计都与IF/IW类似，故不展示具体代码也不再赘述。
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{流水控制信号的修改}
+
+引入类SRAM接口并增加了两个流水级后，取指和load/store访存相关流水级的流水控制信号都有所修改(主要是用于表明当前阶段任务完成与否、是否准备好流入下一级的ready_go信号)。
+
+在load/store访存方面：
+\begin{enumerate}
+    \item MEM级要额外考虑在访存请求握手成功后(当前周期握手成功(req \&\& addr_ok)或是之前已经握手成功(handshake_done))，指令才准备好流入RDW：
+
+    \begin{lstlisting}[language=Verilog, caption={MEM级ready_go信号}]
+    assign ready_go = !in_valid  ||
+                      this_flush ||
+                      !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
+                      !(res_from_div && !(to_div_resp_ready && from_div_resp_valid)) &&
+                      !((res_from_mem || mem_we) && !(req && addr_ok || handshake_done));
+\end{lstlisting}
+
+    \item RDW级除了考虑无效和冲刷情况，主要应该考虑的是流水级内“没有还未收到data_ok的访存指令”时才算准备好流入WB：
+    \begin{lstlisting}[language=Verilog, caption={RDW级ready_go信号}]
+        assign ready_go =!in_valid ||
+                         this_flush||
+                         !((res_from_mem || mem_we) && !(data_valid_from_MEM || data_ok || data_valid));
+    \end{lstlisting}
+\end{enumerate}
+
+在取指方面，与load/store访存的不同之处在于前面提到的：就算后面流水级有异常/跳转指令，也不会暂停取指，所以与标记异常的this_flush等信号无关。
+
+\begin{enumerate}
+    \item IF级只有在当前PC取指请求握手成功(当前周期或者是以前的某个周期)时才算准备好流入IW。特别地，在冲刷报出的那个周期，PC已经修改为冲刷后的值，所以之前就算是有过握手成功且未流入IW的指令，那也是“无效握手”，所以这时IF是否准备好进IW就取决于handshake_done_effective，而非handshake_done：
+    \begin{lstlisting}[language=Verilog, caption={IF级ready_go信号}]
+        assign ready_go = req && addr_ok || handshake_done_effective;
+    \end{lstlisting}
+
+    \item IW级除了无效时一定能流入下一级外，还要考虑：
+    \begin{itemize}
+        \item 当前收到的指令不是需要丢弃的指令，确保指令与PC一致，才可流入ID；
+        \item 当前周期有冲刷信号时，等待指令返回(data_ok)的操作已经交给前面提及的另设的discard相关逻辑进行处理，所以IW流水级相当于“无事可做”，可视为任务完成并准备好流动，故直接拉高ready_go。
+    \end{itemize}
+    \begin{lstlisting}[language=Verilog, caption={IW级ready_go信号}]
+        assign ready_go = !in_valid ||
+                           ex_flush || ertn_flush ||
+                           br_flush ||
+                          (~(|discard)) && (inst_valid_from_IF || data_ok || inst_valid);
+    \end{lstlisting}
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%outvalid
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \subsubsection{brtaken与brflush与brtakenout}
+% for Honglu Ji
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{类 SRAM-AXI 的转接桥设计}
+
+\subsubsection{顶层模块设计}
+
+由于CPU对外只有一个AXI接口，所以转接桥顶层模块要对取指和load/store访存进行仲裁。
+
+我们设立了独热码ar/aw_id，根据优先级表示当前应该与哪个阶段的请求握手(00为无请求，01为取指请求，10为load/store请求)，并用于控制状态机的行为。根据教材的提示，load访存请求的优先级大于取指请求，即两者同时存在时，优先与load握手：
+
+\begin{lstlisting}[language=Verilog, caption={CPU读内存请求独热码}]
+    assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
+    assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
+\end{lstlisting}
+对于读请求而言，利用ar_id可以选择读请求的size和addr来自IF还是MEM。
+
+特别地，写请求只有store访存会发出，所以aw_id只有00和10两种情况，虽然不用区分对哪一流水级进行握手，但是为了对状态机进行驱动(在00时保持空闲不动，10时才开始工作)，仍保留类似ar_id的形式。
+
+此外，为了处理“写后读”相关，引入writing信号，表明当前还有几个store写操作没有处理完：
+\begin{lstlisting}[language=Verilog, caption={writing计数器}]
+    always @(posedge clk) begin
+        if (!resetn) begin
+            writing <= 5'b0;
+        end
+        else if (sram_wr_2 && aw_addr_ok && sram_req_2 && b_data_ok) begin
+            writing <= writing;
+        end
+        else if (sram_wr_2 && aw_addr_ok && sram_req_2) begin
+            writing <= writing + 1;
+        end
+        else if (b_data_ok) begin
+            writing <= writing - 1;
+        end
+    end
+\end{lstlisting}
+
+结合以上两方面，就可以对取指和load/store访存的请求进行握手(addr_ok)：
+
+\begin{lstlisting}[language=Verilog, caption={顶层模块-CPU读写内存请求-addr_ok(1为取指，2为load/store)}]
+    assign sram_addr_ok_1 = ar_id[0] ? ar_addr_ok : 1'b0;
+    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : (writing != 0) ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
+\end{lstlisting}
+
+\begin{enumerate}
+    \item aw_addr_ok和aw_addr_ok由状态机发出，表示他们“能够”处理CPU发来的请求。
+    \item 但是否向CPU给出addr_ok，还要依赖于这时有无请求(ar_id或aw_id)，以及先处理哪一个请求(ar_id，取指或load)。
+    \item 此外，对于load/store访存请求，要在写请求全处理完后(writing为0)才能与读请求握手，防止写后读。
+\end{enumerate}
+
+与请求类似，对于读数据响应，要根据AXI接口返回的rid信号生成独热码r_id，选择向取指还是load访存进行响应(data_ok)，对于写数据响应则不存在选择：
+
+\begin{lstlisting}[language=Verilog, caption={顶层模块-CPU数据响应-data_ok(1为取指，2为load/store)}]
+    assign sram_data_ok_1 = r_id[0] && r_data_ok;
+    assign sram_data_ok_2 = r_id[1] && r_data_ok || b_data_ok;
+\end{lstlisting}
+
+\subsubsection{读请求通道AR}
+状态机的转移图如下：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{fig/AR状态图.png}
+    \caption{读请求通道状态机}
+\end{figure}
+
+读请求通道的任务是，响应CPU用类SRAM接口发来的读请求，并通过AXI接口发送给内存。
+
+\begin{enumerate}
+    \item 空闲状态IDLE——响应CPU发来的读请求：
+
+    在空闲时，拉高addr_ok，告知顶层模块可以处理读请求(进一步判定交给顶层，上文已经描述)：
+    \begin{lstlisting}[language=Verilog, caption={AR状态机-addr_ok}]
+        assign addr_ok = current_state == IDLE;
+    \end{lstlisting}
+
+    由状态图，在收到要马上处理的请求时，IDLE态变为BUSY态，开始处理读请求。
+
+    此外，由于后续通过AXI接口向内存发送读请求时，可能需要持续用到请求信息，但CPU相应流水级收到addr_ok后可能会处理其他指令，导致请求信息丢失，所以读请求通道要用寄存器保存它们：
+
+    \begin{lstlisting}[language=Verilog, caption={AR暂存请求信息}]
+        always @(posedge clk) begin
+        if (!resetn) begin
+            id_reg <= 2'b0;
+            addr_reg <= 32'b0;
+            size_reg <= 2'b0;
+        end
+        else if (current_state == IDLE) begin
+            id_reg <= id;
+            addr_reg <= addr;
+            size_reg <= size;
+        end
+    end
+    \end{lstlisting}
+
+    \item BUSY状态——通过AXI接口把收到的读请求发给内存：
+
+    这时只需拉高arvalid信号，并把保存下来的请求信息通过AXI接口发送：
+
+    \begin{lstlisting}[language=Verilog, caption={AXI接口读通道信号}]
+        assign arid = {3'b0, id_reg[1]};
+        assign araddr = addr_reg;
+        assign arsize = {1'b0, size_reg};
+        assign arvalid = current_state == BUSY;
+    \end{lstlisting}
+
+    由状态图，当用AXI接口发送的请求与内存握手成功后(arready \&\& arvalid)，本次任务完成，回到IDLE，等待CPU发来的下一个读请求。
+\end{enumerate}
+
+
+\subsubsection{读响应通道R}
+
+此通道的作用是接收内存通过AXI接口返回的读数据相关信号，然后通过类SRAM接口传递给CPU。
+
+由于类SRAM接口的读数据没有握手，直接返回数据和data_ok即可，所以面向AXI接口一侧的rready可以在解除复位后一直拉高：
+
+\begin{lstlisting}[language=Verilog, caption={rready信号}]
+    assign rready = resetn;
+\end{lstlisting}
+
+要做的工作十分简单，除了接受数据，再把rid转换成顶层模块使用的独热码(id)，并把握手成功的信号转化成data_ok即可：
+\begin{lstlisting}[language=Verilog, caption={读响应通道工作}]
+    always @(posedge clk) begin
+        if (!resetn) begin
+            id <= 2'b0;
+            data_ok <= 1'b0;
+            data <= 32'b0;
+        end
+        else begin
+            id <= {rid[0], ~rid[0]};
+            data_ok <= rvalid && rready;
+            data <= rdata;
+        end
+    end
+\end{lstlisting}
+
+
+\subsubsection{写请求AW与写数据W通道}
+
+写请求与写数据利用同一个状态机实现，状态转移图如下：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{fig/AW状态图.png}
+    \caption{写请求与写数据通道状态机}
+\end{figure}
+
+这一模块的任务是，响应CPU发的写请求和数据，并把它通过AXI接口发送给内存。
+
+\begin{enumerate}
+    \item 初始化后，处于IDLE。根据顶层模块发来的写请求独热码(id)，检测到写请求后便启动，转到BUSY态。
+    \item 在BUSY态，同时拉高awvalid和wvalid信号，通过AXI接口发送写请求和写数据。
+    \begin{enumerate}
+        \item 若二者同时握手成功，则本次任务完成，回到IDLE，等待下一个写请求和数据。
+        \item 若aw通道握手成功，则跳转到AW_FIRE态，不再拉高awvalid(防止重复发请求)，但保持wvalid拉高，继续等待w通道握手成功，成功后回到IDLE。
+        \item 类似地，若w通道握手成功，则跳转到W_FIRE态，不再拉高wvalid(防止重复发请求)，但保持awvalid拉高，继续等待aw通道握手成功，成功后回到IDLE。
+    \end{enumerate}
+\end{enumerate}
+结合上面的阐释，awvalid和wvalid信号定义如下：
+
+\begin{lstlisting}[language=Verilog, caption={awvalid和wvalid信号}]
+    assign awvalid = current_state == BUSY || current_state == W_FIRE;
+    assign wvalid = current_state == BUSY || current_state == AW_FIRE;
+\end{lstlisting}
+
+与读请求状态机类似，本状态机也要把发给AXI接口的请求信息保存于寄存器中。
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%addr_ok
+
+\subsubsection{写响应通道B}
+
+与读响应通道类似，在解除复位后拉高bready，一直能够接收内存从AXI接口发回的响应信号。data_ok的设置类似读响应通道，不再赘述。
+
+\section{Debug记录}
+
+\subsection{转接桥写请求与写数据状态机逻辑错误}
+
+按照教材要求，我们把写请求和写数据通道写在一个状态机中，想当然地认为写请求和写数据会同时得到ready信号，于是只设计了IDLE和BUSY态，在BUSY态完成握手后回到IDLE，但仿真时出现了下图错误：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/总线桥读请求与读数据通道状态机逻辑错误.png}
+    \caption{转接桥写请求与写数据状态机逻辑错误-导致请求重复发送-波形}
+\end{figure}
+在光标位置附近的几个周期内，状态机处于BUSY，持续拉高awvalid和wvalid信号，但awready在光标左侧位置就已经发来，wready在光标右侧位置才发来。在这一版设计中，由于没有完成两个通道的握手，所以状态机一直处于BUSY，一直在发请求。在光标右侧的那个周期依旧拉高的awvalid又被内存接收到一次，导致下一个周期又回来一次awready——于是，同一条指令的内存写请求做了两次握手，写数据做了一次握手，最终导致后面继续运行时出现卡死。
+
+所以我们后来增加了这一状态机的状态数，如果只完成了一个通道的握手，就转到W_FIRE或AW_FIRE，拉低已经握手成功的valid信号，保留没成功的那个通道的valid，等其握手成功后才能回到IDLE。
+
+\subsection{writing信号提前拉低导致写后读处理错误}
+
+最初我们在做设计时，只考虑了在收到store写请求后，拉高writing，写响应发回后，拉低writing的情况，然后在收到load读请求时如果writing为1就不与CPU握手。然而，仿真时遇到如下问题：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/writing.png}
+    \caption{writing信号提前拉低导致写后读处理错误-波形}
+\end{figure}
+
+如上图所示，图中有连续的三条访存指令——store-store-load，在反汇编文件中是下面这部分：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{fig/ssl.png}
+    \caption{store-store-load访存指令序列}
+\end{figure}
+
+在波形图的红框部分，两条store指令请求握手成功，在发第一条请求时writing被拉高，行为正确；黄框和白框部分分别收到两条指令的写响应。然而，第一次响应时writing就被拉低了，其无法正确反应当前还有一条握手成功写请求没有得到响应；进一步地，由于writing拉低，蓝框部分的load读请求向内存发了出去，导致写后读相关变成了先读后写，最终引发错误。
+
+修改方法上文已经提及，把writing由标志位改为计数器，每多一个store写请求就加1，收到响应就减1，减到0时才能允许load读请求发给内存。
+
+\subsection{this_flush信号设计错误}
+
+在上一个project中，由于访存没有延迟，所以出现异常的指令与前面流水级的指令之间不会有空泡，于是我们设计的this_flush信号如下(这一信号用于标记当前流水级的指令是否在接下来的某一刻被冲刷，阻止这些会被冲刷的指令改变体系状态)：
+
+\begin{lstlisting}[language=Verilog, caption={上一个Project的this_flush信号(以ID为例)}]
+    this_flush = in_valid && (has_exception || next_flush || SYSCALL || BRK || INE || INT || inst_ertn);
+\end{lstlisting}
+需要考虑当前级指令在流经前面流水级时有没有异常(has_exception)，当前流水级有没有异常(SYSCALL等信号)，以及下一流水级的指令有没有异常(next_flush)——由于没有空泡，这是合理的。
+
+
+然而，在本Project中，访存具有延迟，就可能出现两个有效流水级之间存在无效流水级(空泡)，无效流水级自然也不会有this_flush。这时只用next_flush就会出错，比如：MEM级存在异常指令，EX级是空泡，ID级的指令之后会被冲刷(this_flush应为1)，但MEM的this_flush无法通过next_flush链条经EX传到ID，导致ID的this_flush实际不为1，遂出错。
+
+修改后，我们把每一级this_flush逻辑中的next_flush改为了其后所有流水级的this_flush之“或”：
+
+\begin{lstlisting}[language=Verilog, caption={本Project修改后的this_flush信号(以ID为例)}]
+    assign this_flush = in_valid && (has_exception || EX_flush || MEM_flush || RDW_flush || WB_flush || SYSCALL || BRK || INE || INT || inst_ertn);
+\end{lstlisting}
+
+\subsection{冲刷时指令丢弃数目统计错误}
+
+我们在CPU设计时犯了一个与上面的writing信号类似的错误：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/指令丢弃数目错误.png}
+    \caption{指令丢弃数目错误-波形}
+\end{figure}
+
+如上图所示，红框部分出现ertn冲刷，IF和IW都判断出自身流水级内部还有冲刷前请求成功但没收到的指令(需要扔掉)，两个discard_from都拉高，即要丢掉两条指令，但(蓝框所示的)discard最初实现为标志位，导致第一个data_ok到来时(黄框所示)就被拉低。从而使得后面第二个(要扔掉的)data_ok到来时因discard为0而被误视为是当前IW阶段的PC对应的正确指令，从而出现指令和PC错位，最终引发错误。
+
+修改方法类似writing，改为计数器即可。
+
+\subsection{discard_from_IW信号逻辑不完备}
+
+在最初的设计中，discard_from_IW信号设计如下：
+
+\begin{lstlisting}[language=Verilog, caption={最初的discard_from_IW}]
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush) && in_valid && !(inst_valid_from_IF || data_ok || inst_valid);
+\end{lstlisting}
+
+然后出现了下图所示的错误波形：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{fig/discard_IW.png}
+    \caption{discard_from_IW信号逻辑不完备导致的错误-波形}
+\end{figure}
+
+在红框所示位置，报出跳转冲刷br_flush，由于IW当前PC还未收到data_ok，故拉高discard_from_IW，又由于discard_from_IF为0，故上升沿到来时discard计数器从0更新为1(如蓝框所示)。在上升沿到来后的这一周期，WB报出ertn冲刷，同时收到一个data_ok(白框所示)，这时我们的设计会误认为data_ok是当前IW的PC对应的指令(但由于discard为1，实则并不对应)，相当于判定为IW阶段没有没收到的data_ok，故黄框位置处discard_from_IW为0(应该为1)，导致少丢弃一条指令，出现后续指令与PC对应不上的错误。
+
+于是，我们把计数器discard纳入了discard_from_IW的逻辑以避免上述误判：
+
+\begin{lstlisting}[language=Verilog, caption={修改后的discard_from_IW}]
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+\end{lstlisting}
+
+
+\section{合作说明}
+
+本实验由本组成员共同合作完成，组内同学同等贡献。
+
+
+
+\end{document}
