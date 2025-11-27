@@ -78,15 +78,18 @@ module IW (
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(ex_flush || ertn_flush) begin
+        // else if(ex_flush || ertn_flush) begin
+        else if(ex_flush || ertn_flush || br_flush) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(data_ok && out_ready && (inst_valid_from_IF || inst_valid)) begin
+        // else if(data_ok && out_ready && (inst_valid_from_IF || inst_valid)) begin
+        else if(data_ok && out_ready && (inst_valid_from_IF || inst_valid) && (~(|discard))) begin
             inst_valid <= 1'b1;
             inst <= rdata;
         end
-        else if(data_ok && !out_ready && !(inst_valid_from_IF || inst_valid)) begin
+        // else if(data_ok && !out_ready && !(inst_valid_from_IF || inst_valid)) begin
+        else if(data_ok && !out_ready && !(inst_valid_from_IF || inst_valid) && (~(|discard))) begin
             inst_valid <= 1'b1;
             inst <= rdata;
         end

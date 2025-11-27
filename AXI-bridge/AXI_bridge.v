@@ -96,9 +96,9 @@ module AXI_bridge (
     // 注意此处顺序：data-req优先级大于inst-req
     assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
     assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
-    assign ar_size = ~sram_wr_2 && sram_req_2 ? sram_size_2 : sram_size_1;
+    assign ar_size = ar_id[1] ? sram_size_2 : sram_size_1;
     assign aw_size = sram_size_2;
-    assign ar_addr = ~sram_wr_2 && sram_req_2 ? sram_addr_2 : sram_addr_1;
+    assign ar_addr = ar_id[1] ? sram_addr_2 : sram_addr_1;
     assign aw_addr = sram_addr_2;
     assign strb = sram_wstrb_2;
     assign write_data = sram_wdata_2;

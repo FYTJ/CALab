@@ -150,7 +150,8 @@ module IF (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= !rst && ready_go && (!ex_flush && !ertn_flush || req && addr_ok);
+            // out_valid <= !rst && ready_go && (!ex_flush && !ertn_flush || req && addr_ok);
+            out_valid <= !rst && ready_go;
         end
     end
 

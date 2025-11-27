@@ -78,8 +78,11 @@ module RDW (
     assign ready_go = !in_valid ||
                       this_flush ||
                       //ex_flush || ertn_flush ||
-                      (!res_from_mem && !mem_we) ||
-                      data_valid_from_MEM || data_ok || data_valid;
+                    ////////////////////////////////////////////////////////////////////////
+                    //   (!res_from_mem && !mem_we) ||
+                    //   data_valid_from_MEM || data_ok || data_valid;
+                    ////////////////////////////////////////////////////////////////////////
+                      !((res_from_mem || mem_we) && !(data_valid_from_MEM || data_ok || data_valid));
     
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
 
