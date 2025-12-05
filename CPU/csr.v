@@ -1,4 +1,6 @@
-module csr(
+module csr #(
+    parameter TLBNUM = 16
+) (
     input  wire        clk,
     input  wire        csr_re,
     input  wire [13:0] csr_num,
@@ -6,6 +8,11 @@ module csr(
     input  wire        csr_we,
     input  wire [31:0] csr_wmask,
     input  wire [31:0] csr_wvalue,
+    input tlbsrch,
+    input tlbrd,
+    input tlbwr,
+    input tlbfill,
+    input invtlb,
 
     input  wire        rst,
     input  wire        wb_ex,
@@ -27,7 +34,9 @@ module csr(
 
     // CRMD
     `define CSR_CRMD      14'h0
-    `define CSR_CRMD_IE        2
+    `define CSR_CRMD_IE 2
+    `define CSR_CRMD_DA 3
+    `define CSR_CRMD_PG 4
     `define CSR_CRMD_PLV  1:0
 
     // PRMD
@@ -57,6 +66,31 @@ module csr(
     `define CSR_EENTRY      14'hC
     `define CSR_EENTRY_VA   31:6
 
+    // TLBIDX
+    `define CSR_TLBIDX 14'h10
+    `define CSR_TLBIDX_INDEX $clog2(TLBNUM)-1: 0
+    `define CSR_TLBIDX_PS 29: 24
+    `define CSR_TLBIDX_NE 31
+
+    // TLBEHI
+    `define CSR_TLBEHI 14'h11
+    `define CSR_TLBEHI_VPPN 31: 13
+
+    // TLBELO
+    `define CSR_TLBELO0 14'h12
+    `define CSR_TLBELO1 14'h13
+    `define CSR_TLBELO_V 0
+    `define CSR_TLBELO_D 1
+    `define CSR_TLBELO_PLV 3: 2
+    `define CSR_TLBELO_MAT 5: 4
+    `define CSR_TLBELO_G 6
+    `define CSR_TLBELO_PPN 27: 8
+
+    // ASID
+    `define CSR_ASID 14'h18
+    `define CSR_ASID_ASID 9: 0
+    `define CSR_ASID_ASIDBITS 23: 16
+
     // SAVE
     `define CSR_SAVE0      14'h30
     `define CSR_SAVE1      14'h31
@@ -77,11 +111,23 @@ module csr(
     // TVAL
     `define CSR_TVAL       14'h42
 
+    // TLBRENTRY
+    `define CSR_TLBRENTRY 14'h88
+
+    // DMW
+    `define CSR_DMW_PLV0 0
+    `define CSR_DMW_PLV1 1
+    `define CSR_DMW_PLV2 2
+    `define CSR_DMW_PLV3 3
+    `define CSR_DMW_MAT 5: 4
+    `define CSR_DMW_PSEG 27: 25
+    `define CSR_DMW_VSEG 31: 29
+
     // CRMD
     reg  [ 1: 0] csr_crmd_plv;
     reg          csr_crmd_ie;
-    wire         csr_crmd_da;
-    wire         csr_crmd_pg;
+    reg          csr_crmd_da;
+    reg          csr_crmd_pg;
     wire [ 1: 0] csr_crmd_datf;
     wire [ 1: 0] csr_crmd_datm;
 
@@ -108,8 +154,6 @@ module csr(
         end
     end
 
-    assign csr_crmd_da = 1'b1; 
-    assign csr_crmd_pg = 1'b0; 
     assign csr_crmd_datf = 2'b00; 
     assign csr_crmd_datm = 2'b00;
 
