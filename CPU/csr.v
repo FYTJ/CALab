@@ -161,9 +161,7 @@ module csr #(
 
     // TLBRENTRY
     `define CSR_TLBRENTRY 14'h88
-
-    // TLBRBADV
-    `define CSR_TLBRBADV 14'h89
+    `define CSR_TLBRENTRY_PPN 31: 12
 
     // DMW
     `define CSR_DMW_PLV0 0
@@ -491,6 +489,14 @@ module csr #(
 
     // ASID
     reg [9: 0] csr_asid_asid;
+
+    // TLBRENTRY
+    reg [19: 0] csr_tlbrentry_ppn;
+
+    always @(posedge clk) begin
+        if (csr_we && csr_num==`CSR_TLBRENTRY)
+            csr_tlbrentry_ppn <= csr_wmask[`CSR_TLBRENTRY_PPN] & csr_wvalue[`CSR_TLBRENTRY_PPN] | ~csr_wmask[`CSR_TLBRENTRY_PPN] & csr_tlbrentry_ppn;
+    end
 
     assign tlb_s_asid = tlbsrch ? csr_asid_asid : rj_value[9: 0];
     assign tlb_s_vppn = tlbsrch ? csr_tlbehi_vppn : rk_value[18: 0];
