@@ -8,11 +8,6 @@ module csr #(
     input  wire        csr_we,
     input  wire [31:0] csr_wmask,
     input  wire [31:0] csr_wvalue,
-    input tlbsrch,
-    input tlbrd,
-    input tlbwr,
-    input tlbfill,
-    input invtlb,
 
     input  wire        rst,
     input  wire        wb_ex,
@@ -26,7 +21,60 @@ module csr #(
     output wire [31:0] ertn_entry,
 
     output wire [31:0] tid,
-    output reg  [63:0] count
+    output reg  [63:0] count,
+
+    /* TLB */
+    input tlbsrch,
+    input tlbrd,
+    input tlbwr,
+    input tlbfill,
+    input invtlb,
+    input [4: 0] invtlb_op,
+    input [31: 0] rj_value,
+    input [31: 0] rk_value,
+
+    output [18: 0] tlb_s_vppn,
+    output [9: 0] tlb_s_asid,
+    input tlb_s_found,
+    input [$clog2(TLBNUM)-1:0] tlb_s_index,
+
+    output tlb_we,
+    output [$clog2(TLBNUM)-1:0] tlb_w_index,
+    output tlb_w_e,
+    output [18:0] tlb_w_vppn,
+    output [ 5:0] tlb_w_ps,
+    output [ 9:0] tlb_w_asid,
+    output tlb_w_g,
+    output [19:0] tlb_w_ppn0,
+    output [ 1:0] tlb_w_plv0,
+    output [ 1:0] tlb_w_mat0,
+    output tlb_w_d0,
+    output tlb_w_v0,
+    output [19:0] tlb_w_ppn1,
+    output [ 1:0] tlb_w_plv1,
+    output [ 1:0] tlb_w_mat1,
+    output tlb_w_d1,
+    output tlb_w_v1,
+
+    output [$clog2(TLBNUM)-1:0] tlb_r_index,
+    input tlb_r_e,
+    input [18:0] tlb_r_vppn,
+    input [ 5:0] tlb_r_ps,
+    input [ 9:0] tlb_r_asid,
+    input tlb_r_g,
+    input [19:0] tlb_r_ppn0,
+    input [ 1:0] tlb_r_plv0,
+    input [ 1:0] tlb_r_mat0,
+    input tlb_r_d0,
+    input tlb_r_v0,
+    input [19:0] tlb_r_ppn1,
+    input [ 1:0] tlb_r_plv1,
+    input [ 1:0] tlb_r_mat1,
+    input tlb_r_d1,
+    input tlb_r_v1,
+
+    output  tlb_invtlb_valid,
+    output  [4: 0] tlb_invtlb_op
 );
     //TICLR
     `define CSR_TICLR_CLR 0
@@ -113,6 +161,9 @@ module csr #(
 
     // TLBRENTRY
     `define CSR_TLBRENTRY 14'h88
+
+    // TLBRBADV
+    `define CSR_TLBRBADV 14'h89
 
     // DMW
     `define CSR_DMW_PLV0 0
@@ -415,6 +466,93 @@ module csr #(
                         (csr_num==`CSR_TCFG)   ? csr_tcfg_rvalue   :
                         (csr_num==`CSR_TVAL)   ? csr_tval_rvalue   :
                         (csr_num==`CSR_TICLR)  ? csr_ticlr_rvalue  : 32'b0;
+    
+    // TLBIDX
+    reg [$clog2(TLBNUM)-1: 0] csr_tlbidx_index;
+    reg [5: 0] csr_tlbidx_ps;
+    reg csr_tlbidx_ne;
+
+    // TLBEHI
+    reg [18: 0] csr_tlbehi_vppn;
+
+    // TLBELO
+    reg csr_tlbelo0_v;
+    reg csr_tlbelo0_d;
+    reg [1: 0] csr_tlbelo0_plv;
+    reg [1: 0] csr_tlbelo0_mat;
+    reg csr_tlbelo0_g;
+    reg [19: 0] csr_tlbelo0_ppn;
+    reg csr_tlbelo1_v;
+    reg csr_tlbelo1_d;
+    reg [1: 0] csr_tlbelo1_plv;
+    reg [1: 0] csr_tlbelo1_mat;
+    reg csr_tlbelo1_g;
+    reg [19: 0] csr_tlbelo1_ppn;
+
+    // ASID
+    reg [9: 0] csr_asid_asid;
+
+    assign tlb_s_asid = tlbsrch ? csr_asid_asid : rj_value[9: 0];
+    assign tlb_s_vppn = tlbsrch ? csr_tlbehi_vppn : rk_value[18: 0];
+
+    assign tlb_we = tlbwr || tlbfill;
+    assign tlb_w_index = csr_tlbidx_index;
+    assign tlb_w_e = !csr_tlbidx_ne;
+    assign tlb_w_vppn = csr_tlbehi_vppn;
+    assign tlb_w_ps = csr_tlbidx_ps;
+    assign tlb_w_asid = csr_asid_asid;
+    assign tlb_w_g = csr_tlbelo0_g && csr_tlbelo1_g;
+    assign tlb_w_ppn0 = csr_tlbelo0_ppn;
+    assign tlb_w_plv0 = csr_tlbelo0_plv;
+    assign tlb_w_mat0 = csr_tlbelo0_mat;
+    assign tlb_w_d0 = csr_tlbelo0_d;
+    assign tlb_w_v0 = csr_tlbelo0_v;
+    assign tlb_w_ppn1 = csr_tlbelo1_ppn;
+    assign tlb_w_plv1 = csr_tlbelo1_plv;
+    assign tlb_w_mat1 = csr_tlbelo1_mat;
+    assign tlb_w_d1 = csr_tlbelo1_d;
+    assign tlb_w_v1 = csr_tlbelo1_v;
+
+    assign tlb_r_index = csr_tlbidx_index;
+
+    assign tlb_invtlb_valid = invtlb;
+    assign tlb_invtlb_op = invtlb_op;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            csr_tlbidx_ne <= 1'b0;
+        end
+        else if (tlbsrch) begin
+            csr_tlbidx_ne <= !tlb_s_found;
+            if (tlb_s_found) begin
+                csr_tlbidx_index <= tlb_s_index;
+            end
+        end
+        else if (tlbrd) begin
+            if (tlb_r_e) begin
+                csr_tlbidx_ne <= 1'b0;
+                csr_tlbehi_vppn <= tlb_r_vppn;
+                csr_tlbidx_ps <= tlb_r_ps;
+                csr_asid_asid <= tlb_r_asid;
+                csr_tlbelo0_g <= tlb_r_g;
+                csr_tlbelo1_g <= tlb_r_g;
+                csr_tlbelo0_ppn <= tlb_r_ppn0;
+                csr_tlbelo0_plv <= tlb_r_plv0;
+                csr_tlbelo0_mat <= tlb_r_mat0;
+                csr_tlbelo0_d <= tlb_r_d0;
+                csr_tlbelo0_v <= tlb_r_v0;
+                csr_tlbelo1_ppn <= tlb_r_ppn1;
+                csr_tlbelo1_plv <= tlb_r_plv1;
+                csr_tlbelo1_mat <= tlb_r_mat1;
+                csr_tlbelo1_d <= tlb_r_d1;
+                csr_tlbelo1_v <= tlb_r_v1;
+            end
+            else begin
+                csr_tlbidx_ne <= 1'b1;
+            end
+        end
+    end
+
 
 // special:
     // to pre-IF
