@@ -94,6 +94,13 @@ module ID (
     output reg rdcntvl_w_out,
     output reg rdcntvh_w_out,
 
+    output reg tlbsrch_out,
+    output reg tlbrd_out,
+    output reg tlbwr_out,
+    output reg tlbfill_out,
+    output reg invtlb_out,
+    output reg [4:0] invtlb_op_out,
+
     output br_stall
 );
 
@@ -751,4 +758,23 @@ module ID (
 			rdcntvh_w_out <= inst_rdcntvh_w;
 		end
 	end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            tlbsrch_out   <= 1'b0;
+            tlbrd_out     <= 1'b0;
+            tlbwr_out     <= 1'b0;
+            tlbfill_out   <= 1'b0;
+            invtlb_out    <= 1'b0;
+            invtlb_op_out <= 5'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            tlbsrch_out   <= inst_tlbsrch;
+            tlbrd_out     <= inst_tlbrd;
+            tlbwr_out     <= inst_tlbwr;
+            tlbfill_out   <= inst_tlbfill;
+            invtlb_out    <= inst_invtlb;
+            invtlb_op_out <= 5'b0;
+        end
+    end
 endmodule

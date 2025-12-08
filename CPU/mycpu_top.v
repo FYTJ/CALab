@@ -9,7 +9,9 @@
 `include "../divider/Div.v"
 `include "../AXI-bridge/AXI_bridge.v"
 
-module mycpu_top(
+module mycpu_top #(
+    parameter TLBNUM = 16
+) (
     input  wire        aclk,
     input  wire        aresetn,
 
@@ -80,12 +82,355 @@ module mycpu_top(
         end
     end
 
+
+    wire [ 4:0] rf_raddr1;
+    wire [31:0] rf_rdata1;
+    wire [ 4:0] rf_raddr2;
+    wire [31:0] rf_rdata2;
+    wire        rf_we   ;
+    wire [ 4:0] rf_waddr;
+    wire [31:0] rf_wdata;
+
+    regfile u_regfile(
+        .clk    (clk      ),
+        .raddr1 (rf_raddr1),
+        .rdata1 (rf_rdata1),
+        .raddr2 (rf_raddr2),
+        .rdata2 (rf_rdata2),
+        .we     (rf_we    ),
+        .waddr  (rf_waddr ),
+        .wdata  (rf_wdata )
+    );
+
+    wire        csr_re;
+    wire [13:0] csr_num;
+    wire [31:0] csr_rvalue;
+    wire        csr_we;
+    wire [31:0] csr_wmask;
+    wire [31:0] csr_wvalue;
+
+    // interrupt
+    wire        has_interrupt;
+    wire [31:0] ex_entry;
+    wire [31:0] ertn_entry;
+    wire        exception_submit;
+    wire [ 5:0] ecode_submit;
+    wire [ 8:0] esubcode_submit;
+    wire [31:0] exception_pc_submit;
+    wire [31:0] exception_maddr_submit;
+    wire        ertn_submit;
+
+    wire [31:0] csr_tid;  // for rdcntid instruction
+    wire [63:0] count;
+
+    wire [9:0]  asid_asid_value;
+    wire [1: 0] crmd_plv_value;
+    wire        crmd_da_value;
+    wire        crmd_pg_value;
+    wire [18:0] tlbehi_vppn_value;
+    wire        dmw0_plv0_value;
+    wire        dmw0_plv1_value;
+    wire        dmw0_plv2_value;
+    wire        dmw0_plv3_value;
+    wire [1: 0] dmw0_mat_value;
+    wire [2: 0] dmw0_pseg_value;
+    wire [2: 0] dmw0_vseg_value;
+    wire        dmw1_plv0_value;
+    wire        dmw1_plv1_value;
+    wire        dmw1_plv2_value;
+    wire        dmw1_plv3_value;
+    wire [1: 0] dmw1_mat_value;
+    wire [2: 0] dmw1_pseg_value;
+    wire [2: 0] dmw1_vseg_value;
+
+    // TLB
+    wire tlbsrch;
+    wire tlbrd;
+    wire tlbwr;
+    wire tlbfill;
+    wire invtlb;
+    
+    wire [ 4: 0] invtlb_op;
+
+    wire [18:0] tlb_s0_vppn;
+    wire        tlb_s0_va_bit12;
+    wire [ 9:0] tlb_s0_asid;
+    wire        tlb_s0_found;
+    wire [$clog2(TLBNUM)-1:0] tlb_s0_index;
+    wire [19:0] tlb_s0_ppn;
+    wire [ 5:0] tlb_s0_ps;
+    wire [ 1:0] tlb_s0_plv;
+    wire [ 1:0] tlb_s0_mat;
+    wire        tlb_s0_d;
+    wire        tlb_s0_v;
+
+    wire [18:0] tlb_s1_vppn;
+    wire        tlb_s1_va_bit12;
+    wire [ 9:0] tlb_s1_asid;
+    wire        tlb_s1_found;
+    wire [$clog2(TLBNUM)-1:0] tlb_s1_index;
+    wire [19:0] tlb_s1_ppn;
+    wire [ 5:0] tlb_s1_ps;
+    wire [ 1:0] tlb_s1_plv;
+    wire [ 1:0] tlb_s1_mat;
+    wire        tlb_s1_d;
+    wire        tlb_s1_v;
+
+    wire tlb_we;
+    wire [$clog2(TLBNUM)-1:0] tlb_w_index;
+    wire tlb_w_e;
+    wire [18:0] tlb_w_vppn;
+    wire [ 5:0] tlb_w_ps;
+    wire [ 9:0] tlb_w_asid;
+    wire tlb_w_g;
+    wire [19:0] tlb_w_ppn0;
+    wire [ 1:0] tlb_w_plv0;
+    wire [ 1:0] tlb_w_mat0;
+    wire tlb_w_d0;
+    wire tlb_w_v0;
+    wire [19:0] tlb_w_ppn1;
+    wire [ 1:0] tlb_w_plv1;
+    wire [ 1:0] tlb_w_mat1;
+    wire tlb_w_d1;
+    wire tlb_w_v1;
+
+    wire [$clog2(TLBNUM)-1:0] tlb_r_index;
+    wire tlb_r_e;
+    wire [18:0] tlb_r_vppn;
+    wire [ 5:0] tlb_r_ps;
+    wire [ 9:0] tlb_r_asid;
+    wire tlb_r_g;
+    wire [19:0] tlb_r_ppn0;
+    wire [ 1:0] tlb_r_plv0;
+    wire [ 1:0] tlb_r_mat0;
+    wire tlb_r_d0;
+    wire tlb_r_v0;
+    wire [19:0] tlb_r_ppn1;
+    wire [ 1:0] tlb_r_plv1;
+    wire [ 1:0] tlb_r_mat1;
+    wire tlb_r_d1;
+    wire tlb_r_v1;
+
+    wire  tlb_invtlb_valid;
+    wire  [4: 0] tlb_invtlb_op;
+
+    // csr和mmu共用端口
+    assign tlb_s1_asid = tlbsrch ? asid_asid_value : invtlb ? rf_rdata1[9: 0] : asid_asid_value;
+    assign tlb_s1_vppn = tlbsrch ? tlbehi_vppn_value : invtlb ? rf_rdata2[18: 0] : data_sram_vaddr[31: 13];
+
+    csr u_csr(
+        .clk(clk),
+        .rst(reset),
+        .csr_re(csr_re),
+        .csr_num(csr_num),
+        .csr_rvalue(csr_rvalue),
+        .csr_we(csr_we),
+        .csr_wmask(csr_wmask),
+        .csr_wvalue(csr_wvalue),
+        .wb_ex(exception_submit),
+        .wb_ecode(ecode_submit),
+        .wb_esubcode(esubcode_submit),
+        .wb_pc(exception_pc_submit),
+        .wb_vaddr(exception_maddr_submit),
+        .ertn_flush(ertn_submit),
+        .ex_entry(ex_entry),
+        .ertn_entry(ertn_entry),
+        .has_int(has_interrupt),
+        .tid(csr_tid),
+        .count(count),
+        
+        .asid_asid_value(asid_asid_value),
+        .crmd_plv_value(crmd_plv_value),
+        .crmd_da_value(crmd_da_value),
+        .crmd_pg_value(crmd_pg_value),
+        .tlbehi_vppn_value(tlbehi_vppn_value),
+        .dmw0_plv0_value(dmw0_plv0_value),
+        .dmw0_plv1_value(dmw0_plv1_value),
+        .dmw0_plv2_value(dmw0_plv2_value),
+        .dmw0_plv3_value(dmw0_plv3_value),
+        .dmw0_mat_value(dmw0_mat_value),
+        .dmw0_pseg_value(dmw0_pseg_value),
+        .dmw0_vseg_value(dmw0_vseg_value),
+        .dmw1_plv0_value(dmw1_plv0_value),
+        .dmw1_plv1_value(dmw1_plv1_value),
+        .dmw1_plv2_value(dmw1_plv2_value),
+        .dmw1_plv3_value(dmw1_plv3_value),
+        .dmw1_mat_value(dmw1_mat_value),
+        .dmw1_pseg_value(dmw1_pseg_value),
+        .dmw1_vseg_value(dmw1_vseg_value),
+
+        .tlbsrch(tlbsrch),
+        .tlbrd(tlbrd),
+        .tlbwr(tlbwr),
+        .tlbfill(tlbfill),
+        .invtlb(invtlb),
+        .invtlb_op(invtlb_op),
+
+        .tlb_s1_found(tlb_s1_found),
+        .tlb_s1_index(tlb_s1_index),
+
+        .tlb_we(tlb_we),
+        .tlb_w_index(tlb_w_index),
+        .tlb_w_e(tlb_w_e),
+        .tlb_w_vppn(tlb_w_vppn),
+        .tlb_w_ps(tlb_w_ps),
+        .tlb_w_asid(tlb_w_asid),
+        .tlb_w_g(tlb_w_g),
+        .tlb_w_ppn0(tlb_w_ppn0),
+        .tlb_w_plv0(tlb_w_plv0),
+        .tlb_w_mat0(tlb_w_mat0),
+        .tlb_w_d0(tlb_w_d0),
+        .tlb_w_v0(tlb_w_v0),
+        .tlb_w_ppn1(tlb_w_ppn1),
+        .tlb_w_plv1(tlb_w_plv1),
+        .tlb_w_mat1(tlb_w_mat1),
+        .tlb_w_d1(tlb_w_d1),
+        .tlb_w_v1(tlb_w_v1),
+
+        .tlb_r_index(tlb_r_index),
+        .tlb_r_e(tlb_r_e),
+        .tlb_r_vppn(tlb_r_vppn),
+        .tlb_r_ps(tlb_r_ps),
+        .tlb_r_asid(tlb_r_asid),
+        .tlb_r_g(tlb_r_g),
+        .tlb_r_ppn0(tlb_r_ppn0),
+        .tlb_r_plv0(tlb_r_plv0),
+        .tlb_r_mat0(tlb_r_mat0),
+        .tlb_r_d0(tlb_r_d0),
+        .tlb_r_v0(tlb_r_v0),
+        .tlb_r_ppn1(tlb_r_ppn1),
+        .tlb_r_plv1(tlb_r_plv1),
+        .tlb_r_mat1(tlb_r_mat1),
+        .tlb_r_d1(tlb_r_d1),
+        .tlb_r_v1(tlb_r_v1),
+
+        .tlb_invtlb_valid(tlb_invtlb_valid),
+        .tlb_invtlb_op(tlb_invtlb_op)
+    );
+
+    tlb u_tlb(
+        .clk(clk),
+
+        .s0_vppn(tlb_s0_vppn),
+        .s0_va_bit12(tlb_s0_va_bit12),
+        .s0_asid(asid_asid_value),
+        .s0_found(tlb_s0_found),
+        .s0_index(tlb_s0_index),
+        .s0_ppn(tlb_s0_ppn),
+        .s0_ps(tlb_s0_ps),
+        .s0_plv(tlb_s0_plv),
+        .s0_mat(tlb_s0_mat),
+        .s0_d(tlb_s0_d),
+        .s0_v(tlb_s0_v),
+
+        .s1_vppn(tlb_s1_vppn),
+        .s1_va_bit12(tlb_s1_va_bit12),
+        .s1_asid(tlb_s1_asid),
+        .s1_found(tlb_s1_found),
+        .s1_index(tlb_s1_index),
+        .s1_ppn(tlb_s1_ppn),
+        .s1_ps(tlb_s1_ps),
+        .s1_plv(tlb_s1_plv),
+        .s1_mat(tlb_s1_mat),
+        .s1_d(tlb_s1_d),
+        .s1_v(tlb_s1_v),
+
+        .invtlb_valid(tlb_invtlb_valid),
+        .invtlb_op(tlb_invtlb_op),
+
+        .we(tlb_we),
+        .w_index(tlb_w_index),
+        .w_e(tlb_w_e),
+        .w_vppn(tlb_w_vppn),
+        .w_ps(tlb_w_ps),
+        .w_asid(tlb_w_asid),
+        .w_g(tlb_w_g),
+        .w_ppn0(tlb_w_ppn0),
+        .w_plv0(tlb_w_plv0),
+        .w_mat0(tlb_w_mat0),
+        .w_d0(tlb_w_d0),
+        .w_v0(tlb_w_v0),
+        .w_ppn1(tlb_w_ppn1),
+        .w_plv1(tlb_w_plv1),
+        .w_mat1(tlb_w_mat1),
+        .w_d1(tlb_w_d1),
+        .w_v1(tlb_w_v1),
+
+        .r_index(tlb_r_index),
+        .r_e(tlb_r_e),
+        .r_vppn(tlb_r_vppn),
+        .r_ps(tlb_r_ps),
+        .r_asid(tlb_r_asid),
+        .r_g(tlb_r_g),
+        .r_ppn0(tlb_r_ppn0),
+        .r_plv0(tlb_r_plv0),
+        .r_mat0(tlb_r_mat0),
+        .r_d0(tlb_r_d0),
+        .r_v0(tlb_r_v0),
+        .r_ppn1(tlb_r_ppn1),
+        .r_plv1(tlb_r_plv1),
+        .r_mat1(tlb_r_mat1),
+        .r_d1(tlb_r_d1),
+        .r_v1(tlb_r_v1)
+    );
+
+    // MMU
+    wire [31: 0] inst_sram_paddr;
+    wire [31: 0] data_sram_paddr;
+    wire [5: 0] mmu_ecode;
+    wire [8: 0] mmu_esubcode;
+
+    mmu u_mmu(
+        .inst_sram_vaddr(inst_sram_vaddr),
+        .inst_sram_wr(inst_sram_wr),
+        .data_sram_vaddr(data_sram_vaddr),
+        .data_sram_wr(data_sram_wr),
+        .crmd_plv_value(crmd_plv_value),
+        .crmd_da_value(crmd_da_value),
+        .crmd_pg_value(crmd_pg_value),
+        .dmw0_plv0_value(dmw0_plv0_value),
+        .dmw0_plv1_value(dmw0_plv1_value),
+        .dmw0_plv2_value(dmw0_plv2_value),
+        .dmw0_plv3_value(dmw0_plv3_value),
+        .dmw0_mat_value(dmw0_mat_value),
+        .dmw0_pseg_value(dmw0_pseg_value),
+        .dmw0_vseg_value(dmw0_vseg_value),
+        .dmw1_plv0_value(dmw1_plv0_value),
+        .dmw1_plv1_value(dmw1_plv1_value),
+        .dmw1_plv2_value(dmw1_plv2_value),
+        .dmw1_plv3_value(dmw1_plv3_value),
+        .dmw1_mat_value(dmw1_mat_value),
+        .dmw1_pseg_value(dmw1_pseg_value),
+        .dmw1_vseg_value(dmw1_vseg_value),
+
+        .tlb_s0_found(tlb_s0_found),
+        .tlb_s0_ppn(tlb_s0_ppn),
+        .tlb_s0_plv(tlb_s0_plv),
+        .tlb_s0_mat(tlb_s0_mat),
+        .tlb_s0_v(tlb_s0_v),
+        .tlb_s0_vppn(tlb_s0_vppn),
+        .tlb_s0_va_bit12(tlb_s0_va_bit12),
+        .tlb_s1_found(tlb_s1_found),
+        .tlb_s1_ppn(tlb_s1_ppn),
+        .tlb_s1_plv(tlb_s1_plv),
+        .tlb_s1_mat(tlb_s1_mat),
+        .tlb_s1_d(tlb_s1_d),
+        .tlb_s1_v(tlb_s1_v),
+        .tlb_s1_va_bit12(tlb_s1_va_bit12),
+
+        .inst_sram_paddr(inst_sram_paddr),
+        .data_sram_paddr(data_sram_paddr),
+
+        .ecode(mmu_ecode),
+        .esubcode(mmu_esubcode)
+    );
+
     // inst sram-like interface
     wire        inst_sram_req;
     wire        inst_sram_wr;
     wire [1 :0] inst_sram_size;
     wire [3 :0] inst_sram_wstrb;
-    wire [31:0] inst_sram_addr;
+    wire [31:0] inst_sram_vaddr;
     wire [31:0] inst_sram_wdata;
     wire        inst_sram_addr_ok;
     wire        inst_sram_data_ok;
@@ -95,7 +440,7 @@ module mycpu_top(
     wire        data_sram_wr;
     wire [1 :0] data_sram_size;
     wire [3 :0] data_sram_wstrb;
-    wire [31:0] data_sram_addr;
+    wire [31:0] data_sram_vaddr;
     wire [31:0] data_sram_wdata;
     wire        data_sram_addr_ok;
     wire        data_sram_data_ok;
@@ -108,7 +453,7 @@ module mycpu_top(
         .sram_req_1     (inst_sram_req),
         .sram_wr_1      (inst_sram_wr),
         .sram_size_1    (inst_sram_size),
-        .sram_addr_1    (inst_sram_addr),
+        .sram_addr_1    (inst_sram_paddr),
         .sram_wstrb_1   (inst_sram_wstrb),
         .sram_wdata_1   (inst_sram_wdata),
         .sram_addr_ok_1 (inst_sram_addr_ok),
@@ -118,7 +463,7 @@ module mycpu_top(
         .sram_req_2     (data_sram_req),
         .sram_wr_2      (data_sram_wr),
         .sram_size_2    (data_sram_size),
-        .sram_addr_2    (data_sram_addr),
+        .sram_addr_2    (data_sram_paddr),
         .sram_wstrb_2   (data_sram_wstrb),
         .sram_wdata_2   (data_sram_wdata),
         .sram_addr_ok_2 (data_sram_addr_ok),
@@ -165,69 +510,6 @@ module mycpu_top(
         .bresp          (bresp),
         .bvalid         (bvalid),
         .bready         (bready)
-    );
-
-
-    wire [ 4:0] rf_raddr1;
-    wire [31:0] rf_rdata1;
-    wire [ 4:0] rf_raddr2;
-    wire [31:0] rf_rdata2;
-    wire        rf_we   ;
-    wire [ 4:0] rf_waddr;
-    wire [31:0] rf_wdata;
-
-    regfile u_regfile(
-        .clk    (clk      ),
-        .raddr1 (rf_raddr1),
-        .rdata1 (rf_rdata1),
-        .raddr2 (rf_raddr2),
-        .rdata2 (rf_rdata2),
-        .we     (rf_we    ),
-        .waddr  (rf_waddr ),
-        .wdata  (rf_wdata )
-    );
-
-    wire        csr_re;
-    wire [13:0] csr_num;
-    wire [31:0] csr_rvalue;
-    wire        csr_we;
-    wire [31:0] csr_wmask;
-    wire [31:0] csr_wvalue;
-
-    // interrupt
-    wire        has_interrupt;
-    wire [31:0] ex_entry;
-    wire [31:0] ertn_entry;
-    wire        exception_submit;
-    wire [ 5:0] ecode_submit;
-    wire [ 8:0] esubcode_submit;
-    wire [31:0] exception_pc_submit;
-    wire [31:0] exception_maddr_submit;
-    wire        ertn_submit;
-
-    wire [31:0] csr_tid;  // for rdcntid instruction
-    wire [63:0] count;
-
-    csr u_csr(
-        .clk(clk),
-        .rst(reset),
-        .csr_re(csr_re),
-        .csr_num(csr_num),
-        .csr_rvalue(csr_rvalue),
-        .csr_we(csr_we),
-        .csr_wmask(csr_wmask),
-        .csr_wvalue(csr_wvalue),
-        .wb_ex(exception_submit),
-        .wb_ecode(ecode_submit),
-        .wb_esubcode(esubcode_submit),
-        .wb_pc(exception_pc_submit),
-        .wb_vaddr(exception_maddr_submit),
-        .ertn_flush(ertn_submit),
-        .ex_entry(ex_entry),
-        .ertn_entry(ertn_entry),
-        .has_int(has_interrupt),
-        .tid(csr_tid),
-        .count(count)
     );
 
     wire from_mul_req_ready;
@@ -446,7 +728,7 @@ module mycpu_top(
         .req(inst_sram_req),
         .wr(inst_sram_wr),
         .size(inst_sram_size),
-        .addr(inst_sram_addr),
+        .addr(inst_sram_vaddr),
         .wstrb(inst_sram_wstrb),
         .wdata(inst_sram_wdata),
         .addr_ok(inst_sram_addr_ok),
@@ -592,6 +874,13 @@ module mycpu_top(
         .rdcntvl_w_out(EX_rdcntvl_w),
         .rdcntvh_w_out(EX_rdcntvh_w),
 
+        .tlbsrch_out(tlbsrch),
+        .tlbrd_out(tlbrd),
+        .tlbwr_out(tlbwr),
+        .tlbfill_out(tlbfill),
+        .invtlb_out(invtlb),
+        .invtlb_op_out(invtlb_op),
+
         .br_stall(EX_br_stall)
     );
 
@@ -726,7 +1015,7 @@ module mycpu_top(
         .req(data_sram_req),
         .wr(data_sram_wr),
         .size(data_sram_size),
-        .addr(data_sram_addr),
+        .addr(data_sram_vaddr),
         .wstrb(data_sram_wstrb),
         .wdata(data_sram_wdata),
         .addr_ok(data_sram_addr_ok),
