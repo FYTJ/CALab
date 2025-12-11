@@ -44,6 +44,7 @@ module WB (
     output [8: 0] esubcode_submit,
     output [31: 0] exception_pc_submit,
     output [31: 0] exception_maddr_submit,
+    output ex_tlbr_submit,
     output ertn_submit,
 
     input [31:0] csr_tid,   // for rdcntid instruction
@@ -96,4 +97,5 @@ module WB (
     assign exception_pc_submit = PC;
     assign exception_maddr_submit = exception_maddr;
     assign ertn_submit = in_valid && ertn;
+    assign ex_tlbr_submit = in_valid && has_exception && (ecode == 6'h3F); // TLB Refill
 endmodule

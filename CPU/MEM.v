@@ -81,7 +81,24 @@ module MEM (
     output reg ertn_out,
 
     input rdcntid,
-    output reg rdcntid_out
+    output reg rdcntid_out,
+
+    input tlbsrch,
+    input tlbrd,
+    input tlbwr,
+    input tlbfill,
+    input invtlb,
+    input [4:0] invtlb_op,
+
+    output this_tlb_refetch,
+    input RDW_this_tlb_refetch,
+
+    output reg tlb_out,
+
+    input tlb_flush,
+
+    input [5:0] mmu_ecode_d,
+    input [8:0] mmu_esubcode_d
 );
 
     reg handshake_done;
@@ -111,13 +128,13 @@ module MEM (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush;
         end
     end
 
-    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we);
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_refetch;
     assign wr = (|wstrb);
-    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush}} & (
+    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_refetch}} & (
                         ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
                         ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
                         ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -151,7 +168,7 @@ module MEM (
             data_valid_out <= 1'b0;
 			data_out <= 32'd0;
 		end
-        else if (ex_flush || ertn_flush) begin
+        else if (ex_flush || ertn_flush || tlb_flush) begin
             data_valid_out <= 1'b0;
 			data_out <= 32'd0;
         end
@@ -165,6 +182,8 @@ module MEM (
     assign to_div_resp_ready = in_valid && res_from_div;
 
     assign this_flush = in_valid && (has_exception || RDW_flush || WB_flush || ertn);
+
+    assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || RDW_this_tlb_refetch);
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 
@@ -292,7 +311,7 @@ module MEM (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception;
+            has_exception_out <= has_exception || ((|mmu_ecode_d) & (res_from_mem || mem_we));
         end
     end
 
@@ -310,7 +329,12 @@ module MEM (
             ecode_out <= 6'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            ecode_out <= ecode;
+            if(!has_exception) begin
+                ecode_out <= mmu_ecode_d & {6{(res_from_mem || mem_we)}};
+            end
+            else begin
+                ecode_out <= ecode;
+            end
         end
     end
 
@@ -319,7 +343,12 @@ module MEM (
             esubcode_out <= 9'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            esubcode_out <= esubcode;
+            if(!has_exception) begin
+                esubcode_out <= mmu_esubcode_d & {9{(res_from_mem || mem_we)}};
+            end
+            else begin
+                esubcode_out <= esubcode;
+            end
         end
     end
 
@@ -340,4 +369,13 @@ module MEM (
 			rdcntid_out <= rdcntid;
 		end
 	end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            tlb_out <= 1'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            tlb_out <= tlbsrch || tlbrd || tlbwr || tlbfill || invtlb;
+        end
+    end
 endmodule

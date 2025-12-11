@@ -40,8 +40,10 @@ module mmu(
     output [31: 0] data_sram_paddr,
 
     // exceptions
-    output [5: 0] ecode,
-    output [8: 0] esubcode
+    output [5: 0] ecode_i,
+    output [8: 0] esubcode_i,
+    output [5: 0] ecode_d,
+    output [8: 0] esubcode_d
 );
     wire dmw0_plv_cond = (crmd_plv_value == 2'd3 && dmw0_plv3_value) || (crmd_plv_value == 2'd2 && dmw0_plv2_value) || (crmd_plv_value == 2'd1 && dmw0_plv1_value) || (crmd_plv_value == 2'd0 && dmw0_plv0_value);
     wire dmw1_plv_cond = (crmd_plv_value == 2'd3 && dmw1_plv3_value) || (crmd_plv_value == 2'd2 && dmw1_plv2_value) || (crmd_plv_value == 2'd1 && dmw1_plv1_value) || (crmd_plv_value == 2'd0 && dmw1_plv0_value);
@@ -67,19 +69,42 @@ module mmu(
         !(data_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) &&
         !(data_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond);
 
-    wire pil = use_tlb_d && tlb_s1_found && !tlb_s1_v && !data_sram_wr;
-    wire pis = use_tlb_d && tlb_s1_found && !tlb_s1_v && data_sram_wr;
-    wire pif = use_tlb_i && tlb_s0_found && !tlb_s0_v;
-    wire pmm = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value <= tlb_s1_plv) && data_sram_wr && !tlb_s1_d;
-    wire ppi = (use_tlb_i && tlb_s0_found && tlb_s0_v && (crmd_plv_value > tlb_s0_plv)) || 
-        (use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value > tlb_s1_plv));
+    wire tlbr_i = use_tlb_i && !tlb_s0_found;
+    wire tlbr_d = use_tlb_d && !tlb_s1_found;
+    wire pil_d = use_tlb_d && tlb_s1_found && !tlb_s1_v && !data_sram_wr;
+    wire pis_d = use_tlb_d && tlb_s1_found && !tlb_s1_v && data_sram_wr;
+    wire pif_i = use_tlb_i && tlb_s0_found && !tlb_s0_v;
+    wire pme_d = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value <= tlb_s1_plv) && data_sram_wr && !tlb_s1_d;
+    wire ppi_i = use_tlb_i && tlb_s0_found && tlb_s0_v && (crmd_plv_value > tlb_s0_plv);
+    wire ppi_d = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value > tlb_s1_plv);
 
-    assign ecode = pil ? 6'h1 :
-        pis ? 6'h2 :
-        pif ? 6'h3 :
-        pmm ? 6'h4 :
-        ppi ? 6'h5 :
-        6'h0;
+    // ////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////
+    // // 还有TLB重填（TLBR）例外没加上
+    // assign ecode = pil ? 6'h1 :
+    //     pis ? 6'h2 :
+    //     pif ? 6'h3 :
+    //     pme ? 6'h4 :
+    //     ppi ? 6'h7 :
+    //     6'h0;
+    // ////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////
 
-    assign esubcode = 9'h0;
+    // assign esubcode = 9'h0;
+
+    assign ecode_i = tlbr_i ? 6'h3F :
+                     pif_i ? 6'h3 :
+                     ppi_i ? 6'h7 :
+                     6'h0;
+
+    assign esubcode_i = 9'h0;
+
+    assign ecode_d = tlbr_d ? 6'h3F :
+                     pil_d ? 6'h1 :
+                     pis_d ? 6'h2 :
+                     pme_d ? 6'h4 :
+                     ppi_d ? 6'h7 :
+                     6'h0;
+
+    assign esubcode_d = 9'h0;
 endmodule

@@ -5,9 +5,11 @@ module IF (
     input out_ready,
     output reg out_valid,
     input ex_flush,
+    input ex_tlbr,
     input ertn_flush,
 
     input [31: 0] ex_entry,
+    input [31: 0] ex_tlbr_entry,
     input [31: 0] ertn_entry,
     input br_taken,
     input [31: 0] br_target,
@@ -35,7 +37,13 @@ module IF (
     output reg [5: 0] ecode_out,
     output reg [8: 0] esubcode_out,
 
-    output discard_out_wire
+    output discard_out_wire,
+
+    input tlb_flush,
+    input [31:0] tlb_flush_entry,
+
+    input [5:0] mmu_ecode_i,
+    input [8:0] mmu_esubcode_i
 );
     wire ready_go;
     wire in_valid;
@@ -69,7 +77,7 @@ module IF (
         else if(ready_go) begin
             handshake_done <= !out_ready;
         end
-        else if(ex_flush || ertn_flush || br_taken) begin
+        else if(ex_flush || ertn_flush || br_taken || tlb_flush) begin
             handshake_done <= 1'b0;
         end
     end
@@ -80,14 +88,27 @@ module IF (
     reg [31:0] ex_entry_reg;
     reg ertn_flush_reg;
     reg [31:0] ertn_entry_reg;
+
+    reg ex_tlbr_reg;
+    reg [31:0] ex_tlbr_entry_reg;
+
+    reg tlb_flush_reg;
+    reg [31:0] tlb_flush_entry_reg;
+
     wire br_taken_preserved = br_taken | br_taken_reg;
     wire [31:0] br_target_preserved = br_taken ? br_target : br_target_reg;
     wire ex_flush_preserved = ex_flush | ex_flush_reg;
     wire [31:0] ex_entry_preserved = ex_flush ? ex_entry : ex_entry_reg;
     wire ertn_flush_preserved = ertn_flush | ertn_flush_reg;
     wire [31:0] ertn_entry_preserved = ertn_flush ? ertn_entry : ertn_entry_reg;
+    
+    wire ex_tlbr_preserved = ex_tlbr | ex_tlbr_reg;
+    wire [31:0] ex_tlbr_entry_preserved = ex_tlbr ? ex_tlbr_entry : ex_tlbr_entry_reg;
 
-    wire handshake_done_effective = handshake_done && !ex_flush && !ertn_flush && !br_taken;
+    wire tlb_flush_preserved = tlb_flush | tlb_flush_reg;
+    wire [31:0] tlb_flush_entry_preserved = tlb_flush ? tlb_flush_entry : tlb_flush_entry_reg;
+
+    wire handshake_done_effective = handshake_done && !ex_flush && !ertn_flush && !br_taken && !tlb_flush;
 
     reg inst_valid;
     reg [31:0] inst;
@@ -95,15 +116,20 @@ module IF (
     assign req = !handshake_done_effective && !(br_stall && ID_in_valid);
     
     // discard the first instruction after exception flush
-    assign discard_out_wire = (ex_flush || ertn_flush || br_taken) && handshake_done && !inst_valid;
+    assign discard_out_wire = (ex_flush || ertn_flush || br_taken || tlb_flush) && handshake_done && !inst_valid;
 
     wire [31:0] seq_pc;
     wire [31:0] nextpc;
 
     assign seq_pc       = PC_out + 32'h4;
-    assign nextpc       = ex_flush_preserved ? ex_entry_preserved :
+    /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
+    assign nextpc       = ex_flush_preserved ? (ex_tlbr_preserved ? ex_tlbr_entry_preserved : ex_entry_preserved) :
                           ertn_flush_preserved ? ertn_entry_preserved :
+                          tlb_flush_preserved ? tlb_flush_entry_preserved :
                           br_taken_preserved ? br_target_preserved : seq_pc;
+    /////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
 
     assign addr  = nextpc & ~32'b11;
 
@@ -131,7 +157,7 @@ module IF (
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(ex_flush || ertn_flush || br_taken) begin
+        else if(ex_flush || ertn_flush || br_taken || tlb_flush) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
@@ -172,7 +198,7 @@ module IF (
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
 		end
-        else if (ex_flush || ertn_flush || br_taken) begin
+        else if (ex_flush || ertn_flush || br_taken || tlb_flush) begin
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
         end
@@ -254,13 +280,61 @@ module IF (
         end
     end
 
+    always @(posedge clk) begin
+        if(rst) begin
+            ex_tlbr_reg <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            ex_tlbr_reg <= 1'b0;
+        end
+        else if(ex_tlbr) begin
+            ex_tlbr_reg <= 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            ex_tlbr_entry_reg <= 32'd0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            ex_tlbr_entry_reg <= 32'd0;
+        end
+        else if(ex_tlbr) begin
+            ex_tlbr_entry_reg <= ex_tlbr_entry;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            tlb_flush_reg <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            tlb_flush_reg <= 1'b0;
+        end
+        else if(tlb_flush) begin
+            tlb_flush_reg <= 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            tlb_flush_entry_reg <= 32'd0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            tlb_flush_entry_reg <= 32'd0;
+        end
+        else if(tlb_flush) begin
+            tlb_flush_entry_reg <= tlb_flush_entry;
+        end
+    end
+
     // exception handle
     always @(posedge clk) begin
         if (rst) begin
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= ADEF;
+            has_exception_out <= ADEF || (|mmu_ecode_i);
         end
     end
 
@@ -269,7 +343,12 @@ module IF (
             ecode_out <= 6'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            ecode_out <= {6{ADEF}} & 6'h8;
+            if(ADEF) begin
+                ecode_out <= {6{ADEF}} & 6'h8;
+            end
+            else begin
+                ecode_out <= mmu_ecode_i;
+            end
         end
     end
 
@@ -278,7 +357,12 @@ module IF (
             esubcode_out <= 9'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            esubcode_out <= {9{ADEF}} & 9'h0;
+            if(ADEF) begin
+                esubcode_out <= {9{ADEF}} & 9'h0;
+            end
+            else begin
+                esubcode_out <= mmu_esubcode_i;
+            end
         end
     end
 endmodule

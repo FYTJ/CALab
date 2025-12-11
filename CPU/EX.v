@@ -50,6 +50,7 @@ module EX (
     output reg gr_we_out,
     output reg mem_we_out,
     output reg [4: 0] dest_out,
+	output reg [31: 0] rj_value_out,
     output reg [31: 0] rkd_value_out,
 
 	output this_flush,
@@ -71,24 +72,45 @@ module EX (
 	output reg rdcntid_out,
 	input rdcntvl_w,
 	input rdcntvh_w,
-	input [63:0] count
+	input [63:0] count,
+
+	input tlbsrch,
+	input tlbrd,
+	input tlbwr,
+	input tlbfill,
+	input invtlb,
+	input [4:0] invtlb_op,
+
+	output reg tlbsrch_out,
+	output reg tlbrd_out,
+	output reg tlbwr_out,
+	output reg tlbfill_out,
+	output reg invtlb_out,
+	output reg [4:0] invtlb_op_out,
+
+	output this_tlb_refetch,
+	input MEM_this_tlb_refetch,
+	input RDW_this_tlb_refetch,
+
+	input tlb_flush
 );
     wire ready_go;
     assign ready_go = !in_valid ||
 					  this_flush ||
+					  this_tlb_refetch ||
 					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) && !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush;
-	assign to_div_req_valid = in_valid && res_from_div && !this_flush;
+	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush && !this_tlb_refetch;
+	assign to_div_req_valid = in_valid && res_from_div && !this_flush && !this_tlb_refetch;
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush;
         end
     end
 
@@ -115,6 +137,8 @@ module EX (
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
 
 	assign this_flush = in_valid && (has_exception || MEM_flush || RDW_flush || WB_flush || ALE || ertn);
+
+	assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
     always @(posedge clk) begin
 		if (rst) begin
@@ -235,6 +259,15 @@ module EX (
 		end
 	end
 
+	always @(posedge clk) begin
+		if (rst) begin
+			rj_value_out <= 32'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			rj_value_out <= rj_value;
+		end
+	end
+
     always @(posedge clk) begin
 		if (rst) begin
 			rkd_value_out <= 32'b0;
@@ -305,6 +338,25 @@ module EX (
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			rdcntid_out <= rdcntid;
+		end
+	end
+
+	always @(posedge clk) begin
+		if (rst) begin
+			tlbsrch_out <= 1'b0;
+			tlbrd_out   <= 1'b0;
+			tlbwr_out   <= 1'b0;
+			tlbfill_out <= 1'b0;
+			invtlb_out  <= 1'b0;
+			invtlb_op_out <= 5'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			tlbsrch_out <= tlbsrch;
+			tlbrd_out   <= tlbrd;
+			tlbwr_out   <= tlbwr;
+			tlbfill_out <= tlbfill;
+			invtlb_out  <= invtlb;
+			invtlb_op_out <= invtlb_op;
 		end
 	end
 endmodule

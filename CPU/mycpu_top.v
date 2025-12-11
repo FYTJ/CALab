@@ -112,6 +112,7 @@ module mycpu_top #(
     // interrupt
     wire        has_interrupt;
     wire [31:0] ex_entry;
+    wire [31:0] ex_tlbr_entry;
     wire [31:0] ertn_entry;
     wire        exception_submit;
     wire [ 5:0] ecode_submit;
@@ -119,6 +120,7 @@ module mycpu_top #(
     wire [31:0] exception_pc_submit;
     wire [31:0] exception_maddr_submit;
     wire        ertn_submit;
+    wire        ex_tlbr_submit;
 
     wire [31:0] csr_tid;  // for rdcntid instruction
     wire [63:0] count;
@@ -144,13 +146,28 @@ module mycpu_top #(
     wire [2: 0] dmw1_vseg_value;
 
     // TLB
-    wire tlbsrch;
-    wire tlbrd;
-    wire tlbwr;
-    wire tlbfill;
-    wire invtlb;
+    wire EX_tlbsrch;
+    wire EX_tlbrd;
+    wire EX_tlbwr;
+    wire EX_tlbfill;
+    wire EX_invtlb;
+    wire [4:0] EX_invtlb_op;
+
+    wire MEM_tlbsrch;
+    wire MEM_tlbrd;
+    wire MEM_tlbwr;
+    wire MEM_tlbfill;
+    wire MEM_invtlb;
+    wire [ 4: 0] MEM_invtlb_op;
+
+    wire ID_this_tlb_refetch;
+    wire EX_this_tlb_refetch;
+    wire MEM_this_tlb_refetch;
+    wire RDW_this_tlb_refetch;
     
-    wire [ 4: 0] invtlb_op;
+    wire RDW_tlb;
+    wire tlb_submit;
+    wire [31:0] tlb_flush_entry;
 
     wire [18:0] tlb_s0_vppn;
     wire        tlb_s0_va_bit12;
@@ -215,8 +232,8 @@ module mycpu_top #(
     wire  [4: 0] tlb_invtlb_op;
 
     // csr和mmu共用端口
-    assign tlb_s1_asid = tlbsrch ? asid_asid_value : invtlb ? rf_rdata1[9: 0] : asid_asid_value;
-    assign tlb_s1_vppn = tlbsrch ? tlbehi_vppn_value : invtlb ? rf_rdata2[18: 0] : data_sram_vaddr[31: 13];
+    assign tlb_s1_asid = MEM_tlbsrch ? asid_asid_value : MEM_invtlb ? MEM_rj_value[9: 0] : asid_asid_value;
+    assign tlb_s1_vppn = MEM_tlbsrch ? tlbehi_vppn_value : MEM_invtlb ? MEM_rkd_value[18: 0] : data_sram_vaddr[31: 13];
 
     csr u_csr(
         .clk(clk),
@@ -234,6 +251,7 @@ module mycpu_top #(
         .wb_vaddr(exception_maddr_submit),
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
+        .ex_tlbr_entry(ex_tlbr_entry),
         .ertn_entry(ertn_entry),
         .has_int(has_interrupt),
         .tid(csr_tid),
@@ -259,12 +277,12 @@ module mycpu_top #(
         .dmw1_pseg_value(dmw1_pseg_value),
         .dmw1_vseg_value(dmw1_vseg_value),
 
-        .tlbsrch(tlbsrch),
-        .tlbrd(tlbrd),
-        .tlbwr(tlbwr),
-        .tlbfill(tlbfill),
-        .invtlb(invtlb),
-        .invtlb_op(invtlb_op),
+        .tlbsrch(MEM_tlbsrch),
+        .tlbrd(MEM_tlbrd),
+        .tlbwr(MEM_tlbwr),
+        .tlbfill(MEM_tlbfill),
+        .invtlb(MEM_invtlb),
+        .invtlb_op(MEM_invtlb_op),
 
         .tlb_s1_found(tlb_s1_found),
         .tlb_s1_index(tlb_s1_index),
@@ -377,8 +395,10 @@ module mycpu_top #(
     // MMU
     wire [31: 0] inst_sram_paddr;
     wire [31: 0] data_sram_paddr;
-    wire [5: 0] mmu_ecode;
-    wire [8: 0] mmu_esubcode;
+    wire [5: 0] mmu_ecode_i;
+    wire [8: 0] mmu_esubcode_i;
+    wire [5: 0] mmu_ecode_d;
+    wire [8: 0] mmu_esubcode_d;
 
     mmu u_mmu(
         .inst_sram_vaddr(inst_sram_vaddr),
@@ -421,8 +441,10 @@ module mycpu_top #(
         .inst_sram_paddr(inst_sram_paddr),
         .data_sram_paddr(data_sram_paddr),
 
-        .ecode(mmu_ecode),
-        .esubcode(mmu_esubcode)
+        .ecode_i(mmu_ecode_i),
+        .esubcode_i(mmu_esubcode_i),
+        .ecode_d(mmu_ecode_d),
+        .esubcode_d(mmu_esubcode_d)
     );
 
     // inst sram-like interface
@@ -631,6 +653,7 @@ module mycpu_top #(
     wire MEM_gr_we;
     wire MEM_mem_we;
     wire [4: 0] MEM_dest;
+    wire [31: 0] MEM_rj_value;
     wire [31: 0] MEM_rkd_value;
     wire [31: 0] MEM_result_bypass;
     wire MEM_this_flush;
@@ -640,6 +663,8 @@ module mycpu_top #(
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
     wire MEM_rdcntid;
+
+
 
     wire RDW_in_ready;
     wire RDW_out_valid;
@@ -715,8 +740,10 @@ module mycpu_top #(
         .out_valid(IF_out_valid),
         .out_ready(IW_in_ready),
         .ex_flush(exception_submit),
+        .ex_tlbr(ex_tlbr_submit),
         .ertn_flush(ertn_submit),
         .ex_entry(ex_entry),
+        .ex_tlbr_entry(ex_tlbr_entry),
         .ertn_entry(ertn_entry),
         .br_taken(EX_br_taken),
         .br_target(EX_br_target),
@@ -742,7 +769,13 @@ module mycpu_top #(
         .ecode_out(IW_ecode),
         .esubcode_out(IW_esubcode),
 
-        .discard_out_wire(IF_discard)
+        .discard_out_wire(IF_discard),
+
+        .tlb_flush(tlb_submit),
+        .tlb_flush_entry(tlb_flush_entry),
+
+        .mmu_ecode_i(mmu_ecode_i),
+        .mmu_esubcode_i(mmu_esubcode_i)
     );
 
     IW IW_unit(
@@ -782,7 +815,14 @@ module mycpu_top #(
         .esubcode(IW_esubcode),
         .has_exception_out(ID_has_exception),
         .ecode_out(ID_ecode),
-        .esubcode_out(ID_esubcode)
+        .esubcode_out(ID_esubcode),
+
+        .ID_this_tlb_refetch(ID_this_tlb_refetch),
+        .EX_this_tlb_refetch(EX_this_tlb_refetch),
+        .MEM_this_tlb_refetch(MEM_this_tlb_refetch),
+        .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
+
+        .tlb_flush(tlb_submit)
     );
 
     ID ID_unit(
@@ -874,12 +914,19 @@ module mycpu_top #(
         .rdcntvl_w_out(EX_rdcntvl_w),
         .rdcntvh_w_out(EX_rdcntvh_w),
 
-        .tlbsrch_out(tlbsrch),
-        .tlbrd_out(tlbrd),
-        .tlbwr_out(tlbwr),
-        .tlbfill_out(tlbfill),
-        .invtlb_out(invtlb),
-        .invtlb_op_out(invtlb_op),
+        .tlbsrch_out(EX_tlbsrch),
+        .tlbrd_out(EX_tlbrd),
+        .tlbwr_out(EX_tlbwr),
+        .tlbfill_out(EX_tlbfill),
+        .invtlb_out(EX_invtlb),
+        .invtlb_op_out(EX_invtlb_op),
+
+        .this_tlb_refetch(ID_this_tlb_refetch),
+        .EX_this_tlb_refetch(EX_this_tlb_refetch),
+        .MEM_this_tlb_refetch(MEM_this_tlb_refetch),
+        .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
+
+        .tlb_flush(tlb_submit),
 
         .br_stall(EX_br_stall)
     );
@@ -934,6 +981,7 @@ module mycpu_top #(
         .gr_we_out(MEM_gr_we),
         .mem_we_out(MEM_mem_we),
         .dest_out(MEM_dest),
+        .rj_value_out(MEM_rj_value),
         .rkd_value_out(MEM_rkd_value),
         .this_flush(EX_this_flush),
         .MEM_flush(MEM_this_flush),
@@ -952,7 +1000,27 @@ module mycpu_top #(
         .rdcntid_out(MEM_rdcntid),
         .rdcntvl_w(EX_rdcntvl_w),
         .rdcntvh_w(EX_rdcntvh_w),
-        .count(count)
+        .count(count),
+
+        .tlbsrch(EX_tlbsrch),
+        .tlbrd(EX_tlbrd),
+        .tlbwr(EX_tlbwr),
+        .tlbfill(EX_tlbfill),
+        .invtlb(EX_invtlb),
+        .invtlb_op(EX_invtlb_op),
+
+        .tlbsrch_out(MEM_tlbsrch),
+        .tlbrd_out(MEM_tlbrd),
+        .tlbwr_out(MEM_tlbwr),
+        .tlbfill_out(MEM_tlbfill),
+        .invtlb_out(MEM_invtlb),
+        .invtlb_op_out(MEM_invtlb_op),
+
+        .this_tlb_refetch(EX_this_tlb_refetch),
+        .MEM_this_tlb_refetch(MEM_this_tlb_refetch),
+        .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
+
+        .tlb_flush(tlb_submit)
     );
 
 
@@ -1009,6 +1077,7 @@ module mycpu_top #(
         .gr_we(MEM_gr_we),
         .mem_we(MEM_mem_we),
         .dest(MEM_dest),
+        // .rj_value(MEM_rj_value),
         .rkd_value(MEM_rkd_value),
         .RDW_data_valid(RDW_data_valid_out),
 
@@ -1052,9 +1121,23 @@ module mycpu_top #(
         .exception_maddr_out(RDW_exception_maddr),
         .ertn_out(RDW_ertn),
         .rdcntid(MEM_rdcntid),
-        .rdcntid_out(RDW_rdcntid)
+        .rdcntid_out(RDW_rdcntid),
 
-        //.discard(RDW_discard)
+        .tlbsrch(MEM_tlbsrch),
+        .tlbrd(MEM_tlbrd),
+        .tlbwr(MEM_tlbwr),
+        .tlbfill(MEM_tlbfill),
+        .invtlb(MEM_invtlb),
+        .invtlb_op(MEM_invtlb_op),
+
+        .this_tlb_refetch(MEM_this_tlb_refetch),
+        .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
+
+        .tlb_out(RDW_tlb),
+        .tlb_flush(tlb_submit),
+
+        .mmu_ecode_d(mmu_ecode_d),
+        .mmu_esubcode_d(mmu_esubcode_d)
     );
 
     RDW RDW_unit(
@@ -1126,7 +1209,13 @@ module mycpu_top #(
         .ertn_out(WB_ertn),
 
         .rdcntid(RDW_rdcntid),
-        .rdcntid_out(WB_rdcntid)
+        .rdcntid_out(WB_rdcntid),
+
+        .this_tlb_refetch(RDW_this_tlb_refetch),
+
+        .tlb(RDW_tlb),
+        .tlb_submit(tlb_submit),
+        .tlb_flush_entry(tlb_flush_entry)
     );
 
     WB WB_unit(
@@ -1168,6 +1257,7 @@ module mycpu_top #(
         .esubcode_submit(esubcode_submit),
         .exception_pc_submit(exception_pc_submit),
         .exception_maddr_submit(exception_maddr_submit),
+        .ex_tlbr_submit(ex_tlbr_submit),
         .ertn_submit(ertn_submit),
         .csr_tid(csr_tid),
         .rdcntid(WB_rdcntid)

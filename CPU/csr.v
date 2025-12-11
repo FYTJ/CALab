@@ -17,6 +17,7 @@ module csr #(
     input  wire [31:0] wb_vaddr,
     input  wire        ertn_flush,
     output wire [31:0] ex_entry,
+    output wire [31:0] ex_tlbr_entry,
     output wire        has_int,
     output wire [31:0] ertn_entry,
 
@@ -178,6 +179,12 @@ module csr #(
     // TLBRENTRY
     `define CSR_TLBRENTRY 14'h88
     `define CSR_TLBRENTRY_PPN 31: 12
+    `define ECODE_TLBR 6'h3F
+    `define ECODE_PIL 6'h1
+    `define ECODE_PIS 6'h2
+    `define ECODE_PIF 6'h3
+    `define ECODE_PME 6'h4
+    `define ECODE_PPI 6'h7
 
     // DMW
     `define CSR_DMW0 14'h180
@@ -206,7 +213,7 @@ module csr #(
         if (rst) begin
             csr_crmd_plv <= 2'b0;
             csr_crmd_ie  <= 1'b0;
-            csr_crmd_da  <= 1'b0;
+            csr_crmd_da  <= 1'b1;
             csr_crmd_pg  <= 1'b0;
         end
         else if (wb_ex) begin
@@ -348,7 +355,10 @@ module csr #(
     reg  [31: 0] csr_badv_vaddr;
 
     wire [31: 0] csr_badv_rvalue;
-    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE;
+    assign wb_ex_addr_err = wb_ecode==`ECODE_ADE || wb_ecode==`ECODE_ALE || 
+                            wb_ecode==`ECODE_TLBR || wb_ecode==`ECODE_PIL ||
+                            wb_ecode==`ECODE_PIS || wb_ecode==`ECODE_PIF ||
+                            wb_ecode==`ECODE_PME || wb_ecode==`ECODE_PPI;
     always @(posedge clk) begin
         if (wb_ex && wb_ex_addr_err)
             csr_badv_vaddr <= (wb_ecode==`ECODE_ADE && wb_esubcode==`ESUBCODE_ADEF) ? wb_pc : wb_vaddr;
@@ -515,12 +525,59 @@ module csr #(
     wire [31:0] csr_tlbrentry_rvalue = {csr_tlbrentry_ppn, 12'b0};
 
     always @(posedge clk) begin
-        if (csr_we) begin
+        if (tlbsrch) begin
+            csr_tlbidx_ne <= !tlb_s1_found;
+            if (tlb_s1_found) begin
+                csr_tlbidx_index <= tlb_s1_index;
+            end
+        end
+        else if (tlbrd) begin
+            if (tlb_r_e) begin
+                csr_tlbidx_ne <= 1'b0;
+                csr_tlbehi_vppn <= tlb_r_vppn;
+                csr_tlbidx_ps <= tlb_r_ps;
+                csr_asid_asid <= tlb_r_asid;
+                csr_tlbelo0_g <= tlb_r_g;
+                csr_tlbelo1_g <= tlb_r_g;
+                csr_tlbelo0_ppn <= tlb_r_ppn0;
+                csr_tlbelo0_plv <= tlb_r_plv0;
+                csr_tlbelo0_mat <= tlb_r_mat0;
+                csr_tlbelo0_d <= tlb_r_d0;
+                csr_tlbelo0_v <= tlb_r_v0;
+                csr_tlbelo1_ppn <= tlb_r_ppn1;
+                csr_tlbelo1_plv <= tlb_r_plv1;
+                csr_tlbelo1_mat <= tlb_r_mat1;
+                csr_tlbelo1_d <= tlb_r_d1;
+                csr_tlbelo1_v <= tlb_r_v1;
+            end
+            else begin
+                csr_tlbidx_ne <= 1'b1;
+                csr_tlbidx_ps <= 6'b0;
+                csr_asid_asid <= 10'b0;
+                csr_tlbehi_vppn <= 19'b0;
+                csr_tlbelo0_g <= 1'b0;
+                csr_tlbelo1_g <= 1'b0;
+                csr_tlbelo0_ppn <= 20'b0;
+                csr_tlbelo0_plv <= 2'b0;
+                csr_tlbelo0_mat <= 2'b0;
+                csr_tlbelo0_d <= 1'b0;
+                csr_tlbelo0_v <= 1'b0;
+                csr_tlbelo1_ppn <= 20'b0;
+                csr_tlbelo1_plv <= 2'b0;
+                csr_tlbelo1_mat <= 2'b0;
+                csr_tlbelo1_d <= 1'b0;
+                csr_tlbelo1_v <= 1'b0;
+            end
+        end
+
+        else if (csr_we) begin
             if (csr_num==`CSR_TLBRENTRY) begin
                 csr_tlbrentry_ppn <= csr_wmask[`CSR_TLBRENTRY_PPN] & csr_wvalue[`CSR_TLBRENTRY_PPN] 
                                  | ~csr_wmask[`CSR_TLBRENTRY_PPN] & csr_tlbrentry_ppn;
             end
             else if (csr_num==`CSR_TLBIDX) begin
+                csr_tlbidx_ne    <= csr_wmask[`CSR_TLBIDX_NE]    & csr_wvalue[`CSR_TLBIDX_NE]
+                                 | ~csr_wmask[`CSR_TLBIDX_NE]    & csr_tlbidx_ne;
                 csr_tlbidx_index <= csr_wmask[`CSR_TLBIDX_INDEX] & csr_wvalue[`CSR_TLBIDX_INDEX]
                                  | ~csr_wmask[`CSR_TLBIDX_INDEX] & csr_tlbidx_index;
                 csr_tlbidx_ps    <= csr_wmask[`CSR_TLBIDX_PS]    & csr_wvalue[`CSR_TLBIDX_PS]
@@ -567,7 +624,7 @@ module csr #(
 
     assign tlb_we = tlbwr || tlbfill;
     assign tlb_w_index = csr_tlbidx_index;
-    assign tlb_w_e = !csr_tlbidx_ne;
+    assign tlb_w_e = !csr_tlbidx_ne || (csr_estat_ecode == `ECODE_TLBR);
     assign tlb_w_vppn = csr_tlbehi_vppn;
     assign tlb_w_ps = csr_tlbidx_ps;
     assign tlb_w_asid = csr_asid_asid;
@@ -588,37 +645,59 @@ module csr #(
     assign tlb_invtlb_valid = invtlb;
     assign tlb_invtlb_op = invtlb_op;
 
-    always @(posedge clk) begin
-        if (tlbsrch) begin
-            csr_tlbidx_ne <= !tlb_s1_found;
-            if (tlb_s1_found) begin
-                csr_tlbidx_index <= tlb_s1_index;
-            end
-        end
-        else if (tlbrd) begin
-            if (tlb_r_e) begin
-                csr_tlbidx_ne <= 1'b0;
-                csr_tlbehi_vppn <= tlb_r_vppn;
-                csr_tlbidx_ps <= tlb_r_ps;
-                csr_asid_asid <= tlb_r_asid;
-                csr_tlbelo0_g <= tlb_r_g;
-                csr_tlbelo1_g <= tlb_r_g;
-                csr_tlbelo0_ppn <= tlb_r_ppn0;
-                csr_tlbelo0_plv <= tlb_r_plv0;
-                csr_tlbelo0_mat <= tlb_r_mat0;
-                csr_tlbelo0_d <= tlb_r_d0;
-                csr_tlbelo0_v <= tlb_r_v0;
-                csr_tlbelo1_ppn <= tlb_r_ppn1;
-                csr_tlbelo1_plv <= tlb_r_plv1;
-                csr_tlbelo1_mat <= tlb_r_mat1;
-                csr_tlbelo1_d <= tlb_r_d1;
-                csr_tlbelo1_v <= tlb_r_v1;
-            end
-            else begin
-                csr_tlbidx_ne <= 1'b1;
-            end
-        end
-    end
+    // always @(posedge clk) begin
+
+    //     // if(rst) begin
+
+    //     // end
+
+
+
+    //     if (tlbsrch) begin
+    //         csr_tlbidx_ne <= !tlb_s1_found;
+    //         if (tlb_s1_found) begin
+    //             csr_tlbidx_index <= tlb_s1_index;
+    //         end
+    //     end
+    //     else if (tlbrd) begin
+    //         if (tlb_r_e) begin
+    //             csr_tlbidx_ne <= 1'b0;
+    //             csr_tlbehi_vppn <= tlb_r_vppn;
+    //             csr_tlbidx_ps <= tlb_r_ps;
+    //             csr_asid_asid <= tlb_r_asid;
+    //             csr_tlbelo0_g <= tlb_r_g;
+    //             csr_tlbelo1_g <= tlb_r_g;
+    //             csr_tlbelo0_ppn <= tlb_r_ppn0;
+    //             csr_tlbelo0_plv <= tlb_r_plv0;
+    //             csr_tlbelo0_mat <= tlb_r_mat0;
+    //             csr_tlbelo0_d <= tlb_r_d0;
+    //             csr_tlbelo0_v <= tlb_r_v0;
+    //             csr_tlbelo1_ppn <= tlb_r_ppn1;
+    //             csr_tlbelo1_plv <= tlb_r_plv1;
+    //             csr_tlbelo1_mat <= tlb_r_mat1;
+    //             csr_tlbelo1_d <= tlb_r_d1;
+    //             csr_tlbelo1_v <= tlb_r_v1;
+    //         end
+    //         else begin
+    //             csr_tlbidx_ne <= 1'b1;
+    //             csr_tlbidx_ps <= 6'b0;
+    //             csr_asid_asid <= 10'b0;
+    //             csr_tlbehi_vppn <= 19'b0;
+    //             csr_tlbelo0_g <= 1'b0;
+    //             csr_tlbelo1_g <= 1'b0;
+    //             csr_tlbelo0_ppn <= 20'b0;
+    //             csr_tlbelo0_plv <= 2'b0;
+    //             csr_tlbelo0_mat <= 2'b0;
+    //             csr_tlbelo0_d <= 1'b0;
+    //             csr_tlbelo0_v <= 1'b0;
+    //             csr_tlbelo1_ppn <= 20'b0;
+    //             csr_tlbelo1_plv <= 2'b0;
+    //             csr_tlbelo1_mat <= 2'b0;
+    //             csr_tlbelo1_d <= 1'b0;
+    //             csr_tlbelo1_v <= 1'b0;
+    //         end
+    //     end
+    // end
 
     // DMW
     reg csr_dmw0_plv0;
@@ -723,6 +802,7 @@ module csr #(
 // special:
     // to pre-IF
     assign ex_entry   = csr_eentry_rvalue;
+    assign ex_tlbr_entry = csr_tlbrentry_rvalue;
     assign ertn_entry = csr_era_rvalue;
 
     // to ID

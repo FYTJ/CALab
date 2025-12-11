@@ -41,17 +41,25 @@ module IW (
     input [8: 0] esubcode,
     output reg has_exception_out,
     output reg [5: 0] ecode_out,
-    output reg [8: 0] esubcode_out
+    output reg [8: 0] esubcode_out,
+
+    input ID_this_tlb_refetch,
+    input EX_this_tlb_refetch,
+    input MEM_this_tlb_refetch,
+    input RDW_this_tlb_refetch,
+
+    input tlb_flush
 );
     wire this_flush = in_valid && (has_exception || ID_flush || EX_flush || MEM_flush || RDW_flush || WB_flush);
     wire ready_go;
     reg [31:0] inst;
     
-    wire br_flush = br_taken && !this_flush;
+    wire br_flush = br_taken && !this_flush && !this_tlb_refetch;
 
     assign ready_go = !in_valid ||
                       ex_flush || ertn_flush ||
                       br_flush ||
+                      tlb_flush ||
                       (~(|discard)) && (inst_valid_from_IF || data_ok || inst_valid);
 
     
@@ -62,14 +70,16 @@ module IW (
                                 data_ok ? rdata :
                                 32'd0;
 
-    wire discard_from_IW = (ex_flush || ertn_flush || br_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush || tlb_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+
+    wire this_tlb_refetch = in_valid && (ID_this_tlb_refetch || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush && !tlb_flush;
         end
     end
 
@@ -79,7 +89,7 @@ module IW (
             inst <= 32'd0;
         end
         // else if(ex_flush || ertn_flush) begin
-        else if(ex_flush || ertn_flush || br_flush) begin
+        else if(ex_flush || ertn_flush || br_flush || tlb_flush) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end

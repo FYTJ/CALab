@@ -67,7 +67,13 @@ module RDW (
     output reg ertn_out,
 
     input rdcntid,
-    output reg rdcntid_out
+    output reg rdcntid_out,
+
+    output this_tlb_refetch,
+
+    input tlb,
+    output tlb_submit,
+    output [31:0] tlb_flush_entry
 );
     assign this_flush = in_valid && (has_exception || WB_flush || ertn);
     wire ready_go;
@@ -92,6 +98,12 @@ module RDW (
                                 32'd0;
 
     // wire discard_from_RDW = (ex_flush || ertn_flush) && !(data_valid_from_MEM || data_ok || data_valid) && (res_from_mem || mem_we);
+
+    assign this_tlb_refetch = in_valid && tlb;
+
+    assign tlb_submit = in_valid && tlb;
+
+    assign tlb_flush_entry = PC + 4;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 

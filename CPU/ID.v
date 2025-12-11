@@ -101,6 +101,13 @@ module ID (
     output reg invtlb_out,
     output reg [4:0] invtlb_op_out,
 
+    output this_tlb_refetch,
+    input EX_this_tlb_refetch,
+    input MEM_this_tlb_refetch,
+    input RDW_this_tlb_refetch,
+
+    input tlb_flush,
+
     output br_stall
 );
 
@@ -110,6 +117,7 @@ module ID (
     wire rdcntid_stall;
     assign ready_go = !in_valid  ||
                       this_flush ||
+                      this_tlb_refetch ||
                       !load_use_stall && !mul_div_stall && !rdcntid_stall;
 
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
@@ -119,7 +127,7 @@ module ID (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush;
         end
     end
 
@@ -397,7 +405,7 @@ module ID (
     assign res_from_csr  = inst_csrrd | inst_csrwr | inst_csrxchg;
     assign dst_is_r1     = inst_bl;
 
-    assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu;
+    assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu & ~inst_tlbsrch & ~inst_tlbrd & ~inst_tlbwr & ~inst_tlbfill & ~inst_invtlb;
     assign mem_we        = inst_st_b | inst_st_h | inst_st_w;
     assign dest          = dst_is_r1 ? 5'd1 :
                            inst_rdcntid ? rj :
@@ -502,17 +510,19 @@ module ID (
     wire INT;
 
     assign this_flush = in_valid && (has_exception || EX_flush || MEM_flush || RDW_flush || WB_flush || SYSCALL || BRK || INE || INT || inst_ertn);
+    
+    assign this_tlb_refetch = in_valid && (inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush;
+    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush && !this_tlb_refetch;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;
-    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w);
+    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w || inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb);
     assign INT = has_interrupt;
 
     always @(posedge clk) begin
@@ -551,7 +561,7 @@ module ID (
 		end
 	end
 
-    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken & !this_flush;
+    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken & !this_flush & !this_tlb_refetch;
     assign br_target_out = {32{(~rst) & in_valid && ready_go && out_ready}} & br_target;
 
     always @(posedge clk) begin
@@ -774,7 +784,7 @@ module ID (
             tlbwr_out     <= inst_tlbwr;
             tlbfill_out   <= inst_tlbfill;
             invtlb_out    <= inst_invtlb;
-            invtlb_op_out <= 5'b0;
+            invtlb_op_out <= inst[ 4: 0];
         end
     end
 endmodule
