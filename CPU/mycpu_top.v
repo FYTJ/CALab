@@ -238,8 +238,11 @@ module mycpu_top #(
     wire  tlb_invtlb_valid;
     wire  [4: 0] tlb_invtlb_op;
 
-    wire csr_flush;
-    wire [31:0] csr_flush_target;
+    wire csr_flush_submit;
+    wire [31:0] csr_flush_target_submit;
+    wire EX_csr_flush;
+    wire ID_this_csr_flush;
+    wire EX_this_csr_flush;
 
     // csr和mmu共用端口
     assign tlb_s1_asid = MEM_tlbsrch_to_csr ? asid_asid_value : MEM_invtlb_to_csr ? MEM_rj_value[9: 0] : asid_asid_value;
@@ -647,6 +650,7 @@ module mycpu_top #(
     wire EX_rdcntvl_w;
     wire EX_rdcntvh_w;
     wire EX_br_stall;
+    wire EX_mem_inst;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -673,7 +677,7 @@ module mycpu_top #(
     wire [31: 0] MEM_exception_maddr;
     wire MEM_ertn;
     wire MEM_rdcntid;
-
+    wire MEM_mem_inst;
 
 
     wire RDW_in_ready;
@@ -787,8 +791,8 @@ module mycpu_top #(
         .mmu_ecode_i(mmu_ecode_i),
         .mmu_esubcode_i(mmu_esubcode_i),
 
-        .csr_flush(csr_flush),
-        .csr_flush_target(csr_flush_target)
+        .csr_flush(csr_flush_submit),
+        .csr_flush_target(csr_flush_target_submit)
     );
 
     IW IW_unit(
@@ -837,7 +841,9 @@ module mycpu_top #(
 
         .tlb_flush(tlb_submit),
 
-        .csr_flush(csr_flush)
+        .ID_this_csr_flush(ID_this_csr_flush),
+        .EX_this_csr_flush(EX_this_csr_flush),
+        .csr_flush(csr_flush_submit)
     );
 
     ID ID_unit(
@@ -943,10 +949,21 @@ module mycpu_top #(
 
         .tlb_flush(tlb_submit),
         
-        .csr_flush_out_wire(csr_flush),
-        .csr_flush_target_out_wire(csr_flush_target),
+        // .csr_flush_out_wire(csr_flush),
+        // .csr_flush_target_out_wire(csr_flush_target),
 
-        .br_stall(EX_br_stall)
+        .this_csr_flush(ID_this_csr_flush),
+        // .csr_flush_target(csr_flush_target),
+
+        .csr_flush_out(EX_csr_flush),
+
+        .EX_this_csr_flush(EX_this_csr_flush),
+        .csr_flush(csr_flush_submit),
+
+        .br_stall(EX_br_stall),
+
+        .EX_mem_inst(EX_mem_inst),
+        .MEM_mem_inst(MEM_mem_inst)
     );
 
     EX EX_unit(
@@ -1038,7 +1055,14 @@ module mycpu_top #(
         .MEM_this_tlb_refetch(MEM_this_tlb_refetch),
         .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
 
-        .tlb_flush(tlb_submit)
+        .csr_flush_input(EX_csr_flush),
+        .this_csr_flush(EX_this_csr_flush),
+        .csr_flush_submit(csr_flush_submit),
+        .csr_flush_target_submit(csr_flush_target_submit),
+
+        .tlb_flush(tlb_submit),
+
+        .mem_inst(EX_mem_inst)
     );
 
 
@@ -1162,7 +1186,9 @@ module mycpu_top #(
         .tlb_flush(tlb_submit),
 
         .mmu_ecode_d(mmu_ecode_d),
-        .mmu_esubcode_d(mmu_esubcode_d)
+        .mmu_esubcode_d(mmu_esubcode_d),
+
+        .mem_inst(MEM_mem_inst)
     );
 
     RDW RDW_unit(

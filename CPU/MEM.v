@@ -105,7 +105,9 @@ module MEM (
     input tlb_flush,
 
     input [5:0] mmu_ecode_d,
-    input [8:0] mmu_esubcode_d
+    input [8:0] mmu_esubcode_d,
+
+    output wire mem_inst
 );
 
     reg handshake_done;
@@ -129,6 +131,8 @@ module MEM (
                       !((res_from_mem || mem_we) && !(|mmu_ecode_d) && !(req && addr_ok || handshake_done));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
+
+    assign mem_inst = in_valid && (res_from_mem || mem_we);
 
     always @(posedge clk) begin
         if (rst) begin

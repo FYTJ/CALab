@@ -92,7 +92,14 @@ module EX (
 	input MEM_this_tlb_refetch,
 	input RDW_this_tlb_refetch,
 
-	input tlb_flush
+	input tlb_flush,
+
+	input csr_flush_input,
+    output this_csr_flush,
+    output csr_flush_submit,
+	output [31:0] csr_flush_target_submit,
+
+	output wire mem_inst
 );
     wire ready_go;
     assign ready_go = !in_valid ||
@@ -132,6 +139,8 @@ module EX (
 
 	assign result_bypass = res_from_csr ? (rdcntvl_w ? count[31:0] : rdcntvh_w ? count[63:32] : csr_result) : alu_result;
 
+	assign mem_inst = in_valid && (res_from_mem || mem_we);
+
 	wire ALE;
 	assign ALE = (mem_op[1] || mem_op[4] || mem_op[6]) && alu_result[0] != 1'b0 ||
 		     (mem_op[2] || mem_op[7]) && alu_result[1:0] != 2'b00;
@@ -139,6 +148,10 @@ module EX (
 	assign this_flush = in_valid && (has_exception || MEM_flush || RDW_flush || WB_flush || ALE || ertn);
 
 	assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
+
+	assign this_csr_flush = in_valid && csr_flush_input;
+	assign csr_flush_submit = in_valid && csr_flush_input;
+	assign csr_flush_target_submit = PC + 4;
 
     always @(posedge clk) begin
 		if (rst) begin
