@@ -48,7 +48,9 @@ module IW (
     input MEM_this_tlb_refetch,
     input RDW_this_tlb_refetch,
 
-    input tlb_flush
+    input tlb_flush,
+
+    input csr_flush
 );
     wire this_flush = in_valid && (has_exception || ID_flush || EX_flush || MEM_flush || RDW_flush || WB_flush);
     wire ready_go;
@@ -56,10 +58,13 @@ module IW (
     
     wire br_flush = br_taken && !this_flush && !this_tlb_refetch;
 
+    wire csr_flush_effective = csr_flush && !this_flush && !this_tlb_refetch;
+
     assign ready_go = !in_valid ||
                       ex_flush || ertn_flush ||
                       br_flush ||
                       tlb_flush ||
+                      csr_flush_effective ||
                       (~(|discard)) && (inst_valid_from_IF || data_ok || inst_valid);
 
     
@@ -70,7 +75,7 @@ module IW (
                                 data_ok ? rdata :
                                 32'd0;
 
-    wire discard_from_IW = (ex_flush || ertn_flush || br_flush || tlb_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush_effective) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
 
     wire this_tlb_refetch = in_valid && (ID_this_tlb_refetch || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
@@ -79,7 +84,7 @@ module IW (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush && !tlb_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush && !tlb_flush && !csr_flush_effective;
         end
     end
 
@@ -89,7 +94,7 @@ module IW (
             inst <= 32'd0;
         end
         // else if(ex_flush || ertn_flush) begin
-        else if(ex_flush || ertn_flush || br_flush || tlb_flush) begin
+        else if(ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush_effective) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end

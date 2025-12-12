@@ -90,6 +90,13 @@ module MEM (
     input invtlb,
     input [4:0] invtlb_op,
 
+    output wire tlbsrch_to_csr,
+    output wire tlbrd_to_csr,
+    output wire tlbwr_to_csr,
+    output wire tlbfill_to_csr,
+    output wire invtlb_to_csr,
+    output wire [4:0] invtlb_op_to_csr,
+
     output this_tlb_refetch,
     input RDW_this_tlb_refetch,
 
@@ -119,7 +126,7 @@ module MEM (
                       this_flush ||
                       !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid)) &&
-                      !((res_from_mem || mem_we) && !(req && addr_ok || handshake_done));
+                      !((res_from_mem || mem_we) && !(|mmu_ecode_d) && !(req && addr_ok || handshake_done));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
@@ -132,7 +139,7 @@ module MEM (
         end
     end
 
-    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_refetch;
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_refetch && !(|mmu_ecode_d);
     assign wr = (|wstrb);
     assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_refetch}} & (
                         ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
@@ -184,6 +191,13 @@ module MEM (
     assign this_flush = in_valid && (has_exception || RDW_flush || WB_flush || ertn);
 
     assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || RDW_this_tlb_refetch);
+
+    assign tlbsrch_to_csr = in_valid && tlbsrch;
+    assign tlbrd_to_csr   = in_valid && tlbrd;
+    assign tlbwr_to_csr   = in_valid && tlbwr;
+    assign tlbfill_to_csr = in_valid && tlbfill;
+    assign invtlb_to_csr  = in_valid && invtlb;
+    assign invtlb_op_to_csr = {5{in_valid}} & invtlb_op;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 

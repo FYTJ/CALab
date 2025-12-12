@@ -103,7 +103,7 @@ module RDW (
 
     assign tlb_submit = in_valid && tlb;
 
-    assign tlb_flush_entry = PC + 4;
+    assign tlb_flush_entry = PC + 32'h4;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 

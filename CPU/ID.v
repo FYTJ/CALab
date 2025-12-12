@@ -2,6 +2,12 @@
 `include "./utils/decoder_4_16.v"
 `include "./utils/decoder_5_32.v"
 `include "./utils/decoder_6_64.v"
+
+`define CSR_CRMD      14'h0
+`define CSR_ASID      14'h18
+`define CSR_DMW0      14'h180
+`define CSR_DMW1      14'h181
+
 module ID (
     input clk,
 	input rst,
@@ -108,6 +114,10 @@ module ID (
 
     input tlb_flush,
 
+    // output this_csr_refetch,
+    output csr_flush_out_wire,
+    output [31:0] csr_flush_target_out_wire,
+
     output br_stall
 );
 
@@ -137,6 +147,9 @@ module ID (
 
     wire        br_taken;
     wire [31:0] br_target;
+
+    wire csr_flush;
+    wire [31:0] csr_flush_target;
 
     wire [11:0] alu_op;
     wire [7: 0] mem_op;
@@ -513,6 +526,12 @@ module ID (
     
     assign this_tlb_refetch = in_valid && (inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
+    assign csr_flush = in_valid && (inst_csrwr || inst_csrxchg) && (inst[23: 10] == `CSR_CRMD || inst[23: 10] == `CSR_ASID || inst[23: 10] == `CSR_DMW0 || inst[23: 10] == `CSR_DMW1);
+    assign csr_flush_target = PC + 32'h4;
+
+    assign csr_flush_out_wire = (~rst) & in_valid && ready_go && out_ready & csr_flush & !this_flush & !this_tlb_refetch;
+    assign csr_flush_target_out_wire = {32{(~rst) & in_valid && ready_go && out_ready}} & csr_flush_target;
+
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
@@ -522,7 +541,8 @@ module ID (
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;
-    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w || inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb);
+    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w || inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb) || 
+                 (inst_invtlb && (inst[4] || inst[3] || (&inst[2:0])));
     assign INT = has_interrupt;
 
     always @(posedge clk) begin
