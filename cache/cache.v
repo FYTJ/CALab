@@ -1,6 +1,6 @@
 module cache (
     input clk,
-    input rst,
+    input resetn,
 
     // CPU - cache
     input valid,
@@ -29,6 +29,8 @@ module cache (
     output [127: 0] wr_data,
     input wr_rdy
 );
+    wire rst = !resetn;
+
     // FSM
     localparam M_IDLE = 5'b00001;
     localparam M_LOOKUP = 5'b00010;
@@ -96,6 +98,7 @@ module cache (
     
     D u_d0(
         .clk(clk),
+        .rst(rst),
         .addr(d0_addr),
         .rdata(d0_rdata),
         .we(d0_we),
@@ -104,6 +107,7 @@ module cache (
 
     D u_d1(
         .clk(clk),
+        .rst(rst),
         .addr(d1_addr),
         .rdata(d1_rdata),
         .we(d1_we),
@@ -118,10 +122,10 @@ module cache (
     wire [31: 0] data0_bank2_rdata;
     wire [31: 0] data0_bank3_rdata;
     wire [3: 0] data0_wbank_sel;
-    wire data0_bank0_we;
-    wire data0_bank1_we;
-    wire data0_bank2_we;
-    wire data0_bank3_we;
+    wire [3: 0] data0_bank0_we;
+    wire [3: 0] data0_bank1_we;
+    wire [3: 0] data0_bank2_we;
+    wire [3: 0] data0_bank3_we;
     wire [7: 0] data0_waddr;
     wire [31: 0] data0_wdata;
     wire data1_en = 1'b1;
@@ -131,10 +135,10 @@ module cache (
     wire [31: 0] data1_bank2_rdata;
     wire [31: 0] data1_bank3_rdata;
     wire [3: 0] data1_wbank_sel;
-    wire data1_bank0_we;
-    wire data1_bank1_we;
-    wire data1_bank2_we;
-    wire data1_bank3_we;
+    wire [3: 0] data1_bank0_we;
+    wire [3: 0] data1_bank1_we;
+    wire [3: 0] data1_bank2_we;
+    wire [3: 0] data1_bank3_we;
     wire [7: 0] data1_waddr;
     wire [31: 0] data1_wdata;
 
@@ -270,8 +274,8 @@ module cache (
         end
     end
 
-    assign data0_raddr = index;
-    assign data1_raddr = index;
+    assign data0_raddr = (m_current_state == M_IDLE) ? index : index_reg;
+    assign data1_raddr = (m_current_state == M_IDLE) ? index : index_reg;
 
     // M_LOOKUP
     wire hit_way_0 = tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0];
@@ -296,23 +300,23 @@ module cache (
         if (rst) begin
             wr_req_reg <= 1'b0;
         end
-        else if (rd_rdy) begin
+        else if ((m_current_state == M_MISS) && wr_rdy) begin
             wr_req_reg <= 1'b1;
         end
-        else if (wr_rdy) begin
+        else if ((m_current_state == M_REPLACE) && wr_rdy) begin
             wr_req_reg <= 1'b0;
         end
     end
 
-    assign tagv0_we = (replace_way == 1'b0) && ret_valid;
+    assign tagv0_we = (replace_way == 1'b0) && ret_last;
     assign tagv0_wdata = {tag_reg, 1'b1};
-    assign tagv1_we = (replace_way == 1'b1) && ret_valid;
+    assign tagv1_we = (replace_way == 1'b1) && ret_last;
     assign tagv1_wdata = {tag_reg, 1'b1};
 
-    assign d0_we = (replace_way == 1'b0) && ret_valid;
+    assign d0_we = (replace_way == 1'b0) && ret_last;
     assign d0_addr = index_reg;
     assign d0_wdata = op_reg;
-    assign d1_we = (replace_way == 1'b1) && ret_valid;
+    assign d1_we = (replace_way == 1'b1) && ret_last;
     assign d1_addr = index_reg;
     assign d1_wdata = op_reg;
 
@@ -320,7 +324,7 @@ module cache (
     assign rd_type = 3'b100;
     assign rd_addr = {tag_reg, index_reg, 4'b0};
 
-    assign wr_req = wr_req_reg && ((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata);
+    assign wr_req = wr_req_reg && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata));
     assign wr_type = 3'b100;
     assign wr_addr = (replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0};
     assign wr_wstrb = 4'b1111;
@@ -341,7 +345,7 @@ module cache (
     end
 
     wire [31: 0] refill_mask = {{8{wstrb_reg[3]}}, {8{wstrb_reg[2]}}, {8{wstrb_reg[1]}}, {8{wstrb_reg[0]}}};
-    wire [31: 0] refill_wdata = (ret_data & ~refill_mask) | wdata_reg & refill_mask;
+    wire [31: 0] refill_wdata = (ret_data & ~refill_mask) | (wdata_reg & refill_mask);
 
     // W_IDLE
     reg [19: 0] w_tag_reg;
@@ -349,7 +353,9 @@ module cache (
     reg [3: 0] w_offset_reg;
     reg w_way_reg;
     reg w_we_reg;
+    reg [3: 0] w_wstrb_reg;
     reg [31: 0] w_wdata_reg;
+    reg [31: 0] w_prev_data;  // 保存写之前data的值，用于hit_wdata
 
     always @(posedge clk) begin
         if (rst) begin
@@ -358,7 +364,9 @@ module cache (
             w_offset_reg <= 4'b0;
             w_way_reg <= 1'b0;
             w_we_reg <= 1'b0;
+            w_wstrb_reg <= 4'b0;
             w_wdata_reg <= 32'b0;
+            w_prev_data <= 32'b0;
         end
         else if ((m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1)) begin
             w_tag_reg <= tag_reg;
@@ -366,9 +374,15 @@ module cache (
             w_offset_reg <= offset_reg;
             w_way_reg <= hit_way_1;
             w_we_reg <= op_reg;
+            w_wstrb_reg <= wstrb_reg;
             w_wdata_reg <= wdata_reg;
+            w_prev_data <= hit_way_0 ? data0_rdata[offset_reg[3: 2] * 32 +: 32] : data1_rdata[offset_reg[3: 2] * 32 +: 32];
         end
     end
+
+    // W_WRITE
+    wire [31: 0] hit_mask = {{8{w_wstrb_reg[3]}}, {8{w_wstrb_reg[2]}}, {8{w_wstrb_reg[1]}}, {8{w_wstrb_reg[0]}}};
+    wire [31: 0] hit_wdata = (w_wdata_reg & hit_mask) | (w_prev_data & ~hit_mask);
 
     // share
     wire stall = 
@@ -376,28 +390,31 @@ module cache (
         (w_current_state == W_WRITE) && valid && (op == 1'b0) && (tag == w_tag_reg) && (index == w_index_reg) && (offset[3: 2] == w_offset_reg[3: 2]);
 
     assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
-    assign data_ok = ((m_current_state == M_LOOKUP) && hit) || ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) || ((m_current_state == M_REFILL) && ret_valid && (read_cnt == offset_reg[3: 2]));
+
+    assign data_ok = ((m_current_state == M_LOOKUP) && hit) ||
+        ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) ||
+        ((m_current_state == M_REFILL) && (op_reg == 1'b0) && ret_valid && (read_cnt == offset_reg[3: 2]));
 
     assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
     assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
 
     wire data0_we = ((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg);
     assign data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
-    assign data0_bank0_we = data0_we && (data0_wbank_sel == 4'h1);
-    assign data0_bank1_we = data0_we && (data0_wbank_sel == 4'h2);
-    assign data0_bank2_we = data0_we && (data0_wbank_sel == 4'h4);
-    assign data0_bank3_we = data0_we && (data0_wbank_sel == 4'h8);
+    assign data0_bank0_we = ((data0_wbank_sel == 4'h1) && data0_we) ? 4'b1111 : 4'b0;
+    assign data0_bank1_we = ((data0_wbank_sel == 4'h2) && data0_we) ? 4'b1111 : 4'b0;
+    assign data0_bank2_we = ((data0_wbank_sel == 4'h4) && data0_we) ? 4'b1111 : 4'b0;
+    assign data0_bank3_we = ((data0_wbank_sel == 4'h8) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_waddr = index_reg;
-    assign data0_wdata = (w_current_state == W_WRITE) ? w_wdata_reg : !op_reg ? ret_data : (ret_last == 1'b1) ? refill_wdata : ret_data;
+    assign data0_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
     wire data1_we = ((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg);
     assign data1_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
-    assign data1_bank0_we = data1_we && (data1_wbank_sel == 4'h1);
-    assign data1_bank1_we = data1_we && (data1_wbank_sel == 4'h2);
-    assign data1_bank2_we = data1_we && (data1_wbank_sel == 4'h4);
-    assign data1_bank3_we = data1_we && (data1_wbank_sel == 4'h8);
+    assign data1_bank0_we = ((data1_wbank_sel == 4'h1) && data1_we) ? 4'b1111 : 4'b0;
+    assign data1_bank1_we = ((data1_wbank_sel == 4'h2) && data1_we) ? 4'b1111 : 4'b0;
+    assign data1_bank2_we = ((data1_wbank_sel == 4'h4) && data1_we) ? 4'b1111 : 4'b0;
+    assign data1_bank3_we = ((data1_wbank_sel == 4'h8) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_waddr = index_reg;
-    assign data1_wdata = (w_current_state == W_WRITE) ? w_wdata_reg : !op_reg ? ret_data : (ret_last == 1'b1) ? refill_wdata : ret_data;
+    assign data1_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
     assign rdata = hit_way_0 ? data0_rdata[offset_reg[3: 2] * 32 +: 32] :
         hit_way_1 ? data1_rdata[offset_reg[3: 2] * 32 +: 32] :
