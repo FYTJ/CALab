@@ -196,12 +196,12 @@ module MEM (
 
     assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || RDW_this_tlb_refetch);
 
-    assign tlbsrch_to_csr = in_valid && tlbsrch;
-    assign tlbrd_to_csr   = in_valid && tlbrd;
-    assign tlbwr_to_csr   = in_valid && tlbwr;
-    assign tlbfill_to_csr = in_valid && tlbfill;
-    assign invtlb_to_csr  = in_valid && invtlb;
-    assign invtlb_op_to_csr = {5{in_valid}} & invtlb_op;
+    assign tlbsrch_to_csr = in_valid && tlbsrch && !this_flush && !RDW_this_tlb_refetch;
+    assign tlbrd_to_csr   = in_valid && tlbrd && !this_flush && !RDW_this_tlb_refetch;
+    assign tlbwr_to_csr   = in_valid && tlbwr && !this_flush && !RDW_this_tlb_refetch;
+    assign tlbfill_to_csr = in_valid && tlbfill && !this_flush && !RDW_this_tlb_refetch;
+    assign invtlb_to_csr  = in_valid && invtlb && !this_flush && !RDW_this_tlb_refetch;
+    assign invtlb_op_to_csr = {5{in_valid & !this_flush & !RDW_this_tlb_refetch}} & invtlb_op;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 
