@@ -46,7 +46,9 @@ module IF (
     input [8:0] mmu_esubcode_i,
 
     input csr_flush,
-    input [31:0] csr_flush_target
+    input [31:0] csr_flush_target,
+
+    output reg [31:0] exception_maddr_out
 );
     wire ready_go;
     wire in_valid;
@@ -396,6 +398,23 @@ module IF (
             end
             else begin
                 esubcode_out <= mmu_esubcode_i;
+            end
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            exception_maddr_out <= 32'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            if(ADEF) begin
+                exception_maddr_out <= nextpc;
+            end
+            else if(|mmu_ecode_i) begin
+                exception_maddr_out <= addr;
+            end
+            else begin
+                exception_maddr_out <= 32'b0;
             end
         end
     end

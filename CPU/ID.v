@@ -126,7 +126,10 @@ module ID (
     output br_stall,
 
     input EX_mem_inst,
-    input MEM_mem_inst
+    input MEM_mem_inst,
+
+    input [31:0] exception_maddr,
+    output reg [31:0] exception_maddr_out
 );
 
     wire ready_go;
@@ -828,6 +831,15 @@ module ID (
         end
         else if (in_valid && ready_go && out_ready) begin
             csr_flush_out <= csr_affect_mem;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            exception_maddr_out <= 32'd0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            exception_maddr_out <= exception_maddr;
         end
     end
 endmodule

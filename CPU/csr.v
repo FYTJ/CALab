@@ -539,12 +539,12 @@ module csr #(
     wire [31:0] csr_tlbrentry_rvalue = {csr_tlbrentry_ppn, 12'b0};
 
     always @(posedge clk) begin
-        if(wb_ex && (wb_ecode==`ECODE_TLBR || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_PPI)) begin
+        if(wb_ex && (wb_ecode==`ECODE_TLBR || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS || wb_ecode==`ECODE_PIF || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_PPI)) begin
             csr_tlbehi_vppn <= wb_vaddr[31:13];
         end
-        else if(wb_ex && (wb_ecode==`ECODE_PIF)) begin
-            csr_tlbehi_vppn <= wb_pc[31:13];
-        end
+        // else if(wb_ex && (wb_ecode==`ECODE_PIF)) begin
+        //     csr_tlbehi_vppn <= wb_pc[31:13];
+        // end
         else if (tlbsrch) begin
             csr_tlbidx_ne <= !tlb_s1_found;
             if (tlb_s1_found) begin

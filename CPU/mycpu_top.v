@@ -607,6 +607,7 @@ module mycpu_top #(
     wire [5: 0] IW_ecode;
     wire [8: 0] IW_esubcode;
     wire IW_inst_valid_out;
+    wire [31:0] IW_exception_maddr;
     
 
     wire ID_in_ready;
@@ -617,6 +618,7 @@ module mycpu_top #(
     wire ID_has_exception;
     wire [5: 0] ID_ecode;
     wire [8: 0] ID_esubcode;
+    wire [31:0] ID_exception_maddr;
 
     wire EX_in_ready;
     wire EX_out_valid;
@@ -651,6 +653,7 @@ module mycpu_top #(
     wire EX_rdcntvh_w;
     wire EX_br_stall;
     wire EX_mem_inst;
+    wire [31:0] EX_exception_maddr;
 
     wire MEM_in_ready;
     wire MEM_out_valid;
@@ -792,7 +795,9 @@ module mycpu_top #(
         .mmu_esubcode_i(mmu_esubcode_i),
 
         .csr_flush(csr_flush_submit),
-        .csr_flush_target(csr_flush_target_submit)
+        .csr_flush_target(csr_flush_target_submit),
+
+        .exception_maddr_out(IW_exception_maddr)
     );
 
     IW IW_unit(
@@ -843,7 +848,10 @@ module mycpu_top #(
 
         .ID_this_csr_flush(ID_this_csr_flush),
         .EX_this_csr_flush(EX_this_csr_flush),
-        .csr_flush(csr_flush_submit)
+        .csr_flush(csr_flush_submit),
+
+        .exception_maddr(IW_exception_maddr),
+        .exception_maddr_out(ID_exception_maddr)
     );
 
     ID ID_unit(
@@ -963,7 +971,10 @@ module mycpu_top #(
         .br_stall(EX_br_stall),
 
         .EX_mem_inst(EX_mem_inst),
-        .MEM_mem_inst(MEM_mem_inst)
+        .MEM_mem_inst(MEM_mem_inst),
+
+        .exception_maddr(ID_exception_maddr),
+        .exception_maddr_out(EX_exception_maddr)
     );
 
     EX EX_unit(
@@ -1025,6 +1036,7 @@ module mycpu_top #(
         .has_exception(EX_has_exception),
         .ecode(EX_ecode),
         .esubcode(EX_esubcode),
+        .exception_maddr(EX_exception_maddr),
         .ertn(EX_ertn),
         .has_exception_out(MEM_has_exception),
         .ecode_out(MEM_ecode),

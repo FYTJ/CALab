@@ -52,7 +52,10 @@ module IW (
 
     input ID_this_csr_flush,
     input EX_this_csr_flush,
-    input csr_flush
+    input csr_flush,
+
+    input [31:0] exception_maddr,
+    output reg [31:0] exception_maddr_out
 );
     wire this_flush = in_valid && (has_exception || ID_flush || EX_flush || MEM_flush || RDW_flush || WB_flush);
     wire ready_go;
@@ -198,6 +201,15 @@ module IW (
         end
         else if (in_valid && ready_go && out_ready) begin
             esubcode_out <= esubcode;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            exception_maddr_out <= 32'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            exception_maddr_out <= exception_maddr;
         end
     end
 endmodule

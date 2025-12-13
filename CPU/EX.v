@@ -61,6 +61,7 @@ module EX (
 	input has_exception,
 	input [5: 0] ecode,
     input [8: 0] esubcode,
+	input [31:0] exception_maddr,
 	input ertn,
     output reg has_exception_out,
 	output reg [5: 0] ecode_out,
@@ -332,7 +333,12 @@ module EX (
             exception_maddr_out <= 32'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            exception_maddr_out <= alu_result;
+			if(exception_maddr != 32'b0) begin
+				exception_maddr_out <= exception_maddr;
+			end
+			else begin
+            	exception_maddr_out <= alu_result;
+			end
         end
     end
 
