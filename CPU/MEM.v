@@ -110,6 +110,8 @@ module MEM (
     output wire mem_inst
 );
 
+    wire this_tlb_flush;
+
     reg handshake_done;
 
     always @(posedge clk) begin
@@ -143,9 +145,9 @@ module MEM (
         end
     end
 
-    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_refetch && !(|mmu_ecode_d);
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_flush && !(|mmu_ecode_d);
     assign wr = (|wstrb);
-    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_refetch}} & (
+    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_flush}} & (
                         ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
                         ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
                         ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -196,12 +198,14 @@ module MEM (
 
     assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || RDW_this_tlb_refetch);
 
-    assign tlbsrch_to_csr = in_valid && tlbsrch && !this_flush && !RDW_this_tlb_refetch;
-    assign tlbrd_to_csr   = in_valid && tlbrd && !this_flush && !RDW_this_tlb_refetch;
-    assign tlbwr_to_csr   = in_valid && tlbwr && !this_flush && !RDW_this_tlb_refetch;
-    assign tlbfill_to_csr = in_valid && tlbfill && !this_flush && !RDW_this_tlb_refetch;
-    assign invtlb_to_csr  = in_valid && invtlb && !this_flush && !RDW_this_tlb_refetch;
-    assign invtlb_op_to_csr = {5{in_valid & !this_flush & !RDW_this_tlb_refetch}} & invtlb_op;
+    assign this_tlb_flush = in_valid && RDW_this_tlb_refetch;
+
+    assign tlbsrch_to_csr = in_valid && tlbsrch && !this_flush && !this_tlb_flush;
+    assign tlbrd_to_csr   = in_valid && tlbrd && !this_flush && !this_tlb_flush;
+    assign tlbwr_to_csr   = in_valid && tlbwr && !this_flush && !this_tlb_flush;
+    assign tlbfill_to_csr = in_valid && tlbfill && !this_flush && !this_tlb_flush;
+    assign invtlb_to_csr  = in_valid && invtlb && !this_flush && !this_tlb_flush;
+    assign invtlb_op_to_csr = {5{in_valid & !this_flush & !this_tlb_flush}} & invtlb_op;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 

@@ -96,7 +96,7 @@ module EX (
 	input tlb_flush,
 
 	input csr_flush_input,
-    output this_csr_flush,
+    output this_csr_refetch,
     output csr_flush_submit,
 	output [31:0] csr_flush_target_submit,
 
@@ -150,7 +150,7 @@ module EX (
 
 	assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
-	assign this_csr_flush = in_valid && csr_flush_input;
+	assign this_csr_refetch = in_valid && csr_flush_input;
 	assign csr_flush_submit = in_valid && csr_flush_input;
 	assign csr_flush_target_submit = PC + 4;
 

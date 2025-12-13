@@ -114,13 +114,13 @@ module ID (
 
     input tlb_flush,
 
-    // output this_csr_refetch,
-    output this_csr_flush,
+    output this_csr_refetch,
+    // output this_csr_flush,
     //output [31:0] csr_flush_target,
 
     output reg csr_flush_out,
 
-    input EX_this_csr_flush,
+    input EX_this_csr_refetch,
     input csr_flush,
 
     output br_stall,
@@ -131,6 +131,8 @@ module ID (
     input [31:0] exception_maddr,
     output reg [31:0] exception_maddr_out
 );
+
+    wire this_csr_flush;
 
     wire ready_go;
     wire mul_div_stall;
@@ -543,7 +545,9 @@ module ID (
     
     assign this_tlb_refetch = in_valid && (inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
-    assign this_csr_flush = in_valid && EX_this_csr_flush;
+    assign this_csr_refetch = in_valid && (csr_affect_mem || EX_this_csr_refetch);
+
+    assign this_csr_flush = in_valid && EX_this_csr_refetch;
     //assign csr_flush_target = PC + 32'h4;
 
     // assign csr_flush_out_wire = (~rst) & in_valid && ready_go && out_ready & csr_flush & !this_flush & !this_tlb_refetch;

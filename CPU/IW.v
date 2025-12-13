@@ -50,8 +50,8 @@ module IW (
 
     input tlb_flush,
 
-    input ID_this_csr_flush,
-    input EX_this_csr_flush,
+    input ID_this_csr_refetch,
+    input EX_this_csr_refetch,
     input csr_flush,
 
     input [31:0] exception_maddr,
@@ -61,9 +61,9 @@ module IW (
     wire ready_go;
     reg [31:0] inst;
 
-    wire this_csr_flush = in_valid && (ID_this_csr_flush || EX_this_csr_flush);
+    wire this_csr_refetch = in_valid && (ID_this_csr_refetch || EX_this_csr_refetch);
     
-    wire br_flush = br_taken && !this_flush && !this_tlb_refetch && !this_csr_flush;
+    wire br_flush = br_taken && !this_flush && !this_tlb_refetch && !this_csr_refetch;
 
     // wire csr_flush_effective = csr_flush && !this_flush && !this_tlb_refetch;
 

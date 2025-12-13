@@ -241,8 +241,8 @@ module mycpu_top #(
     wire csr_flush_submit;
     wire [31:0] csr_flush_target_submit;
     wire EX_csr_flush;
-    wire ID_this_csr_flush;
-    wire EX_this_csr_flush;
+    wire ID_this_csr_refetch;
+    wire EX_this_csr_refetch;
 
     // csr和mmu共用端口
     assign tlb_s1_asid = MEM_tlbsrch_to_csr ? asid_asid_value : MEM_invtlb_to_csr ? MEM_rj_value[9: 0] : asid_asid_value;
@@ -846,8 +846,8 @@ module mycpu_top #(
 
         .tlb_flush(tlb_submit),
 
-        .ID_this_csr_flush(ID_this_csr_flush),
-        .EX_this_csr_flush(EX_this_csr_flush),
+        .ID_this_csr_refetch(ID_this_csr_refetch),
+        .EX_this_csr_refetch(EX_this_csr_refetch),
         .csr_flush(csr_flush_submit),
 
         .exception_maddr(IW_exception_maddr),
@@ -960,12 +960,12 @@ module mycpu_top #(
         // .csr_flush_out_wire(csr_flush),
         // .csr_flush_target_out_wire(csr_flush_target),
 
-        .this_csr_flush(ID_this_csr_flush),
+        .this_csr_refetch(ID_this_csr_refetch),
         // .csr_flush_target(csr_flush_target),
 
         .csr_flush_out(EX_csr_flush),
 
-        .EX_this_csr_flush(EX_this_csr_flush),
+        .EX_this_csr_refetch(EX_this_csr_refetch),
         .csr_flush(csr_flush_submit),
 
         .br_stall(EX_br_stall),
@@ -1068,7 +1068,7 @@ module mycpu_top #(
         .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
 
         .csr_flush_input(EX_csr_flush),
-        .this_csr_flush(EX_this_csr_flush),
+        .this_csr_refetch(EX_this_csr_refetch),
         .csr_flush_submit(csr_flush_submit),
         .csr_flush_target_submit(csr_flush_target_submit),
 
