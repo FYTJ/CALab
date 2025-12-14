@@ -45,8 +45,8 @@ module mmu(
     output [5: 0] ecode_d,
     output [8: 0] esubcode_d
 );
-    wire dmw0_plv_cond = (crmd_plv_value == 2'd3 && dmw0_plv3_value) || (crmd_plv_value == 2'd2 && dmw0_plv2_value) || (crmd_plv_value == 2'd1 && dmw0_plv1_value) || (crmd_plv_value == 2'd0 && dmw0_plv0_value);
-    wire dmw1_plv_cond = (crmd_plv_value == 2'd3 && dmw1_plv3_value) || (crmd_plv_value == 2'd2 && dmw1_plv2_value) || (crmd_plv_value == 2'd1 && dmw1_plv1_value) || (crmd_plv_value == 2'd0 && dmw1_plv0_value);
+    wire dmw0_plv_cond = (crmd_plv_value == 2'd3 && dmw0_plv3_value) || (crmd_plv_value == 2'd0 && dmw0_plv0_value);
+    wire dmw1_plv_cond = (crmd_plv_value == 2'd3 && dmw1_plv3_value) || (crmd_plv_value == 2'd0 && dmw1_plv0_value);
 
     assign inst_sram_paddr = (crmd_da_value && !crmd_pg_value) ? inst_sram_vaddr : 
         (inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? {dmw0_pseg_value, inst_sram_vaddr[28: 0]} :

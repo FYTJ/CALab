@@ -333,12 +333,12 @@ module EX (
             exception_maddr_out <= 32'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-			if(exception_maddr != 32'b0) begin
-				exception_maddr_out <= exception_maddr;
-			end
-			else begin
-            	exception_maddr_out <= alu_result;
-			end
+		if(!has_exception) begin
+			exception_maddr_out <= alu_result & {32{ALE}};
+		end
+		else begin
+    			exception_maddr_out <= exception_maddr;
+		end
         end
     end
 

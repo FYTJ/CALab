@@ -147,7 +147,7 @@ module MEM (
 
     assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_flush && !(|mmu_ecode_d);
     assign wr = (|wstrb);
-    assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_flush}} & (
+    assign wstrb  = {4{mem_we && valid && in_valid}} & (
                         ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
                         ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
                         ({4{mem_op[7]}} & 4'b1111)  // SW;
@@ -342,7 +342,11 @@ module MEM (
             exception_maddr_out <= 32'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            exception_maddr_out <= exception_maddr;
+            if(!has_exception) begin
+                exception_maddr_out <= addr & {32{(|mmu_ecode_d) & (res_from_mem || mem_we)}};
+            end
+            else
+                exception_maddr_out <= exception_maddr;
         end
     end
 
