@@ -1,0 +1,687 @@
+% 这是中国科学院大学计算机科学与技术专业《计算机组成原理（研讨课）》使用的实验报告 Latex 模板
+% 本模板与 2024 年 2 月 Jun-xiong Ji 完成, 更改自由 Shing-Ho Lin 和 Jun-Xiong Ji 于 2022 年 9 月共同完成的基础物理实验模板
+% 如有任何问题, 请联系: jijunxoing21@mails.ucas.ac.cn
+% This is the LaTeX template for report of Experiment of Computer Organization and Design courses, based on its provided Word template.
+% This template is completed on Febrary 2024, based on the joint collabration of Shing-Ho Lin and Junxiong Ji in September 2022.
+% Adding numerous pictures and equations leads to unsatisfying experience in Word. Therefore LaTeX is better.
+% Feel free to contact me via: jijunxoing21@mails.ucas.ac.cn
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper]{geometry}
+\geometry{left=2.0cm,right=2.0cm,top=2.5cm,bottom=2.5cm}
+
+\usepackage{ctex} % 支持中文的LaTeX宏包
+\usepackage{amsmath,amsfonts,graphicx,subfigure,amssymb,bm,amsthm,mathrsfs,mathtools,breqn} % 数学公式和符号的宏包集合
+\usepackage{algorithm,algorithmicx} % 算法和伪代码
+\usepackage[noend]{algpseudocode} % 算法和伪代码
+\usepackage{fancyhdr} % 自定义页眉页脚
+\usepackage[framemethod=TikZ]{mdframed} % 创建带边框的框架
+\usepackage{fontspec} % 字体设置
+\usepackage{adjustbox} % 调整盒子大小
+\usepackage{fontsize} % 设置字体大小
+\usepackage{tikz,xcolor} % 绘制图形和使用颜色
+\usepackage{multicol} % 多栏排版
+\usepackage{multirow} % 表格中合并单元格
+\usepackage{pdfpages} % 插入PDF文件
+\usepackage{listings} % 在文档中插入源代码
+\usepackage{wrapfig} % 文字绕排图片
+\usepackage{bigstrut,multirow,rotating} % 支持在表格中使用特殊命令
+\usepackage{booktabs} % 创建美观的表格
+\usepackage{circuitikz} % 绘制电路图
+\usepackage{zhnumber} % 中文序号（用于标题）
+\usepackage{tabularx} % 表格折行
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+% \lstset{
+%   frame=tb,
+%   aboveskip=3mm,
+%   belowskip=3mm,
+%   showstringspaces=false,
+%   columns=flexible,
+%   framerule=1pt,
+%   rulecolor=\color{gray!35},
+%   backgroundcolor=\color{gray!5},
+%   basicstyle={\small\ttfamily},
+%   numbers=none,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   tabsize=3,
+% }
+
+
+
+\lstset{
+    % basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single,
+}
+
+\lstdefinelanguage{Verilog}{
+    morekeywords={always, and, assign, attribute, begin, buf, bufif0, bufif1, case, casex, casez,
+                 cmos, deassign, default, defparam, disable, edge, else, end, endattribute,
+                 endcase, endfunction, endmodule, endprimitive, endspecify, endtable, endtask,
+                 event, for, force, forever, fork, function, highz0, highz1, if, ifnone, initial,
+                 inout, input, integer, join, large, macromodule, medium, module, nand, negedge,
+                 nmos, nor, not, notif0, notif1, or, output, parameter, pmos, posedge, primitive,
+                 pull0, pull1, pulldown, pullup, rcmos, real, realtime, reg, release, repeat,
+                 rnmos, rpmos, rtran, rtranif0, rtranif1, scalared, signed, small, specify,
+                 specparam, strong0, strong1, supply0, supply1, table, task, time, tran, tranif0,
+                 tranif1, tri, tri0, tri1, triand, trior, trireg, unsigned, vectored, wait, wand,
+                 weak0, weak1, while, wire, wor, xnor, xor},
+    morekeywords=[2]{`define, `undef, `ifdef, `ifndef, `else, `elsif, `endif, `include,
+                    `resetall, `timescale, `celldefine, `endcelldefine, `default_nettype,
+                    `unconnected_drive, `nounconnected_drive},
+    morekeywords=[3]{\$display, \$write, \$strobe, \$monitor, \$time, \$stime, \$realtime,
+                    \$finish, \$stop, \$dumpfile, \$dumpvars, \$dumpon, \$dumpoff, \$dumpall,
+                    \$dumpflush, \$dumplimit, \$random, \$readmemb, \$readmemh},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    sensitive=true,
+    keywordstyle=\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple}\bfseries,
+    keywordstyle=[3]\color{orange}\bfseries,
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    title=\lstname,
+    escapeinside={\%*}{*},
+    morekeywords={*,...}
+}
+
+
+
+
+
+
+
+
+
+% 轻松引用, 可以用\cref{}指令直接引用, 自动加前缀.
+% 例: 图片label为fig:1
+% \cref{fig:1} => Figure.1
+% \ref{fig:1}  => 1
+\usepackage[capitalize]{cleveref}
+% \crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Table.}{Tabs.}
+
+% \setmainfont{Palatino Linotype.ttf}
+% \setCJKmainfont{SimHei.ttf}
+% \setCJKsansfont{Songti.ttf}
+% \setCJKmonofont{SimSun.ttf}
+\punctstyle{kaiming}
+% 偏好的几个字体, 可以根据需要自行加入字体ttf文件并调用
+
+\renewcommand{\emph}[1]{\begin{kaishu}#1\end{kaishu}}
+
+% 对 section 等环境的序号使用中文
+% \renewcommand \thesection{\zhnum{section}、}
+% \renewcommand \thesubsection{\arabic{section}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%改这里可以修改实验报告表头的信息
+\newcommand{\name}{裴晨皓\ 竹彦博\ 纪弘璐}
+\newcommand{\studentNum}{2023K8009916003\ \ \ \ 2023K8009916001\ \ \ \ 2023K8009916002}
+\newcommand{\major}{计算机科学与技术}
+\newcommand{\labNum}{Project 6}
+\newcommand{\labName}{TLB MMU设计专题实验}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input{tex_file/head.tex}
+
+\section{实验简介}
+
+这次实验中，本组同学按照讲义提示，先实现了独立的TLB模块，又实现了用于虚实地址转换的MMU模块，并将新增模块与已有的流水线和CSR模块进行协同，又依次完成了TLB指令的添加和TLB异常的处理，同时在设计过程中兼顾了CSR寄存器的添加及其读写逻辑的设计。
+
+\section{设计方案介绍}
+下图是完成本次实验后的处理器结构框图：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.84\textwidth]{fig/结构框图.png}
+    \caption{处理器结构框图}
+\end{figure}
+
+\subsection{总体思路}
+
+我们在本次实验新增加了MMU和TLB模块，上面的结构框图还不够直观，于是我们绘制了下面的逻辑示意图，直观展示新增的两个模块与流水线和CSR模块实现协同工作的逻辑：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.58\textwidth]{fig/协同.png}
+    \caption{新增模块与原有模块协调工作逻辑图}
+\end{figure}
+
+\subsection{TLB模块设计}
+
+\subsubsection{组织结构与接口}
+TLB的主体是一个二维组织结构的查找表，每一项都有多个字段，所以类似寄存器堆的实现，内部要用reg对信息进行保存；由于每个字段的含义不同，所以仿照CSR模块的写法，不把每一项当成整体实现，而是把不同字段用reg分别实现。
+
+对外的接口具体为：
+\begin{enumerate}
+    \item 两套查找接口：取指和Load/Store访存操作都涉及查找TLB，为了保证流水线的性能良好，它们需要能够同时对TLB进行查找，故它们各自使用一套查找接口；由于INVTLB和TLBSRCH指令也都需要查找，但它们和Load/Store访存指令一样，都在MEM阶段进行查找，故复用Load/Store访存使用的查找接口(然后只需要附加它们额外需要的invtlb_op 输入和s_index输出即可)。
+    \item 读写接口各一套：用于支持专门的根据index对TLB进行读(TLBRD)写(TLBWR 和 TLBFILL)的指令。
+\end{enumerate}
+
+
+\subsubsection{读写功能}
+
+读写功能与寄存器堆的读写类似，都是同步写异步读。需要注意的是要把内部保存的1位ps字段和读写时输入输出的6位ps进行转换(查找时也需要转换)：
+\begin{lstlisting}[language=Verilog, caption={ps字段的处理}]
+    assign r_ps   = tlb_ps4MB[r_index] ? 6'd21 : 6'd12;
+    always @(posedge clk) begin
+        if(we) begin
+                tlb_ps4MB[w_index] <= (w_ps == 6'd21);
+        end
+    end
+\end{lstlisting}
+ps为21对应4MB页，ps为12对应4KB页，模块内每一项的tlb_ps4MB信号为1时对应4MB页，否则对应4KB页。
+
+
+\subsubsection{查找功能}
+
+关于查找功能，按照讲义的提示，1号接口(Load/Store访存指令在MEM级使用)可以与INVTLB指令op为6的情况复用逻辑。于是，我们先把INVTLB用来查找、判断的condition进行实现，然后再用它们生成正常查找和INVTLB时的查找结果：
+
+\begin{lstlisting}[language=Verilog, caption={正常查找与INVTLB查找逻辑}]
+for(i = 0; i < TLBNUM; i = i + 1)begin
+    assign    cond1   [i] =  (tlb_g[i] == 1'b0);
+    assign    cond2   [i] =  (tlb_g[i] == 1'b1);
+    assign    s1_cond3[i] =  (s1_asid == tlb_asid[i]);
+    assign    s0_cond3[i] =  (s0_asid == tlb_asid[i]);
+    assign    s1_cond4[i] =  (s1_vppn[18:9] == tlb_vppn[i][18:9]) 
+                          && (tlb_ps4MB[i] || (s1_vppn[8:0] == tlb_vppn[i][8:0]));
+    assign    s0_cond4[i] =  (s0_vppn[18:9] == tlb_vppn[i][18:9]) 
+                          && (tlb_ps4MB[i] || (s0_vppn[8:0] == tlb_vppn[i][8:0]));
+
+    assign match1[i] = tlb_e[i] && s1_cond4[i] && (cond2[i] || s1_cond3[i]);
+    assign match0[i] = tlb_e[i] && s0_cond4[i] && (cond2[i] || s0_cond3[i]);
+
+    assign inv_match[i] =  (invtlb_op == 5'h0 || invtlb_op == 5'h1) && (cond1[i] || cond2[i])
+                        || (invtlb_op == 5'h2) && cond2[i]
+                        || (invtlb_op == 5'h3) && cond1[i]
+                        || (invtlb_op == 5'h4) && cond1[i] && s1_cond3[i] 
+                        || (invtlb_op == 5'h5) && cond1[i] && s1_cond3[i] && s1_cond4[i]
+                        || (invtlb_op == 5'h6) && match1[i];
+end
+\end{lstlisting}
+
+\begin{itemize}
+    \item cond1和cond2只与TLB内部的信息有关，故各自只有1个信号；而cond3和cond4还额外涉及两个查找接口的外部输入，故它们各自应当有2个信号，分别对应两个接口(s0、s1)。
+    \item 正常查找时(除了INVTLB)，命中第i项对应于match0/1[i]拉高。虽然与INVTLB在op为6时逻辑类似，但并不完全相同——这里要额外考虑tlb_e，因为这一项如果无效，就不能算命中，也就不能把match拉高。
+    \item 对于INVTLB用到的查找，命中第i项对应于inv_match[i]拉高。由于该指令会把所有符合条件的项的e位置0，所以inv_match的逻辑中可以不加入tlb_e，因为本来无效的一项再清0一次也无妨。op为0至5时根据指令集手册用cond逻辑进行设计，op为6时复用MEM级Load/Store访存用到的1号查找接口的match1信号。
+\end{itemize}
+
+若是一般查找，那么根据上面提到的match信息，就可以判断本次查找是否命中——若某一项的match拉高，则说明命中。故我们可以将match向量的所有位“或”在一起进行判断：
+\begin{lstlisting}[language=Verilog, caption={命中判断信号——found(以取指时用到的0号查找接口为例)}]
+assign s0_found = |match0;
+\end{lstlisting}
+具体命中哪一项(s0/1_index)，根据match向量的所有位实现一个多路选择器来判断即可，不再赘述。
+
+在查找时还要注意TLB里“一项对应两页”的特性——确定了命中项后，还要对其中的两页进行“二选一”：
+
+\begin{lstlisting}[language=Verilog, caption={对一项中的两页进行选择(以0号查找接口为例)}]
+assign s0_select_unit1 = tlb_ps4MB[s0_index] && s0_vppn[8] || !tlb_ps4MB[s0_index] && s0_va_bit12;
+\end{lstlisting}
+
+设同一项中的两页里，虚页号最低位(第0位)为0的一页为第0页，虚页号最低位为1的一页为第1页，则s0_select_unit1信号拉高时表示选中第1页。此外，在我们的设计中，vppn信号的第0位对应的是4KB页的虚双页号的第0位，而非4MB页的虚双页号的第0位，这一点要注意。
+
+关于s0_select_unit1信号，下面是两个易错的细节，理解不到位或是数位数时粗心就可能出错：
+\begin{itemize}
+    \item 4KB页：
+    
+    这时，页内偏移为虚地址的第0到11位，虚页号从虚地址第12位开始算；虚页号最低位不放入TLB，虚双页号从第13位开始算。所以这里要根据s0_va_bit12来选择一项中的两页，而非vppn中的某一位。
+
+    \item 4MB页：
+    
+    根据指令集手册，每一项里的两页实际上都是2MB大小。由于$2MB = 2^{21}B$，所以虚页号的第0位应该看虚地址的第21位，也就是虚双页号的第8位。
+\end{itemize}
+
+特别地，若当前是INVTLB(invtlb_valid拉高)指令用到的查找，直接把命中项的e位置0即可，不涉及项内页选择：
+
+\begin{lstlisting}[language=Verilog, caption={INVTLB对命中项的e位置0逻辑}]
+always @(posedge clk) begin
+        if(we)
+                tlb_e[w_index] <= w_e;
+        else if(invtlb_valid) begin      
+                for(j = 0; j < TLBNUM; j = j + 1) begin
+                        if(inv_match[j])
+                                tlb_e[j] <= 1'b0;
+                end
+        end
+end
+\end{lstlisting}
+
+\subsection{MMU模块设计}
+
+如图2所示，我们的MMU模块主要负责接收流水线发来的虚地址，进行虚实地址转换操作，并将转换后的物理地址送往AXI转接桥。如果转换过程涉及TLB查找，则还要对TLB相关异常进行判定并发回流水线。
+
+\subsubsection{地址翻译逻辑}
+
+以取指为例：
+
+\begin{lstlisting}[language=Verilog, caption={虚实地址翻译-取指}]
+assign inst_sram_paddr = 
+(crmd_da_value && !crmd_pg_value) ? 
+    inst_sram_vaddr : 
+(inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? 
+    {dmw0_pseg_value, inst_sram_vaddr[28: 0]} :
+(inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? 
+    {dmw1_pseg_value, inst_sram_vaddr[28: 0]} :
+{tlb_s0_ppn, inst_sram_vaddr[11: 0]};
+\end{lstlisting}
+\begin{itemize}
+    \item 若DA为1且PG为0，直接把虚地址作为物理地址输出。
+    \item 否则再看两个直接映射窗口，若权限等级符合(dmw0/1_plv_cond为1)，并且虚地址的高3位与对应窗口的dmw0/1_vseg_value相等，则直接用dmw0/1_pseg_value与虚地址的低29位拼接得到物理地址。
+    \item 否则，使用TLB查找得到的ppn与虚地址的低12位(页内偏移)拼接得到物理地址。
+\end{itemize}
+
+关于使用直接映射窗口时的权限等级判定(dmw0/1_plv_cond)，只需根据CRMD寄存器的PLV值与DMW0/1寄存器记录的PLV情况进行比较即可，二者相同说明权限级别符合，dmw0/1_plv_cond拉高。此处不再赘述。
+
+\subsubsection{TLB异常判定}
+
+TLB异常发生在借助TLB进行地址转换时，所以发生此类异常的必要条件是地址转换“的确使用了TLB”，同样以取指为例：
+
+\begin{lstlisting}[language=Verilog, caption={对地址翻译是否使用了TLB的判定}]
+wire use_tlb_i = !(crmd_da_value && !crmd_pg_value) &&
+        !(inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) &&
+        !(inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond);
+\end{lstlisting}
+即：既不是“DA为1且PG为0”的直接地址翻译，也不是落在两个直接映射窗口内的情况，那就一定用到了TLB。进一步，再结合查找TLB得到的信息，就可以产生异常标志信号：
+\begin{lstlisting}[language=Verilog, caption={异常标志-以取指为例}]
+wire tlbr_i = use_tlb_i && !tlb_s0_found;
+wire pif_i = use_tlb_i && tlb_s0_found && !tlb_s0_v;
+wire ppi_i = use_tlb_i && tlb_s0_found && tlb_s0_v && (crmd_plv_value > tlb_s0_plv);
+\end{lstlisting}
+这里要注意的是，取指时仅会出现TLB重填异常、取指页无效异常和页特权等级不合规异常(共3类)；而访存级还会出现load/store页无效异常和页修改异常，但不会出现取指页无效异常(共5类)。
+
+最后，还要根据上面的异常标志，把异常信息通过ecode和esubcode的形式发回流水线，此处仍以取指的ecode为例：
+\begin{lstlisting}[language=Verilog, caption={ecode生成逻辑-取指}]
+assign ecode_i = tlbr_i ? 6'h3F :
+                 pif_i  ? 6'h3 :
+                 ppi_i  ? 6'h7 :
+                          6'h0;
+\end{lstlisting}
+% % % % % % (如果没有异常发生，则ecode为0)。
+
+
+\subsection{TLB指令的实现与TLB/CSR冲突处理}
+
+在我们的设计中，TLB指令对TLB的读、写和查找都在MEM级进行。下面介绍实现过程中的关键：
+
+\subsubsection{重取机制}
+根据讲义的提示，由于实现的几条TLB指令(除了TLBSRCH)，都会修改TLB的内容或是虚实地址转换所依赖的CSR的内容，而这些内容最早在取指级做地址翻译就会被使用，所以这些TLB指令后面几条已经取出的/发过取指请求的指令，很可能用的是旧的TLB/CSR信息进行的地址翻译，所以需要进行“重取”。
+
+此外，CSR指令也有可能改写地址翻译依赖的CRMD、ASID、DMW0或DMW1寄存器，那么后续指令也要重取。
+
+借鉴异常冲刷的处理逻辑，仿照this_flush信号(用于标记当前流水级的指令将来会被冲刷，以此限制指令做出修改内存等改变体系状态的操作)，我们引入this_tlb_refetch/flush和this_csr_refetch/flush信号，限制因重取而被冲刷的指令的行为。
+
+% \begin{lstlisting}[language=Verilog, caption={this_tlb_refetch和this_csr_flush信号-以ID为例}]
+% assign this_tlb_refetch = 
+%             in_valid 
+%         && (inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb 
+%             || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
+% assign this_csr_flush = in_valid && EX_this_csr_flush;
+% \end{lstlisting}
+% 由于无阻塞情况下，TLB指令对TLB的写入在从MEM进入RDW的上升沿才能完成，所以我们认为其在RDW级“提交”重取；同理CSR指令需要重取时，在EX级“提交”重取——尽早地“提交”有利于提高性能。
+% \begin{itemize}
+%     \item this_tlb_refetch：
+    
+%     本级有效，并且本级是TLB指令或是后续直到RDW阶段有因TLB指令而重取的情况，就给本级标上需要重取；
+%     \item this_csr_flush：
+    
+%     本级有效，并且后续EX存在因CSR指令而重取的情况，就给本级标上需要重取。
+    
+%     这里不用“或”上“本级是影响地址翻译的CSR写指令”，是因为要重取的是“影响地址翻译的CSR写指令”之后的指令，不包括这条指令本身。同理，TLB指令带来的重取也是面向其后的指令，不包括其本身，所以在MEM级的this_tlb_refetch也有类似处理，不再赘述。
+% \end{itemize}
+
+以MEM级的this_tlb_refetch和this_tlb_flush信号为例：
+\begin{lstlisting}[language=Verilog, caption={this_tlb_refetch和this_tlb_flush信号-以MEM为例}]
+assign this_tlb_refetch = in_valid 
+                        && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb 
+                           || RDW_this_tlb_refetch);
+assign this_tlb_flush = in_valid && RDW_this_tlb_refetch;
+\end{lstlisting}
+由于无阻塞情况下，TLB指令对TLB的写入在从MEM进入RDW的上升沿才能完成，所以我们认为其在RDW级“提交”重取；同理CSR指令导致重取时，在EX级“提交”重取——尽早地“提交”有利于提高性能。
+\begin{itemize}
+    \item this_tlb_refetch：表明本级的指令与重取相关。
+    
+    本级有效，并且本级是TLB指令或是后续直到(做重取提交的)RDW的所有阶段中，存在与重取有关的情况，那么本级指令也一定与重取有关。
+    \item this_csr_flush：表明本级的指令将来会因重取而被冲刷。
+    
+    本级有效，并且后续直到RDW的所有阶段中，存在有关于重取的情况，说明本级的指令将来一定会被重取。
+\end{itemize}
+refetch和flush的区别在于，前者包含了“本级是引起重取的指令”的情况，而后者不包含。为了防止引起重取的指令作用也被限制，所以在其发挥作用的MEM级区分出这两个信号(用flush限制指令的功能而非用refetch)，而前面的流水级中，引起重取的指令本来也不会产生作用，其作用是否受限不会带来影响，故只使用一个refetch信号即可。
+
+
+重取被提交后，前面各流水级复用异常时的冲刷逻辑进行冲刷即可，冲刷后的IF级取指PC应当设为被重取的第一条指令(即引起重取的指令的下一条指令)的PC。
+
+
+
+
+\subsubsection{“冲突”处理}
+
+由于TLB指令对TLB的读写都在MEM，因此不会出现围绕TLB的读写相关冲突，只需要做好前面提到的重取即可。
+
+然而，原有的设计中，CSR指令对CSR的读写都在ID进行；现在(除了ID)IF和MEM都会读CSR，在MEM更是有可能出现写CSR的TLBSRCH、TLBRD指令。由于读与读之间不互斥，而读与写、写与写是互斥的，所以我们重点考虑涉及写的冲突处理。
+
+\noindent
+(特别地，WB级的异常提交与返回也涉及CSR的写，但这种情况下前面的指令会被冲刷，将会被冲刷的指令不会产生作用，相当于不读也不写CSR，所以没有冲突。)
+
+\begin{enumerate}
+    
+
+    \item MEM写，ID写：
+    
+    此时MEM为TLB指令，前面的流水级的refetch信号都会拉高，阻止前面即将被重取冲刷的指令发挥作用，故实际上ID不会出现“写”CSR的行为，所以不必担心：
+
+    \begin{lstlisting}[language=Verilog, caption={ID级refetch信号对csr写使能的限制}]
+    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready 
+                  && !this_flush && !this_tlb_refetch && !this_csr_flush;
+    \end{lstlisting}
+    
+    \item MEM写，ID读：
+    
+    与上一条类似，ID这时被refetch限制，ID这条指令将来会被冲刷，所以这时CSR的读端口读出什么值也就不必在意了。
+
+    \item MEM读，ID写：
+    
+    \begin{enumerate}
+        \item MEM为TLB指令，ID为CSR指令：
+        
+        同样，ID的指令被refetch限制，不必在意二者冲突。
+
+        \item MEM为正常访存指令，ID为CSR指令：
+        
+        这时没有refetch对ID进行限制(不需要重取)，若ID的写CSR操作发生在MEM读CSR之前，则可能使MEM读出错误的值。于是，要对ID进行阻塞(当前设计中CSR写操作在CSR写指令从ID进入EX的上升沿发生，所以只要写指令阻塞在ID，就不会对CSR进行写入)。
+
+        \begin{lstlisting}[language=Verilog, caption={csr_affect_mem信号的生成}]
+wire csr_affect_mem = in_valid && (inst_csrwr || inst_csrxchg) 
+                    && (  inst[23: 10] == `CSR_CRMD || inst[23: 10] == `CSR_ASID 
+                       || inst[23: 10] == `CSR_DMW0 || inst[23: 10] == `CSR_DMW1);
+        \end{lstlisting}
+        首先，要判定ID的CSR指令是否会改写地址翻译所依赖的CSR(CRMD、ASID、DMW0、DMW1)，得到上面的csr_affect_mem信号。若它不改写这些CSR，则不会影响MEM的地址翻译，为了保障性能，可以不阻塞。
+
+        然后，再根据EX和MEM的指令类型(是否为load/store)，生成ID级的阻塞信号：
+        \begin{lstlisting}[language=Verilog, caption={CSR读写相关的阻塞信号-ID级}]
+assign csr_mem_stall = in_valid && (EX_mem_inst || MEM_mem_inst) && csr_affect_mem;
+        \end{lstlisting}
+    \end{enumerate}
+\end{enumerate}
+
+
+\subsubsection{指令功能实现}
+我们把流水线中关于TLB指令的信号都送入CSR，由CSR模块把这些指令的信号送入TLB。如果它们涉及CSR的读写，能够较为方便地在CSR模块内进行处理。
+
+对于TLBSRCH和INVTLB指令，需要关注它们对TLB查找接口的共用(它们与地址翻译过程共用)：
+
+\begin{lstlisting}[language=Verilog, caption={TLB查找接口的共用}]
+assign tlb_s1_asid = MEM_tlbsrch_to_csr ? asid_asid_value : 
+                     MEM_invtlb_to_csr ? MEM_rj_value[9: 0] : 
+                     asid_asid_value;
+assign tlb_s1_vppn = MEM_tlbsrch_to_csr ? tlbehi_vppn_value : 
+                     MEM_invtlb_to_csr ? MEM_rkd_value[31: 13] : 
+                     data_sram_vaddr[31: 13];
+\end{lstlisting}
+若是TLBSRCH，那么就是用asid和tlbehi的值；若是INVTLB，则要用到相应的rj和rk寄存器的值；否则就是默认的地址翻译使用的asid寄存器以及访存使用的虚地址的值。此外，根据手册，TLBSRCH还要根据查找结果更新TLBIDX寄存器：
+\begin{lstlisting}[language=Verilog, caption={TLBSRCH对TLBIDX的更新}]
+else if (tlbsrch) begin
+        csr_tlbidx_ne <= !tlb_s1_found;
+        if (tlb_s1_found) begin
+            csr_tlbidx_index <= tlb_s1_index;
+        end
+end
+\end{lstlisting}
+
+
+对于TLBFILL和TLBWR，只需要拉高TLB的写使能并把相应CSR的值从写端口送入TLB即可。二者的区别在于FILL是随机选一个位置写入，而WR是根据index写入，所以写入位置可以都用TLBIDX的INDEX字段进行指定。
+\begin{lstlisting}[language=Verilog, caption={TLB写使能与写index}]
+assign tlb_we = tlbwr || tlbfill;
+assign tlb_w_index = csr_tlbidx_index;
+\end{lstlisting}
+根据手册，此处还要注意：
+\begin{lstlisting}[language=Verilog, caption={写入TLB的项的e位与g位}]
+assign tlb_w_e = !csr_tlbidx_ne || (csr_estat_ecode == `ECODE_TLBR);
+assign tlb_w_g = csr_tlbelo0_g && csr_tlbelo1_g;
+\end{lstlisting}
+\begin{enumerate}
+    \item 只有TLBIDX的NE位为0或ESTAT的ecode对应TLBREFILL时(处于重填例外处理过程中)，才把写入项的e位置1(有效项)，否则写0；
+    \item 只有TLBELO0和TLBELO1的g位都为1时，才把写入项的g位置1，否则写0。
+\end{enumerate}
+
+对于TLBRD指令，如果查找到的是有效项，则把其页表项信息填入相应csr，并把TLBIDX的NE置0；否则把用于保存页表项信息的csr清零，同时TLBIDX的NE置1。
+
+\subsection{对TLB异常的处理}
+
+\subsubsection{异常的判定与提交}
+
+在流水线内，涉及发送虚地址进行访存的流水级为IF和MEM，因此需要在这两个流水级根据MMU发回的ecode进行TLB异常的判定。这里以MEM为例：
+
+\begin{lstlisting}[language=Verilog, caption={异常检测与传递-MEM}]
+always @(posedge clk) begin
+    if (rst) begin
+        has_exception_out <= 1'b0;
+    end
+    else if (in_valid && ready_go && out_ready) begin
+        has_exception_out <= has_exception || ((|mmu_ecode_d) & (res_from_mem || mem_we));
+    end
+end
+\end{lstlisting}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%一位and
+(|mmu_ecode_d)\ \&\ (res_from_mem || mem_we)表明当前MEM是一条访存指令，并且MMU发回的ecode不为0，说明发生了TLB异常；has_exception则表明当前指令在前面流水级是否发生了异常——将本流水级与前面流水级的情况合并，就得到当前MEM级指令流入RDW后的异常标志has_exception_out。
+
+% 异常码ecode/esubcode的传递仍采用之前实验的思路，若本条指令在前面未发生异常，则把本级的异常码传递下去；否则保持前面的异常码不变(因为发生异常后，指令最后会被冲刷，故在后续流水级其不应该发挥任何功能，所以也不应该再触发异常，所以异常码是第一次“触发”异常时的。例如：若IF级发生ADEF异常，那么取指都变得无意义，更不必提指令执行过程中出现的异常了)。仍以MEM为例：
+% \begin{lstlisting}[language=Verilog, caption={异常码的传递-MEM}]
+% always @(posedge clk) begin
+%     if (rst) begin
+%         ecode_out <= 6'b0;
+%     end
+%     else if (in_valid && ready_go && out_ready) begin
+%         if(!has_exception) begin
+%             ecode_out <= mmu_ecode_d & {6{(res_from_mem || mem_we)}};
+%         end
+%         else begin
+%             ecode_out <= ecode;
+%         end
+%     end
+% end
+% \end{lstlisting}
+% 还要将发生异常的地址传递下去，这类似ecode的传递，不再赘述。
+
+异常码ecode/esubcode和异常地址maddr等异常信息的记录、传递与异常的提交仍沿用之前实验的思路，不再赘述。
+特别地，IF级存在的ADEF和TLB异常中，ADEF优先级更高，这是因为：进行TLB的查找与TLB异常判定的前提是取指地址合法。
+\begin{lstlisting}[language=Verilog, caption={ADEF与TLB异常的优先级区分}]
+if(ADEF) begin
+    ecode_out <= {6{ADEF}} & 6'h8;
+end
+else begin
+    ecode_out <= mmu_ecode_i;
+end
+\end{lstlisting}
+发生异常后，与前面的实验处理方式相同，需要限制异常指令及其前面流水级指令发挥作用，此处不再浪费多余篇幅描述。
+
+这里还要注意的是，TLB重填异常比较特殊，有单独的异常处理程序入口(ex_tlbr_entry_preserved)，在IF级选择取指nextpc时要纳入考虑：
+\begin{lstlisting}[language=Verilog, caption={IF级取指PC选择}]
+assign nextpc = ex_flush_preserved ? 
+                (ex_tlbr_preserved ? ex_tlbr_entry_preserved : ex_entry_preserved) :
+                ertn_flush_preserved ? ertn_entry_preserved :
+                tlb_flush_preserved ? tlb_flush_entry_preserved :
+                csr_flush_preserved ? csr_flush_target_preserved :
+                br_taken_preserved ? br_target_preserved : seq_pc;
+\end{lstlisting}
+(此外，上面这一代码片段中的tlb_flush_entry_preserved和csr_flush_target_preserved分别对应前面提到的因TLB指令/CSR指令而重取指令的起始PC。)
+
+% TLB重填异常的提交也是单独提交：
+% \begin{lstlisting}[language=Verilog, caption={TLB重填异常提交}]
+% assign ex_tlbr_submit = in_valid && has_exception && (ecode == 6'h3F); // TLB Refill
+% \end{lstlisting}
+
+
+\subsubsection{对CSR的修改}
+
+CSR在应对TLB异常时也需要起辅助作用。比如，需要在TLBEHI的VPPN字段记录发生异常的虚双页号：
+
+\begin{lstlisting}[language=Verilog, caption={TLB异常虚双页号记录}]
+if(wb_ex && (  wb_ecode==`ECODE_TLBR || wb_ecode==`ECODE_PIL || wb_ecode==`ECODE_PIS 
+            || wb_ecode==`ECODE_PIF || wb_ecode==`ECODE_PME || wb_ecode==`ECODE_PPI)) begin
+    csr_tlbehi_vppn <= wb_vaddr[31:13];
+end
+\end{lstlisting}
+\begin{lstlisting}[language=Verilog, caption={TLB重填异常处理入口}]
+assign ex_tlbr_entry = csr_tlbrentry_rvalue;  
+\end{lstlisting}
+发生异常时还需要把出错地址填入BADV寄存器；如果是TLB重填异常，要把TLB重填异常的处理入口地址(TLBRENTRY的内容)发送给IF级；重填异常提交和返回时还要修改地址翻译模式(DA、PG)。这些细节上的处理较为简单，不再赘述。
+
+
+
+
+
+
+\section{Debug记录(见下一页)}
+
+
+\newpage
+
+\subsection{忘记在恰当时机修改地址翻译模式}
+本章实验的特点是难度不大，但细节较多，需要仔细研读手册，容易疏忽——尤其是地址翻译模式的设置。
+
+在rst复位时，不能盲目把各种寄存器初始化为0。我们最初的设计中，忘记在rst复位时设置DA为1，PG为0，而是把二者都初始化为0，导致没能进入直接地址翻译模式，影响了取指：
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/复位地址翻译.png}
+    \caption{复位时DA未置为1-波形图}
+\end{figure}
+正确的设置方式为：
+\begin{lstlisting}[language=Verilog, caption={复位时地址翻译模式设置}]
+csr_crmd_da <= 1'b1;
+csr_crmd_pg <= 1'b0;
+\end{lstlisting}
+
+
+此外，我们最初忘记了在TLB重填异常提交时，要把地址翻译模式改为“直接地址翻译”(DA为1，PG为0)；在重填异常处理完后，返回时要改回“映射地址翻译模式”(DA为0，PG为1)。下面展示的片段为修改后的正确逻辑。
+\begin{lstlisting}[language=Verilog, caption={TLB重填异常与地址翻译模式修改}]
+else if (wb_ex) begin
+    csr_crmd_plv <= 2'b0;
+    csr_crmd_ie  <= 1'b0;
+    if(wb_ecode==`ECODE_TLBR) begin
+        csr_crmd_da  <= 1'b1;
+        csr_crmd_pg  <= 1'b0;
+    end
+end
+else if (ertn_flush) begin
+    csr_crmd_plv <= csr_prmd_pplv;
+    csr_crmd_ie  <= csr_prmd_pie;
+    if(csr_estat_ecode==`ECODE_TLBR) begin
+        csr_crmd_da  <= 1'b0;
+        csr_crmd_pg  <= 1'b1;
+    end
+end
+\end{lstlisting}
+
+
+
+\subsection{发生TLB异常时忘记限制发送访存请求}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/忘记限制req.png}
+    \caption{发生TLB异常时忘记限制发送访存请求-波形图}
+\end{figure}
+
+上图中，红框部分显示MEM此时是一条store指令，其触发了PME异常(如黄色方框所示，ecode为04)，但是访存req信号却仍然拉高(如蓝色方框所示)，导致这条发生异常的指令仍然发送了访存请求，显然是不合理的。
+
+经过排查发现，我们忘记在TLB异常发生时限制访存请求req，正确的逻辑为：
+\begin{lstlisting}[language=Verilog, caption={在TLB异常时限制访存请求req}]
+assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_flush && !(|mmu_ecode_d);
+\end{lstlisting}
+即：最后额外“与”上“!(|mmu_ecode_d)”，表示只有没发生TLB异常的访存指令(ecode为0)，才能拉高req请求访存。
+
+\newpage
+
+\subsection{忘记使用“流水级有效”信号(in_valid)限制TLB指令功能}
+
+理论上，只有流水级有效时，其内部的指令信息才有意义，才能发挥作用，但我们最初忘记用in_valid信号来限制TLB指令，出现下图波形：
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/忘记限制tlb指令.png}
+    \caption{忘记使用in_valid限制TLB指令功能-波形图}
+\end{figure}
+红框位置是一条位于MEM级的TLBWR指令，它把TLB的写使能we拉高(见黄框位置)，把TLB相关的CSR存放的页表项信息写入TLB(比如图中的tlbehi_vppn)，下一拍这条TLBWR从MEM级流出，in_valid拉低表明这时也没有其他指令流入MEM，但是TLB写使能we却仍然拉高(黄框位置)。如蓝框所示，后来出现了一条ID级的CSR写指令，改写了tlbehi的vppn字段；如白框所示，由于TLB的we仍然拉高，导致这一被修改后的tlbehi_vppn被误写入了TLB。
+
+解决方法十分简单，只要把TLB指令“有效”(即会产生作用)的逻辑里“与”上表明流水级有效的in_valid信号即可：
+
+\begin{lstlisting}[language=Verilog, caption={TLB指令“有效”(即会产生作用)逻辑-以TLBWR为例}]
+assign tlbwr_to_csr   = in_valid && tlbwr && !this_flush && !this_tlb_flush;
+\end{lstlisting}
+这一bug具有较强的迷惑性，因为把写好的TLB表项又“写坏了”，导致后续本应提交TLBload页无效异常，却报出了重填异常，表现为异常处理入口点不同，让人首先怀疑是异常入口选择逻辑写错。
+
+\newpage
+
+\subsection{store指令误报出load页无效异常}
+如下图所示，黄色方框处的指令报出了红色方框处的pil异常(load页无效异常)，而非store页无效异常(pis)：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/store波形.png}
+    \caption{store指令误报出load页无效异常-波形图}
+\end{figure}
+
+乍看波形毫无异样，但是查找反汇编文件发现这实际上是st指令，无论如何不可能出现load页无效异常：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{fig/store.png}
+    \caption{store指令误报出load页无效异常-反汇编}
+\end{figure}
+
+回看MEM级生成的用于内存读写选择的wr信号的逻辑——用于生成wr信号的wstrb信号内部包含了与冲刷相关的信号this_flush和this_tlb_flush，即这条指令如果将来会被冲刷，那么一定会强行使得wstrb为0，进而导致wr为0：
+\begin{lstlisting}[language=Verilog, caption={MEM级读写选择-wr信号逻辑}]
+assign wr = (|wstrb);
+assign wstrb  = {4{mem_we && valid && in_valid && !this_flush && !this_tlb_flush}} & (
+                    ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
+                    ({4{mem_op[6]}} & (4'b0011 << alu_result[1: 0])) |  // SH
+                    ({4{mem_op[7]}} & 4'b1111)  // SW;
+                );
+\end{lstlisting}
+
+而MMU模块内用到wr来区分load/store页无效异常：
+\begin{lstlisting}[language=Verilog, caption={load/store页无效异常判定}]
+wire pil_d = use_tlb_d && tlb_s1_found && !tlb_s1_v && !data_sram_wr;
+wire pis_d = use_tlb_d && tlb_s1_found && !tlb_s1_v && data_sram_wr;
+\end{lstlisting}
+这两种异常判定的区别仅在于访存操作的类型不同(是读还是写,wr为0还是1)。由于前面在指令“将来会被冲刷”的情况下强行把本应为1的wr置为0，所以会导致store页无效被误判为load页无效。
+
+最终的解决方法是：在wstrb信号中删除表明指令“将来会被冲刷”的this_flush和this_tlb_flush信号，从而使得wr信号不会被强行错误更改，也就解决了上面提到的异常误判问题。
+
+\section{合作说明}
+
+本实验由本组成员共同合作完成，组内同学同等贡献。
+
+
+
+\end{document}

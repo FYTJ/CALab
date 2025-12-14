@@ -1,0 +1,62 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}实验简介}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}设计方案介绍}{1}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 处理器结构框图}}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}总体思路}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 新增模块与原有模块协调工作逻辑图}}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}TLB模块设计}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}组织结构与接口}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}读写功能}{2}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}ps字段的处理}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}查找功能}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}正常查找与INVTLB查找逻辑}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}命中判断信号——found(以取指时用到的0号查找接口为例)}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}对一项中的两页进行选择(以0号查找接口为例)}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}INVTLB对命中项的e位置0逻辑}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}MMU模块设计}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}地址翻译逻辑}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}虚实地址翻译-取指}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}TLB异常判定}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7}对地址翻译是否使用了TLB的判定}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8}异常标志-以取指为例}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9}ecode生成逻辑-取指}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}TLB指令的实现与TLB/CSR冲突处理}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.1}重取机制}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10}this_tlb_refetch和this_tlb_flush信号-以MEM为例}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.2}“冲突”处理}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11}ID级refetch信号对csr写使能的限制}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12}csr_affect_mem信号的生成}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {13}CSR读写相关的阻塞信号-ID级}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.4.3}指令功能实现}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14}TLB查找接口的共用}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15}TLBSRCH对TLBIDX的更新}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {16}TLB写使能与写index}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {17}写入TLB的项的e位与g位}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}对TLB异常的处理}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.1}异常的判定与提交}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18}异常检测与传递-MEM}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {19}ADEF与TLB异常的优先级区分}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {20}IF级取指PC选择}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.5.2}对CSR的修改}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {21}TLB异常虚双页号记录}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {22}TLB重填异常处理入口}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Debug记录(见下一页)}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}忘记在恰当时机修改地址翻译模式}{10}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 复位时DA未置为1-波形图}}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {23}复位时地址翻译模式设置}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {24}TLB重填异常与地址翻译模式修改}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}发生TLB异常时忘记限制发送访存请求}{11}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 发生TLB异常时忘记限制发送访存请求-波形图}}{11}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {25}在TLB异常时限制访存请求req}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}忘记使用“流水级有效”信号(in_valid)限制TLB指令功能}{12}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 忘记使用in_valid限制TLB指令功能-波形图}}{12}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {26}TLB指令“有效”(即会产生作用)逻辑-以TLBWR为例}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}store指令误报出load页无效异常}{13}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces store指令误报出load页无效异常-波形图}}{13}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces store指令误报出load页无效异常-反汇编}}{13}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {27}MEM级读写选择-wr信号逻辑}{13}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {28}load/store页无效异常判定}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}合作说明}{14}{}\protected@file@percent }
+\gdef \@abspage@last{14}
