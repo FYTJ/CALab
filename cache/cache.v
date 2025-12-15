@@ -245,6 +245,7 @@ module cache (
 
     LSFR u_LSFR(
         .clk(clk),
+        .rst(rst),
         .rand_way(rand_way)
     );
 
