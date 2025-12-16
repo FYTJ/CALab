@@ -418,6 +418,7 @@ module mycpu_top #(
         .inst_sram_wr(inst_sram_wr),
         .data_sram_vaddr(data_sram_vaddr),
         .data_sram_wr(data_sram_wr),
+        
         .crmd_plv_value(crmd_plv_value),
         .crmd_da_value(crmd_da_value),
         .crmd_pg_value(crmd_pg_value),
