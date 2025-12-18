@@ -290,25 +290,20 @@ module cache (
         if (rst) begin
             replace_way <= 1'b0;
         end
-        else if ((m_current_state == M_MISS) && wr_rdy) begin
+        // 注意这里的赋值条件与LOOKUP -> MISS的条件相同，而不是组合连接
+        else if ((m_current_state == M_LOOKUP) && hit) begin
             replace_way <= rand_way;
         end
     end
 
-    // M_REPLACE
-    reg wr_req_reg;
-    always @(posedge clk) begin
-        if (rst) begin
-            wr_req_reg <= 1'b0;
-        end
-        else if ((m_current_state == M_MISS) && wr_rdy) begin
-            wr_req_reg <= 1'b1;
-        end
-        else if ((m_current_state == M_REPLACE) && wr_rdy) begin
-            wr_req_reg <= 1'b0;
-        end
-    end
+    // 为防止在M_REPLACE状态同时发读写请求，此处允许`wr_req`提前于`wr_rdy`拉高，将写请求提前到M_MISS
+    assign wr_req = (m_current_state == M_MISS) && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata));
+    assign wr_type = 3'b100;
+    assign wr_addr = (replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0};
+    assign wr_wstrb = 4'b1111;
+    assign wr_data = (replace_way == 1'b0) ? data0_rdata : data1_rdata;
 
+    // M_REPLACE
     assign tagv0_we = (replace_way == 1'b0) && ret_last;
     assign tagv0_wdata = {tag_reg, 1'b1};
     assign tagv1_we = (replace_way == 1'b1) && ret_last;
@@ -324,12 +319,6 @@ module cache (
     assign rd_req = (m_current_state == M_REPLACE);
     assign rd_type = 3'b100;
     assign rd_addr = {tag_reg, index_reg, 4'b0};
-
-    assign wr_req = wr_req_reg && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata));
-    assign wr_type = 3'b100;
-    assign wr_addr = (replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0};
-    assign wr_wstrb = 4'b1111;
-    assign wr_data = (replace_way == 1'b0) ? data0_rdata : data1_rdata;
 
     // M_REFILL
     reg [1: 0] read_cnt;
