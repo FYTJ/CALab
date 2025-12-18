@@ -121,7 +121,6 @@ module cache (
     wire [31: 0] data0_bank1_rdata;
     wire [31: 0] data0_bank2_rdata;
     wire [31: 0] data0_bank3_rdata;
-    wire [3: 0] data0_wbank_sel;
     wire [3: 0] data0_bank0_we;
     wire [3: 0] data0_bank1_we;
     wire [3: 0] data0_bank2_we;
@@ -134,7 +133,6 @@ module cache (
     wire [31: 0] data1_bank1_rdata;
     wire [31: 0] data1_bank2_rdata;
     wire [31: 0] data1_bank3_rdata;
-    wire [3: 0] data1_wbank_sel;
     wire [3: 0] data1_bank0_we;
     wire [3: 0] data1_bank1_we;
     wire [3: 0] data1_bank2_we;
@@ -145,6 +143,7 @@ module cache (
     wire [127: 0] data0_rdata = {data0_bank3_rdata, data0_bank2_rdata, data0_bank1_rdata, data0_bank0_rdata};
     wire [127: 0] data1_rdata = {data1_bank3_rdata, data1_bank2_rdata, data1_bank1_rdata, data1_bank0_rdata};
 
+    // data-ram支持一个读端口和一个写端口
     data_ram u_data0_bank0 (
         .clka (clk),
         .ena (data0_en),
@@ -265,6 +264,7 @@ module cache (
             wstrb_reg <= 4'b0;
             wdata_reg <= 32'b0;
         end
+        // request buffer的更新条件：1. IDLE -> LOOKUP; 2. LOOKUP -> LOOKUP
         else if (((m_current_state == M_IDLE) && valid && !stall) || ((m_current_state == M_LOOKUP) && hit && valid && !stall)) begin
             op_reg <= op;
             tag_reg <= tag;
@@ -321,6 +321,7 @@ module cache (
     assign rd_addr = {tag_reg, index_reg, 4'b0};
 
     // M_REFILL
+    // 该信号用于bank选择，见`share`
     reg [1: 0] read_cnt;
     always @(posedge clk) begin
         if (rst) begin
@@ -345,7 +346,7 @@ module cache (
     reg w_we_reg;
     reg [3: 0] w_wstrb_reg;
     reg [31: 0] w_wdata_reg;
-    reg [31: 0] w_prev_data;  // 保存写之前data的值，用于hit_wdata
+    reg [31: 0] w_prev_data;  // 保存写之前data的值，用于hit_wdata，见`W_IDLE`
 
     always @(posedge clk) begin
         if (rst) begin
@@ -371,6 +372,7 @@ module cache (
     end
 
     // W_WRITE
+    // 由于写命中只改某一个字，因此需要记录修改之前的数据，使用mask进行修改
     wire [31: 0] hit_mask = {{8{w_wstrb_reg[3]}}, {8{w_wstrb_reg[2]}}, {8{w_wstrb_reg[1]}}, {8{w_wstrb_reg[0]}}};
     wire [31: 0] hit_wdata = (w_wdata_reg & hit_mask) | (w_prev_data & ~hit_mask);
 
@@ -388,17 +390,23 @@ module cache (
     assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
     assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
 
+    // 两个条件分别对应未命中和写命中的情况
     wire data0_we = ((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg);
-    assign data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
+
+    // 根据read_cnt进行选bank
+    wire [3: 0] data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
     assign data0_bank0_we = ((data0_wbank_sel == 4'h1) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_bank1_we = ((data0_wbank_sel == 4'h2) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_bank2_we = ((data0_wbank_sel == 4'h4) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_bank3_we = ((data0_wbank_sel == 4'h8) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_waddr = index_reg;
+
+    // 第一个条件筛选写命中；第二个条件筛选读未命中：需要写入`ret_data`；第三个条件筛选写未命中：如果是`wdata`，则直接写入该字，否则写入`ret_data`
     assign data0_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
+    // 下同
     wire data1_we = ((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg);
-    assign data1_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
+    wire [3: 0] data1_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
     assign data1_bank0_we = ((data1_wbank_sel == 4'h1) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank1_we = ((data1_wbank_sel == 4'h2) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank2_we = ((data1_wbank_sel == 4'h4) && data1_we) ? 4'b1111 : 4'b0;
