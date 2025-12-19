@@ -5,6 +5,7 @@ module AR (
     input [1: 0] id,
     input [31: 0] addr,
     input [1: 0] size,
+    input [7: 0] len,
     output addr_ok,
 
     input [4: 0] writing,
@@ -23,7 +24,6 @@ module AR (
     localparam IDLE = 2'b01;
     localparam BUSY = 2'b10;
 
-    assign arlen = 8'b0;
     assign arburst = 2'b01;
     assign arlock = 2'b0;
     assign arcache = 4'b0;
@@ -35,10 +35,12 @@ module AR (
     reg [1: 0] id_reg;
     reg [31: 0] addr_reg;
     reg [1: 0] size_reg;
+    reg [7: 0] len_reg;
 
     assign arid = {3'b0, id_reg[1]};
     assign araddr = addr_reg;
     assign arsize = {1'b0, size_reg};
+    assign arlen = len_reg;
     assign arvalid = current_state == BUSY;
 
     assign addr_ok = current_state == IDLE;
@@ -48,11 +50,13 @@ module AR (
             id_reg <= 2'b0;
             addr_reg <= 32'b0;
             size_reg <= 2'b0;
+            len_reg <= 8'b0;
         end
         else if (current_state == IDLE) begin
             id_reg <= id;
             addr_reg <= addr;
             size_reg <= size;
+            len_reg <= len;
         end
     end
 

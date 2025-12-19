@@ -13,6 +13,7 @@ module AXI_bridge (
     input sram_wr_1,
     input [1: 0] sram_size_1,
     input [31: 0] sram_addr_1,
+    input [7: 0] sram_len_1,
     input [3: 0] sram_wstrb_1,
     input [31: 0] sram_wdata_1,
     output sram_addr_ok_1,
@@ -24,8 +25,11 @@ module AXI_bridge (
     input sram_wr_2,
     input [1: 0] sram_size_2,
     input [31: 0] sram_addr_2,
+    input [7: 0] sram_len_2,
     input [3: 0] sram_wstrb_2,
     input [31: 0] sram_wdata_2,
+    input sram_last_2,
+    input sram_data_valid_2,
     output sram_addr_ok_2,
     output sram_data_ok_2,
     output [31: 0] sram_rdata_2,
@@ -79,7 +83,11 @@ module AXI_bridge (
     wire [1: 0] ar_id;
     wire [1: 0] aw_id;
     wire [1: 0] ar_size;
+    wire [7: 0] ar_len;
     wire [1: 0] aw_size;
+    wire [7: 0] aw_len;
+    wire w_last;
+    wire w_data_valid;
     wire [31: 0] ar_addr;
     wire [31: 0] aw_addr;
     wire [3: 0] strb;
@@ -97,11 +105,15 @@ module AXI_bridge (
     assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
     assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
     assign ar_size = ar_id[1] ? sram_size_2 : sram_size_1;
+    assign ar_len = ar_id[1] ? sram_len_2 : sram_len_1;
     assign aw_size = sram_size_2;
+    assign aw_len = sram_len_2;
     assign ar_addr = ar_id[1] ? sram_addr_2 : sram_addr_1;
     assign aw_addr = sram_addr_2;
     assign strb = sram_wstrb_2;
     assign write_data = sram_wdata_2;
+    assign w_last = sram_last_2;
+    assign w_data_valid = sram_data_valid_2;
     assign sram_rdata_1 = read_data;
     assign sram_rdata_2 = read_data;
     // 如果同时存在读内存和取指请求，优先选择了MEM，则此时addr_ok_1不能拉高
@@ -133,6 +145,7 @@ module AXI_bridge (
         .id(ar_id),
         .addr(ar_addr),
         .size(ar_size),
+        .len(ar_len),
         .addr_ok(ar_addr_ok),
 
         .writing(writing),
@@ -172,8 +185,11 @@ module AXI_bridge (
         .id(aw_id),
         .addr(aw_addr),
         .size(aw_size),
+        .len(aw_len),
         .strb(strb),
         .data(write_data),
+        .last(w_last),
+        .data_valid(w_data_valid),
         .addr_ok(aw_addr_ok),
 
         .awid(awid),

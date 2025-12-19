@@ -5,8 +5,11 @@ module AW (
     input [1: 0] id,
     input [31: 0] addr,
     input [1: 0] size,
+    input [7: 0] len,
     input [3: 0] strb,
     input [31: 0] data,
+    input last,
+    input data_valid,
     output addr_ok,
 
     output [3: 0] awid,
@@ -46,15 +49,17 @@ module AW (
 
     reg [31: 0] addr_reg;
     reg [1: 0] size_reg;
+    reg [7: 0] len_reg;
     reg [3: 0] strb_reg;
     reg [31: 0] data_reg;
 
     assign awaddr = addr_reg;
     assign awsize = {1'b0, size_reg};
+    assign awlen = len_reg;
     assign awvalid = current_state == BUSY || current_state == W_FIRE;
     assign wdata = data_reg;
     assign wstrb = strb_reg;
-    assign wvalid = current_state == BUSY || current_state == AW_FIRE;
+    assign wvalid = (current_state == BUSY || current_state == AW_FIRE) && data_valid;
 
     assign addr_ok = current_state == IDLE;
 
@@ -62,12 +67,14 @@ module AW (
         if (!resetn) begin
             addr_reg <= 32'b0;
             size_reg <= 2'b0;
+            len_reg <= 8'b0;
             strb_reg <= 4'b0;
             data_reg <= 32'b0;
         end
         else if (current_state == IDLE) begin
             addr_reg <= addr;
             size_reg <= size;
+            len_reg <= len;
             strb_reg <= strb;
             data_reg <= data;
         end
@@ -98,13 +105,13 @@ module AW (
                     end
                 end
                 BUSY: begin
-                    if (awready && awvalid && wready && wvalid) begin
+                    if (awready && awvalid && wready && wvalid && last) begin
                         next_state = IDLE;
                     end
                     else if (awready && awready) begin
                         next_state = AW_FIRE;
                     end
-                    else if (wready && wvalid) begin
+                    else if (wready && wvalid && last) begin
                         next_state = W_FIRE;
                     end
                     else begin
@@ -112,7 +119,7 @@ module AW (
                     end
                 end
                 AW_FIRE: begin
-                    if (wready && wvalid) begin
+                    if (wready && wvalid && last) begin
                         next_state = IDLE;
                     end
                     else begin
