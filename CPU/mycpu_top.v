@@ -482,6 +482,13 @@ module mycpu_top #(
     wire        data_sram_data_ok;
     wire [31:0] data_sram_rdata;
 
+
+    // temporary wire for AXI bridge
+    wire [7: 0] inst_sram_len = 8'd0;
+    wire [7: 0] data_sram_len = 8'd0;
+    wire data_sram_wr_last = data_sram_req;
+    wire data_sram_wr_data_valid = data_sram_req;
+
     AXI_bridge u_AXI_bridge (
         .clk            (clk),
         .resetn         (resetn),
@@ -490,6 +497,7 @@ module mycpu_top #(
         .sram_wr_1      (inst_sram_wr),
         .sram_size_1    (inst_sram_size),
         .sram_addr_1    (inst_sram_paddr),
+        .sram_len_1     (inst_sram_len),
         .sram_wstrb_1   (inst_sram_wstrb),
         .sram_wdata_1   (inst_sram_wdata),
         .sram_addr_ok_1 (inst_sram_addr_ok),
@@ -500,8 +508,11 @@ module mycpu_top #(
         .sram_wr_2      (data_sram_wr),
         .sram_size_2    (data_sram_size),
         .sram_addr_2    (data_sram_paddr),
+        .sram_len_2     (data_sram_len),
         .sram_wstrb_2   (data_sram_wstrb),
         .sram_wdata_2   (data_sram_wdata),
+        .sram_last_2    (data_sram_wr_last),
+        .sram_data_valid_2(data_sram_wr_data_valid),
         .sram_addr_ok_2 (data_sram_addr_ok),
         .sram_data_ok_2 (data_sram_data_ok),
         .sram_rdata_2   (data_sram_rdata),

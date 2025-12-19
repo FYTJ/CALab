@@ -36,13 +36,13 @@ module AW (
     localparam W_FIRE = 4'b1000;
 
     assign awid = 4'b1;
-    assign awlen = 8'b0;
+    // assign awlen = 8'b0;
     assign awburst = 2'b01;
     assign awlock = 2'b0;
     assign awcache = 4'b0;
     assign awprot = 3'b0;
     assign wid = 4'b1;
-    assign wlast = 1'b1;
+    assign wlast = (awlen == 8'b0) ? 1'b1 : last;
 
     reg [3: 0] current_state;
     reg [3: 0] next_state;
@@ -50,6 +50,7 @@ module AW (
     reg [31: 0] addr_reg;
     reg [1: 0] size_reg;
     reg [7: 0] len_reg;
+    // reg last_reg;
     reg [3: 0] strb_reg;
     reg [31: 0] data_reg;
 
@@ -59,7 +60,7 @@ module AW (
     assign awvalid = current_state == BUSY || current_state == W_FIRE;
     assign wdata = data_reg;
     assign wstrb = strb_reg;
-    assign wvalid = (current_state == BUSY || current_state == AW_FIRE) && data_valid;
+    assign wvalid = (current_state == BUSY || current_state == AW_FIRE) && (data_valid || (awlen == 8'b0));
 
     assign addr_ok = current_state == IDLE;
 
@@ -68,6 +69,7 @@ module AW (
             addr_reg <= 32'b0;
             size_reg <= 2'b0;
             len_reg <= 8'b0;
+            // last_reg <= 1'b0;
             strb_reg <= 4'b0;
             data_reg <= 32'b0;
         end
@@ -75,6 +77,7 @@ module AW (
             addr_reg <= addr;
             size_reg <= size;
             len_reg <= len;
+            // last_reg <= last;
             strb_reg <= strb;
             data_reg <= data;
         end
@@ -105,13 +108,13 @@ module AW (
                     end
                 end
                 BUSY: begin
-                    if (awready && awvalid && wready && wvalid && last) begin
+                    if (awready && awvalid && wready && wvalid && (last || (awlen == 8'b0))) begin
                         next_state = IDLE;
                     end
                     else if (awready && awready) begin
                         next_state = AW_FIRE;
                     end
-                    else if (wready && wvalid && last) begin
+                    else if (wready && wvalid && (last || (awlen == 8'b0))) begin
                         next_state = W_FIRE;
                     end
                     else begin
@@ -119,7 +122,7 @@ module AW (
                     end
                 end
                 AW_FIRE: begin
-                    if (wready && wvalid && last) begin
+                    if (wready && wvalid && (last || (awlen == 8'b0))) begin
                         next_state = IDLE;
                     end
                     else begin
