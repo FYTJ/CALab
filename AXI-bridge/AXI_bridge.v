@@ -28,10 +28,11 @@ module AXI_bridge (
     input [7: 0] sram_len_2,
     input [3: 0] sram_wstrb_2,
     input [31: 0] sram_wdata_2,
-    input sram_last_2,
+    input sram_wlast_2,
     input sram_data_valid_2,
     output sram_addr_ok_2,
     output sram_data_ok_2,
+    output sram_rlast_2,
     output [31: 0] sram_rdata_2,
 
     // AR channel
@@ -98,6 +99,7 @@ module AXI_bridge (
     wire b_data_ok;
     wire [31: 0] read_data;
     wire [1: 0] r_id;
+    wire r_last;
     wire [1: 0] b_id;
     reg  [4: 0] writing;
 
@@ -112,7 +114,8 @@ module AXI_bridge (
     assign aw_addr = sram_addr_2;
     assign strb = sram_wstrb_2;
     assign write_data = sram_wdata_2;
-    assign w_last = sram_last_2;
+    assign w_last = sram_wlast_2;
+    assign sram_rlast_2 = r_last;
     assign w_data_valid = sram_data_valid_2;
     assign sram_rdata_1 = read_data;
     assign sram_rdata_2 = read_data;
@@ -169,6 +172,7 @@ module AXI_bridge (
         .id(r_id),
         .data_ok(r_data_ok),
         .data(read_data),
+        .last(r_last),
 
         .rid(rid),
         .rdata(rdata),
