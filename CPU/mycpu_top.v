@@ -504,9 +504,9 @@ module mycpu_top #(
 
     // temporary wire for AXI bridge
     // wire [7: 0] inst_sram_len = 8'd0;
-    wire [7: 0] data_sram_len = 8'd0;
-    wire data_sram_wr_last = data_sram_req;
-    wire data_sram_wr_data_valid = data_sram_req;
+    // wire [7: 0] data_sram_len = 8'd0;
+    // wire data_sram_wr_last = data_sram_req;
+    // wire data_sram_wr_data_valid = data_sram_req;
 
     wire rd_req_i;
     wire [2: 0] rd_type_i;
@@ -522,6 +522,22 @@ module mycpu_top #(
     wire [3: 0] wr_wstrb_i;
     wire [127: 0] wr_data_i;
     wire wr_rdy_i;  // 恒1
+    wire wr_complete_i; // 恒1
+
+    wire rd_req_d;
+    wire [2: 0] rd_type_d;
+    wire [31: 0] rd_addr_d;
+    wire rd_rdy_d;
+    wire ret_valid_d;
+    wire ret_last_d;
+    wire [31: 0] ret_data_d;
+    wire wr_req_d;
+    wire [2: 0] wr_type_d;
+    wire [31: 0] wr_addr_d;
+    wire [3: 0] wr_wstrb_d;
+    wire [127: 0] wr_data_d;
+    wire wr_rdy_d;
+    wire wr_complete_d;
 
 
     cache u_icache (
@@ -557,11 +573,45 @@ module mycpu_top #(
         
         .wr_wstrb(wr_wstrb_i),
         .wr_data(wr_data_i),
-        .wr_rdy(wr_rdy_i)
+        .wr_rdy(wr_rdy_i),
+        .wr_complete(wr_complete_i)
     );
 
-    // temporary signal
-    wire data_sram_rd_last;
+    cache u_dcache (
+        .clk(clk),
+        .resetn(resetn),
+
+        // CPU - cache
+        .valid(data_sram_req),
+        //.cached(mat_d[0]),  // 0: uncached, 1: cached
+        .cached(1'b1),      // temp
+        .op(data_sram_wr),  // 0: read, 1: write
+        .index(data_sram_vaddr[11:4]),
+        .tag(data_sram_paddr[31:12]),
+        .offset(data_sram_vaddr[3:0]),
+        .wstrb(data_sram_wstrb),
+        .wdata(data_sram_wdata),
+        .addr_ok(data_sram_addr_ok),
+        .data_ok(data_sram_data_ok),
+        .rdata(data_sram_rdata),
+
+
+        // AXI - cache
+        .rd_req(rd_req_d),
+        .rd_type(rd_type_d),
+        .rd_addr(rd_addr_d),
+        .rd_rdy(rd_rdy_d),
+        .ret_valid(ret_valid_d),
+        .ret_last(ret_last_d),
+        .ret_data(ret_data_d),
+        .wr_req(wr_req_d),
+        .wr_type(wr_type_d),
+        .wr_addr(wr_addr_d),
+        .wr_wstrb(wr_wstrb_d),
+        .wr_data(wr_data_d),
+        .wr_rdy(wr_rdy_d),
+        .wr_complete(wr_complete_d)
+    );
 
     AXI_bridge u_AXI_bridge (
         .clk            (clk),
@@ -592,20 +642,37 @@ module mycpu_top #(
         .wr_wstrb_i(wr_wstrb_i),
         .wr_data_i(wr_wstrb_i),
         .wr_rdy_i(wr_rdy_i),
+        .wr_complete_i(wr_complete_i),
 
-        .sram_req_2     (data_sram_req),
-        .sram_wr_2      (data_sram_wr),
-        .sram_size_2    (data_sram_size),
-        .sram_addr_2    (data_sram_paddr),
-        .sram_len_2     (data_sram_len),
-        .sram_wstrb_2   (data_sram_wstrb),
-        .sram_wdata_2   (data_sram_wdata),
-        .sram_wlast_2    (data_sram_wr_last),
-        .sram_data_valid_2(data_sram_wr_data_valid),
-        .sram_addr_ok_2 (data_sram_addr_ok),
-        .sram_data_ok_2 (data_sram_data_ok),
-        .sram_rlast_2   (data_sram_rd_last),
-        .sram_rdata_2   (data_sram_rdata),
+        // .sram_req_2     (data_sram_req),
+        // .sram_wr_2      (data_sram_wr),
+        // .sram_size_2    (data_sram_size),
+        // .sram_addr_2    (data_sram_paddr),
+        // .sram_len_2     (data_sram_len),
+        // .sram_wstrb_2   (data_sram_wstrb),
+        // .sram_wdata_2   (data_sram_wdata),
+        // .sram_wlast_2    (data_sram_wr_last),
+        // .sram_data_valid_2(data_sram_wr_data_valid),
+        // .sram_addr_ok_2 (data_sram_addr_ok),
+        // .sram_data_ok_2 (data_sram_data_ok),
+        // .sram_rlast_2   (data_sram_rd_last),
+        // .sram_rdata_2   (data_sram_rdata),
+
+        .rd_req_d(rd_req_d),
+        .rd_type_d(rd_type_d),
+        .rd_addr_d(rd_addr_d),
+        .rd_rdy_d(rd_rdy_d),
+        .ret_valid_d(ret_valid_d),
+        .ret_last_d(ret_last_d),
+        .ret_data_d(ret_data_d),
+        .wr_req_d(wr_req_d),
+        .wr_type_d(wr_type_d),
+        .wr_addr_d(wr_addr_d),
+        .wr_wstrb_d(wr_wstrb_d),
+        .wr_data_d(wr_data_d),
+        .wr_rdy_d(wr_rdy_d),
+        .wr_complete_d(wr_complete_d),
+
 
         .arid           (arid),
         .araddr         (araddr),

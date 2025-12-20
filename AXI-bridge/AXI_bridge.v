@@ -36,22 +36,38 @@ module AXI_bridge (
     input [3: 0] wr_wstrb_i,
     input [127: 0] wr_data_i,
     output wr_rdy_i,
-    
+    output wr_complete_i, // 新增接口，仅用于非缓存的写请求（此处无效）
 
     // Data-Ram
-    input sram_req_2,
-    input sram_wr_2,
-    input [1: 0] sram_size_2,
-    input [31: 0] sram_addr_2,
-    input [7: 0] sram_len_2,
-    input [3: 0] sram_wstrb_2,
-    input [31: 0] sram_wdata_2,
-    input sram_wlast_2,
-    input sram_data_valid_2,
-    output sram_addr_ok_2,
-    output sram_data_ok_2,
-    output sram_rlast_2,
-    output [31: 0] sram_rdata_2,
+    // input sram_req_2,
+    // input sram_wr_2,
+    // input [1: 0] sram_size_2,
+    // input [31: 0] sram_addr_2,
+    // input [7: 0] sram_len_2,
+    // input [3: 0] sram_wstrb_2,
+    // input [31: 0] sram_wdata_2,
+    // input sram_wlast_2,
+    // input sram_data_valid_2,
+    // output sram_addr_ok_2,
+    // output sram_data_ok_2,
+    // output sram_rlast_2,
+    // output [31: 0] sram_rdata_2,
+
+    // d-cache
+    input rd_req_d,
+    input [2: 0] rd_type_d,
+    input [31: 0] rd_addr_d,
+    output rd_rdy_d,
+    output ret_valid_d,
+    output ret_last_d,
+    output [31: 0] ret_data_d,
+    input wr_req_d,
+    input [2: 0] wr_type_d,
+    input [31: 0] wr_addr_d,
+    input [3: 0] wr_wstrb_d,
+    input [127: 0] wr_data_d,
+    output wr_rdy_d,
+    output wr_complete_d, // 新增接口，仅用于非缓存的写请求
 
     // AR channel
     output [3: 0] arid,
@@ -105,12 +121,14 @@ module AXI_bridge (
     wire [7: 0] ar_len;
     wire [1: 0] aw_size;
     wire [7: 0] aw_len;
-    wire w_last;
-    wire w_data_valid;
+    // wire w_last;
+    // wire w_data_valid;
     wire [31: 0] ar_addr;
     wire [31: 0] aw_addr;
     wire [3: 0] strb;
-    wire [31: 0] write_data;
+    // wire [31: 0] write_data;
+    wire [127: 0] write_data;
+
     wire ar_addr_ok;
     wire aw_addr_ok;
     wire r_data_ok;
@@ -121,58 +139,91 @@ module AXI_bridge (
     wire [1: 0] b_id;
     reg  [4: 0] writing;
 
+    // 无效端口
     assign wr_rdy_i = 1'b1;
+    assign wr_complete_i = 1'b1;
 
     // 注意此处顺序：data-req优先级大于inst-req
     // assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
-    assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : rd_req_i ? 2'b01 : 2'b00;
+    // assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : rd_req_i ? 2'b01 : 2'b00;
+     assign ar_id = rd_req_d ? 2'b10 : rd_req_i ? 2'b01 : 2'b00;
 
-    assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
+    // assign aw_id = (sram_wr_2 && sram_req_2) ? 2'b10 : 2'b00;
+    assign aw_id = wr_req_d ? 2'b10 : 2'b00;
+
     // assign ar_size = ar_id[1] ? sram_size_2 : sram_size_1;
-    assign ar_size = ar_id[1] ? sram_size_2 : 2'b10;  // 固定32字节
+    // assign ar_size = ar_id[1] ? sram_size_2 : 2'b10;  // 固定32字节
+    assign ar_size = 2'b10;  // 固定32字节
 
     // assign ar_len = ar_id[1] ? sram_len_2 : sram_len_1;
-    assign ar_len = ar_id[1] ? sram_len_2 : ((rd_type_i == 3'b100) ? 8'd3 : 8'd0);
+    // assign ar_len = ar_id[1] ? sram_len_2 : ((rd_type_i == 3'b100) ? 8'd3 : 8'd0);
+    assign ar_len = ar_id[1] ? ((rd_type_d == 3'b100) ? 8'd3 : 8'd0) : ((rd_type_i == 3'b100) ? 8'd3 : 8'd0);
 
-    assign aw_size = sram_size_2;
-    assign aw_len = sram_len_2;
+    // assign aw_size = sram_size_2;
+    assign aw_size = 2'b10;  // 固定32字节
+
+    // assign aw_len = sram_len_2;
+    assign aw_len = (wr_type_d == 3'b100) ? 8'd3 : 8'd0;
+
     // assign ar_addr = ar_id[1] ? sram_addr_2 : sram_addr_1;
-    assign ar_addr = ar_id[1] ? sram_addr_2 : rd_addr_i;
+    // assign ar_addr = ar_id[1] ? sram_addr_2 : rd_addr_i;
+    assign ar_addr = ar_id[1] ? rd_addr_d : rd_addr_i;
 
-    assign aw_addr = sram_addr_2;
-    assign strb = sram_wstrb_2;
-    assign write_data = sram_wdata_2;
-    assign w_last = sram_wlast_2;
+    // assign aw_addr = sram_addr_2;
+    assign aw_addr = wr_addr_d;
+
+    // assign strb = sram_wstrb_2;
+    assign strb = wr_wstrb_d;
+
+    // assign write_data = sram_wdata_2;
+    assign write_data = wr_data_d;
+
+    // assign w_last = sram_wlast_2;
+
+
     // assign sram_rlast_1 = r_id[0] & r_last;
     assign ret_last_i = r_id[0] & r_last;
 
-    assign sram_rlast_2 = r_id[1] & r_last;
-    assign w_data_valid = sram_data_valid_2;
+    // assign sram_rlast_2 = r_id[1] & r_last;
+    assign ret_last_d = r_id[1] & r_last;
+
+    // assign w_data_valid = sram_data_valid_2;
+
     // assign sram_rdata_1 = read_data;
     assign ret_data_i = read_data;
 
-    assign sram_rdata_2 = read_data;
+    // assign sram_rdata_2 = read_data;
+    assign ret_data_d = read_data;
+
     // 如果同时存在读内存和取指请求，优先选择了MEM，则此时addr_ok_1不能拉高
     // assign sram_addr_ok_1 = ar_id[0] ? ar_addr_ok : 1'b0;
     assign rd_rdy_i = ar_id[0] ? ar_addr_ok : 1'b0;
 
-    // WARNING: MEM的addr_ok是否应该依赖wr？
+    // WARNING: MEM的addr_ok是否应该依赖wr？  -----对于cache，rd_rdy和wr_rdy是分开的，因此不用依赖wr进行选择
     // RAW阻塞：当内存写忙时，禁止接收内存读请求
-    assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : (writing != 0) ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
-    // 原本的sram_data_ok_1只管读，不管写，因此可以直接改成ret_valid_i。sram_data_ok_2就得思考一下了。
+    // assign sram_addr_ok_2 = sram_wr_2 ? aw_addr_ok : (writing != 0) ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
+    assign rd_rdy_d = (writing != 0) ? 1'b0 : ar_id[1] ? ar_addr_ok : 1'b0;
+    assign wr_rdy_d = aw_addr_ok;
+
+    // 原本的sram_data_ok_1只管读，不管写，因此可以直接改成ret_valid_i。sram_data_ok_2就得思考一下了。解决办法是增加新接口wr_complete_d
     // assign sram_data_ok_1 = r_id[0] && r_data_ok;
     assign ret_valid_i = r_id[0] && r_data_ok;
 
-    assign sram_data_ok_2 = r_id[1] && r_data_ok || b_data_ok;
+    // assign sram_data_ok_2 = r_id[1] && r_data_ok || b_data_ok;
+    assign ret_valid_d = r_id[1] && r_data_ok;
+    assign wr_complete_d = b_data_ok;
+
 
     always @(posedge clk) begin
         if (!resetn) begin
             writing <= 5'b0;
         end
-        else if (sram_wr_2 && aw_addr_ok && sram_req_2 && b_data_ok) begin
+        // else if (sram_wr_2 && aw_addr_ok && sram_req_2 && b_data_ok) begin
+        else if (wr_req_d && aw_addr_ok && b_data_ok) begin
             writing <= writing;
         end
-        else if (sram_wr_2 && aw_addr_ok && sram_req_2) begin
+        // else if (sram_wr_2 && aw_addr_ok && sram_req_2) begin
+        else if (wr_req_d && aw_addr_ok) begin
             writing <= writing + 1;
         end
         else if (b_data_ok) begin
@@ -229,9 +280,9 @@ module AXI_bridge (
         .size(aw_size),
         .len(aw_len),
         .strb(strb),
-        .data(write_data),
-        .last(w_last),
-        .data_valid(w_data_valid),
+        .data(write_data), // 位宽128
+        // .last(w_last),  // last应为AW内部信号
+        // .data_valid(w_data_valid),  // 也应为AW内部信号
         .addr_ok(aw_addr_ok),
 
         .awid(awid),

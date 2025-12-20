@@ -31,7 +31,8 @@ module cache (
     output [31: 0] wr_addr,
     output [3: 0] wr_wstrb,
     output [127: 0] wr_data,
-    input wr_rdy
+    input wr_rdy,
+    input wr_complete
 );
     wire rst = !resetn;
 
@@ -382,19 +383,19 @@ module cache (
     assign wr_data = (replace_way == 1'b0) ? data0_rdata : data1_rdata;
 
     // M_REPLACE
-    assign tagv0_we = (replace_way == 1'b0) && ret_last;
+    assign tagv0_we = cached_reg && (replace_way == 1'b0) && ret_last;
     assign tagv0_wdata = {tag_reg, 1'b1};
-    assign tagv1_we = (replace_way == 1'b1) && ret_last;
+    assign tagv1_we = cached_reg && (replace_way == 1'b1) && ret_last;
     assign tagv1_wdata = {tag_reg, 1'b1};
 
-    assign d0_we = (replace_way == 1'b0) && ret_last;
+    assign d0_we = cached_reg && (replace_way == 1'b0) && ret_last;
     assign d0_addr = index_reg;
     assign d0_wdata = op_reg;
-    assign d1_we = (replace_way == 1'b1) && ret_last;
+    assign d1_we = cached_reg && (replace_way == 1'b1) && ret_last;
     assign d1_addr = index_reg;
     assign d1_wdata = op_reg;
 
-    assign rd_req = (m_current_state == M_REPLACE);
+    assign rd_req = (m_current_state == M_REPLACE) && !(!cached_reg && op_reg); // 对于非缓存的写请求，是不需要读内存的
     assign rd_type = cached_reg ? 3'b100 : 3'b010;
     // assign rd_addr = {tag_reg, index_reg, offset_reg}; // 非突发的时候[3:2]不是0
     assign rd_addr = cached_reg ? {tag_reg, index_reg, 4'b0000} : {tag_reg, index_reg, offset_reg};
@@ -462,9 +463,17 @@ module cache (
 
     assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
 
-    assign data_ok = ((m_current_state == M_LOOKUP) && hit) ||
-        ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) ||
-        ((m_current_state == M_REFILL) && (op_reg == 1'b0) && ret_valid && (cached_reg && (read_cnt == offset_reg[3: 2]) || !cached_reg));
+    // 这里有一个精妙的设计：对于cached且miss且重填前需要写回脏块的请求，我们不需要写回操作的data_ok信号，即不需要知道写回操作什么时候完成，
+    // 因为AXI转接桥里的设计是：写操作完成之前，不能有新的读操作进入（rd_rdy == 0来保证），因此只要进入了REFILL状态，那么写回操作一定完成了。
+    // 另外，cached且miss的写请求也可以用读请求的逻辑（REFILL状态，ret_valid && (read_cnt == offset_reg[3: 2])），这是因为这个数据是缓存在
+    // cache中的数据，如果这时候立刻有读请求，也得等待cache完成REFILL，回到IDLE状态才能相应，这时候数据早就被写到cache的data_ram里了，不会有写后读。
+    // cached且hit的写请求可以直接返回data_ok，原因：写后读被hit write阻塞机制解决了。
+    // 现在还需要考虑uncached的写请求。此时为解决写后读，必须引入新的接口信号wr_complete，表示写操作已经完成。
+    assign data_ok = ((m_current_state == M_LOOKUP) && hit) || 
+        // ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) || // 之前的实现，不命中的写操作也直接拉高data_ok，这样不行，会有内存的写后读风险
+        (m_current_state == M_REFILL) && !cached_reg && (op_reg == 1'b0) && ret_valid && ret_last || 
+        (m_current_state == M_REPLACE) && !cached_reg && (op_reg == 1'b1) && wr_complete || 
+        (m_current_state == M_REFILL) && cached_reg && ret_valid && (read_cnt == offset_reg[3: 2]);
 
     // assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
     // assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
@@ -528,7 +537,7 @@ module cache (
                     end
                 end
                 M_MISS: begin
-                    if (!cached_reg && !op_reg) begin   // 非缓存的读请求，直接进入REPLACE状态。注意读请求在REPLACE状态发出。
+                    if (!cached_reg && !op_reg) begin   // 非缓存的读请求，直接进入REPLACE状态（因为不用发总线写）。注意读请求在REPLACE状态发出。
                         m_next_state = M_REPLACE;
                     end
                     else if (!wr_rdy) begin
@@ -539,6 +548,14 @@ module cache (
                     end
                 end
                 M_REPLACE: begin
+                    if (!cached_reg && op_reg) begin   // 非缓存的写请求,不用发总线读，且写请求已经在MISS状态发出，但必须等到data_ok才能回IDLE
+                        if (wr_complete) begin
+                            m_next_state = M_IDLE;
+                        end
+                        else begin
+                            m_next_state = M_REPLACE;
+                        end
+                    end
                     if (!rd_rdy) begin
                         m_next_state = M_REPLACE;
                     end
