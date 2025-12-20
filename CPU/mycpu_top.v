@@ -129,6 +129,10 @@ module mycpu_top #(
     wire [1: 0] crmd_plv_value;
     wire        crmd_da_value;
     wire        crmd_pg_value;
+
+    wire [1: 0] crmd_datf_value;
+    wire [1: 0] crmd_datm_value;
+
     wire [18:0] tlbehi_vppn_value;
     wire        dmw0_plv0_value;
     wire        dmw0_plv1_value;
@@ -274,6 +278,10 @@ module mycpu_top #(
         .crmd_plv_value(crmd_plv_value),
         .crmd_da_value(crmd_da_value),
         .crmd_pg_value(crmd_pg_value),
+
+        .crmd_datf_value(crmd_datf_value),
+        .crmd_datm_value(crmd_datm_value),
+
         .tlbehi_vppn_value(tlbehi_vppn_value),
         .dmw0_plv0_value(dmw0_plv0_value),
         .dmw0_plv1_value(dmw0_plv1_value),
@@ -408,6 +416,10 @@ module mycpu_top #(
     // MMU
     wire [31: 0] inst_sram_paddr;
     wire [31: 0] data_sram_paddr;
+
+    wire [1: 0] mat_i;
+    wire [1: 0] mat_d;
+
     wire [5: 0] mmu_ecode_i;
     wire [8: 0] mmu_esubcode_i;
     wire [5: 0] mmu_ecode_d;
@@ -422,6 +434,10 @@ module mycpu_top #(
         .crmd_plv_value(crmd_plv_value),
         .crmd_da_value(crmd_da_value),
         .crmd_pg_value(crmd_pg_value),
+
+        .crmd_datf_value(crmd_datf_value),
+        .crmd_datm_value(crmd_datm_value),
+
         .dmw0_plv0_value(dmw0_plv0_value),
         .dmw0_plv1_value(dmw0_plv1_value),
         .dmw0_plv2_value(dmw0_plv2_value),
@@ -455,6 +471,9 @@ module mycpu_top #(
         .inst_sram_paddr(inst_sram_paddr),
         .data_sram_paddr(data_sram_paddr),
 
+        .mat_i(mat_i),
+        .mat_d(mat_d),
+
         .ecode_i(mmu_ecode_i),
         .esubcode_i(mmu_esubcode_i),
         .ecode_d(mmu_ecode_d),
@@ -484,25 +503,95 @@ module mycpu_top #(
 
 
     // temporary wire for AXI bridge
-    wire [7: 0] inst_sram_len = 8'd0;
+    // wire [7: 0] inst_sram_len = 8'd0;
     wire [7: 0] data_sram_len = 8'd0;
     wire data_sram_wr_last = data_sram_req;
     wire data_sram_wr_data_valid = data_sram_req;
+
+    wire rd_req_i;
+    wire [2: 0] rd_type_i;
+    wire [31: 0] rd_addr_i;
+    wire rd_rdy_i;
+    wire ret_valid_i;
+    wire ret_last_i;
+    wire [31: 0] ret_data_i;
+    // 以下i-cache接口不需要使用
+    wire wr_req_i;
+    wire [2: 0] wr_type_i;
+    wire [31: 0] wr_addr_i;
+    wire [3: 0] wr_wstrb_i;
+    wire [127: 0] wr_data_i;
+    wire wr_rdy_i;  // 恒1
+
+
+    cache u_icache (
+        .clk(clk),
+        .resetn(resetn),
+
+        // CPU - cache
+        .valid(inst_sram_req),
+        //.cached(mat_i[0]),  // 0: uncached, 1: cached
+        .cached(1'b1),      // temp
+        .op(inst_sram_wr),  // 0: read, 1: write
+        .index(inst_sram_vaddr[11:4]),
+        .tag(inst_sram_paddr[31:12]),
+        .offset(inst_sram_vaddr[3:0]),
+        .wstrb(inst_sram_wstrb),
+        .wdata(inst_sram_wdata),
+        .addr_ok(inst_sram_addr_ok),
+        .data_ok(inst_sram_data_ok),
+        .rdata(inst_sram_rdata),
+
+
+        // AXI - cache
+        .rd_req(rd_req_i),
+        .rd_type(rd_type_i),
+        .rd_addr(rd_addr_i),
+        .rd_rdy(rd_rdy_i),
+        .ret_valid(ret_valid_i),
+        .ret_last(ret_last_i),
+        .ret_data(ret_data_i),
+        .wr_req(wr_req_i),
+        .wr_type(wr_type_i),
+        .wr_addr(wr_addr_i),
+        
+        .wr_wstrb(wr_wstrb_i),
+        .wr_data(wr_data_i),
+        .wr_rdy(wr_rdy_i)
+    );
+
+    // temporary signal
+    wire data_sram_rd_last;
 
     AXI_bridge u_AXI_bridge (
         .clk            (clk),
         .resetn         (resetn),
 
-        .sram_req_1     (inst_sram_req),
-        .sram_wr_1      (inst_sram_wr),
-        .sram_size_1    (inst_sram_size),
-        .sram_addr_1    (inst_sram_paddr),
-        .sram_len_1     (inst_sram_len),
-        .sram_wstrb_1   (inst_sram_wstrb),
-        .sram_wdata_1   (inst_sram_wdata),
-        .sram_addr_ok_1 (inst_sram_addr_ok),
-        .sram_data_ok_1 (inst_sram_data_ok),
-        .sram_rdata_1   (inst_sram_rdata),
+        // .sram_req_1     (inst_sram_req),
+        // .sram_wr_1      (inst_sram_wr),
+        // .sram_size_1    (inst_sram_size),
+        // .sram_addr_1    (inst_sram_paddr),
+        // .sram_len_1     (inst_sram_len),
+        // .sram_wstrb_1   (inst_sram_wstrb),
+        // .sram_wdata_1   (inst_sram_wdata),
+        // .sram_addr_ok_1 (inst_sram_addr_ok),
+        // .sram_data_ok_1 (inst_sram_data_ok),
+        // .sram_rdata_1   (inst_sram_rdata),
+
+        .rd_req_i(rd_req_i),
+        .rd_type_i(rd_type_i),
+        .rd_addr_i(rd_addr_i),
+        .rd_rdy_i(rd_rdy_i),
+        .ret_valid_i(ret_valid_i),
+        .ret_last_i(ret_last_i),
+        .ret_data_i(ret_data_i),
+        // 以下i-cache接口不需要使用
+        .wr_req_i(wr_req_i),
+        .wr_type_i(wr_type_i),
+        .wr_addr_i(wr_addr_i),
+        .wr_wstrb_i(wr_wstrb_i),
+        .wr_data_i(wr_wstrb_i),
+        .wr_rdy_i(wr_rdy_i),
 
         .sram_req_2     (data_sram_req),
         .sram_wr_2      (data_sram_wr),
@@ -511,10 +600,11 @@ module mycpu_top #(
         .sram_len_2     (data_sram_len),
         .sram_wstrb_2   (data_sram_wstrb),
         .sram_wdata_2   (data_sram_wdata),
-        .sram_last_2    (data_sram_wr_last),
+        .sram_wlast_2    (data_sram_wr_last),
         .sram_data_valid_2(data_sram_wr_data_valid),
         .sram_addr_ok_2 (data_sram_addr_ok),
         .sram_data_ok_2 (data_sram_data_ok),
+        .sram_rlast_2   (data_sram_rd_last),
         .sram_rdata_2   (data_sram_rdata),
 
         .arid           (arid),

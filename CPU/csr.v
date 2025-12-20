@@ -28,6 +28,10 @@ module csr #(
     output wire [1: 0] crmd_plv_value,
     output wire        crmd_da_value,
     output wire        crmd_pg_value,
+
+    output wire [1: 0] crmd_datf_value,
+    output wire [1: 0] crmd_datm_value,
+
     output wire [18:0] tlbehi_vppn_value,
     output wire        dmw0_plv0_value,
     output wire        dmw0_plv1_value,
@@ -234,6 +238,8 @@ module csr #(
             if(csr_estat_ecode==`ECODE_TLBR) begin
                 csr_crmd_da  <= 1'b0;
                 csr_crmd_pg  <= 1'b1;
+                // csr_crmd_datf <= 2'b01;
+                // csr_crmd_datm也要确定下来
             end
         end
         else if (csr_we && csr_num==`CSR_CRMD) begin
@@ -255,6 +261,9 @@ module csr #(
     assign crmd_plv_value = csr_crmd_plv;
     assign crmd_da_value = csr_crmd_da;
     assign crmd_pg_value = csr_crmd_pg;
+
+    assign crmd_datf_value = csr_crmd_datf;
+    assign crmd_datm_value = csr_crmd_datm;
 
     assign csr_crmd_rvalue = {23'b0, csr_crmd_datm, csr_crmd_datf, csr_crmd_pg, csr_crmd_da, csr_crmd_ie, csr_crmd_plv};
 

@@ -6,6 +6,10 @@ module mmu(
     input [1: 0] crmd_plv_value,
     input crmd_da_value,
     input crmd_pg_value,
+
+    input [1: 0] crmd_datf_value,
+    input [1: 0] crmd_datm_value,
+
     input dmw0_plv0_value,
     input dmw0_plv1_value,
     input dmw0_plv2_value,
@@ -38,6 +42,9 @@ module mmu(
 
     output [31: 0] inst_sram_paddr,
     output [31: 0] data_sram_paddr,
+
+    output [1: 0] mat_i,
+    output [1: 0] mat_d,
 
     // exceptions
     output [5: 0] ecode_i,
@@ -77,6 +84,17 @@ module mmu(
     wire pme_d = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value <= tlb_s1_plv) && data_sram_wr && !tlb_s1_d;
     wire ppi_i = use_tlb_i && tlb_s0_found && tlb_s0_v && (crmd_plv_value > tlb_s0_plv);
     wire ppi_d = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value > tlb_s1_plv);
+
+    assign mat_i = use_tlb_i ? (tlb_s0_found ? tlb_s0_mat : 2'b0) : 
+                   (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
+                   (inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
+                   (inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
+                   2'b0;
+    assign mat_d = use_tlb_d ? (tlb_s1_found ? tlb_s1_mat : 2'b0) : 
+                   (crmd_da_value && !crmd_pg_value) ? crmd_datm_value :
+                   (data_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
+                   (data_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
+                   2'b0;
 
     // ////////////////////////////////////////////////////////////////////
     // ////////////////////////////////////////////////////////////////////

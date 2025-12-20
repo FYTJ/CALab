@@ -1,9 +1,13 @@
+`include "D.v"
+`include "LSFR.v"
+
 module cache (
     input clk,
     input resetn,
 
     // CPU - cache
     input valid,
+    input cached,   // 0: uncached, 1: cached
     input op,  // 0: read, 1: write
     input [7: 0] index,
     input [19: 0] tag,
@@ -57,12 +61,12 @@ module cache (
     end
 
     // TagV
-    wire tagv0_en = 1'b1;
+    wire tagv0_en = cached || cached_reg;
     wire [7: 0] tagv0_addr;
     wire [20: 0] tagv0_rdata;
     wire tagv0_we;
     wire [20: 0] tagv0_wdata;
-    wire tagv1_en = 1'b1;
+    wire tagv1_en = cached || cached_reg;
     wire [7: 0] tagv1_addr;
     wire [20: 0] tagv1_rdata;
     wire tagv1_we;
@@ -115,8 +119,9 @@ module cache (
     );
 
     // Data
-    wire data0_en = 1'b1;
-    wire [7: 0] data0_raddr;
+    wire data0_en = cached || cached_reg;
+    // wire [7: 0] data0_raddr;
+    wire [7: 0] data0_addr;
     wire [31: 0] data0_bank0_rdata;
     wire [31: 0] data0_bank1_rdata;
     wire [31: 0] data0_bank2_rdata;
@@ -125,10 +130,11 @@ module cache (
     wire [3: 0] data0_bank1_we;
     wire [3: 0] data0_bank2_we;
     wire [3: 0] data0_bank3_we;
-    wire [7: 0] data0_waddr;
+    // wire [7: 0] data0_waddr;
     wire [31: 0] data0_wdata;
-    wire data1_en = 1'b1;
-    wire [7: 0] data1_raddr;
+    wire data1_en = cached || cached_reg;
+    // wire [7: 0] data1_raddr;
+    wire [7: 0] data1_addr;
     wire [31: 0] data1_bank0_rdata;
     wire [31: 0] data1_bank1_rdata;
     wire [31: 0] data1_bank2_rdata;
@@ -137,106 +143,171 @@ module cache (
     wire [3: 0] data1_bank1_we;
     wire [3: 0] data1_bank2_we;
     wire [3: 0] data1_bank3_we;
-    wire [7: 0] data1_waddr;
+    // wire [7: 0] data1_waddr;
     wire [31: 0] data1_wdata;
 
     wire [127: 0] data0_rdata = {data0_bank3_rdata, data0_bank2_rdata, data0_bank1_rdata, data0_bank0_rdata};
     wire [127: 0] data1_rdata = {data1_bank3_rdata, data1_bank2_rdata, data1_bank1_rdata, data1_bank0_rdata};
 
     // data-ram支持一个读端口和一个写端口
+    // data_ram u_data0_bank0 (
+    //     .clka (clk),
+    //     .ena (data0_en),
+    //     .wea (data0_bank0_we),
+    //     .addra (data0_waddr),
+    //     .dina (data0_wdata),
+    //     .clkb (clk),
+    //     .enb (data0_en),
+    //     .addrb (data0_raddr),
+    //     .doutb (data0_bank0_rdata)
+    // );
     data_ram u_data0_bank0 (
         .clka (clk),
         .ena (data0_en),
         .wea (data0_bank0_we),
-        .addra (data0_waddr),
+        .addra (data0_addr),
         .dina (data0_wdata),
-        .clkb (clk),
-        .enb (data0_en),
-        .addrb (data0_raddr),
-        .doutb (data0_bank0_rdata)
+        .douta (data0_bank0_rdata)
     );
 
+    // data_ram u_data0_bank1 (
+    //     .clka (clk),
+    //     .ena (data0_en),
+    //     .wea (data0_bank1_we),
+    //     .addra (data0_waddr),
+    //     .dina (data0_wdata),
+    //     .clkb (clk),
+    //     .enb (data0_en),
+    //     .addrb (data0_raddr),
+    //     .doutb (data0_bank1_rdata)
+    // );
     data_ram u_data0_bank1 (
         .clka (clk),
         .ena (data0_en),
         .wea (data0_bank1_we),
-        .addra (data0_waddr),
+        .addra (data0_addr),
         .dina (data0_wdata),
-        .clkb (clk),
-        .enb (data0_en),
-        .addrb (data0_raddr),
-        .doutb (data0_bank1_rdata)
+        .douta (data0_bank1_rdata)
     );
 
+    // data_ram u_data0_bank2 (
+    //     .clka (clk),
+    //     .ena (data0_en),
+    //     .wea (data0_bank2_we),
+    //     .addra (data0_waddr),
+    //     .dina (data0_wdata),
+    //     .clkb (clk),
+    //     .enb (data0_en),
+    //     .addrb (data0_raddr),
+    //     .doutb (data0_bank2_rdata)
+    // );
     data_ram u_data0_bank2 (
         .clka (clk),
         .ena (data0_en),
         .wea (data0_bank2_we),
-        .addra (data0_waddr),
+        .addra (data0_addr),
         .dina (data0_wdata),
-        .clkb (clk),
-        .enb (data0_en),
-        .addrb (data0_raddr),
-        .doutb (data0_bank2_rdata)
+        .douta (data0_bank2_rdata)
     );
 
+    // data_ram u_data0_bank3 (
+    //     .clka (clk),
+    //     .ena (data0_en),
+    //     .wea (data0_bank3_we),
+    //     .addra (data0_waddr),
+    //     .dina (data0_wdata),
+    //     .clkb (clk),
+    //     .enb (data0_en),
+    //     .addrb (data0_raddr),
+    //     .doutb (data0_bank3_rdata)
+    // );
     data_ram u_data0_bank3 (
         .clka (clk),
         .ena (data0_en),
         .wea (data0_bank3_we),
-        .addra (data0_waddr),
+        .addra (data0_addr),
         .dina (data0_wdata),
-        .clkb (clk),
-        .enb (data0_en),
-        .addrb (data0_raddr),
-        .doutb (data0_bank3_rdata)
+        .douta (data0_bank3_rdata)
     );
+
+    // data_ram u_data1_bank0 (
+    //     .clka (clk),
+    //     .ena (data1_en),
+    //     .wea (data1_bank0_we),
+    //     .addra (data1_waddr),
+    //     .dina (data1_wdata),
+    //     .clkb (clk),
+    //     .enb (data1_en),
+    //     .addrb (data1_raddr),
+    //     .doutb (data1_bank0_rdata)
+    // );
     data_ram u_data1_bank0 (
         .clka (clk),
         .ena (data1_en),
         .wea (data1_bank0_we),
-        .addra (data1_waddr),
+        .addra (data1_addr),
         .dina (data1_wdata),
-        .clkb (clk),
-        .enb (data1_en),
-        .addrb (data1_raddr),
-        .doutb (data1_bank0_rdata)
+        .douta (data1_bank0_rdata)
     );
 
+    // data_ram u_data1_bank1 (
+    //     .clka (clk),
+    //     .ena (data1_en),
+    //     .wea (data1_bank1_we),
+    //     .addra (data1_waddr),
+    //     .dina (data1_wdata),
+    //     .clkb (clk),
+    //     .enb (data1_en),
+    //     .addrb (data1_raddr),
+    //     .doutb (data1_bank1_rdata)
+    // );
     data_ram u_data1_bank1 (
         .clka (clk),
         .ena (data1_en),
         .wea (data1_bank1_we),
-        .addra (data1_waddr),
+        .addra (data1_addr),
         .dina (data1_wdata),
-        .clkb (clk),
-        .enb (data1_en),
-        .addrb (data1_raddr),
-        .doutb (data1_bank1_rdata)
+        .douta (data1_bank1_rdata)
     );
 
+    // data_ram u_data1_bank2 (
+    //     .clka (clk),
+    //     .ena (data1_en),
+    //     .wea (data1_bank2_we),
+    //     .addra (data1_waddr),
+    //     .dina (data1_wdata),
+    //     .clkb (clk),
+    //     .enb (data1_en),
+    //     .addrb (data1_raddr),
+    //     .doutb (data1_bank2_rdata)
+    // );
     data_ram u_data1_bank2 (
         .clka (clk),
         .ena (data1_en),
         .wea (data1_bank2_we),
-        .addra (data1_waddr),
+        .addra (data1_addr),
         .dina (data1_wdata),
-        .clkb (clk),
-        .enb (data1_en),
-        .addrb (data1_raddr),
-        .doutb (data1_bank2_rdata)
+        .douta (data1_bank2_rdata)
     );
 
+    // data_ram u_data1_bank3 (
+    //     .clka (clk),
+    //     .ena (data1_en),
+    //     .wea (data1_bank3_we),
+    //     .addra (data1_waddr),
+    //     .dina (data1_wdata),
+    //     .clkb (clk),
+    //     .enb (data1_en),
+    //     .addrb (data1_raddr),
+    //     .doutb (data1_bank3_rdata)
+    // );
     data_ram u_data1_bank3 (
         .clka (clk),
         .ena (data1_en),
         .wea (data1_bank3_we),
-        .addra (data1_waddr),
+        .addra (data1_addr),
         .dina (data1_wdata),
-        .clkb (clk),
-        .enb (data1_en),
-        .addrb (data1_raddr),
-        .doutb (data1_bank3_rdata)
+        .douta (data1_bank3_rdata)
     );
 
     // LFSR
@@ -250,6 +321,7 @@ module cache (
 
     // M_IDLE
     reg op_reg;
+    reg cached_reg;
     reg [19: 0] tag_reg;
     reg [7: 0] index_reg;
     reg [3: 0] offset_reg;
@@ -258,6 +330,7 @@ module cache (
     always @(posedge clk) begin
         if (rst) begin
             op_reg <= 1'b0;
+            cached_reg <= 1'b0;
             tag_reg <= 20'b0;
             index_reg <= 8'b0;
             offset_reg <= 4'b0;
@@ -267,6 +340,7 @@ module cache (
         // request buffer的更新条件：1. IDLE -> LOOKUP; 2. LOOKUP -> LOOKUP
         else if (((m_current_state == M_IDLE) && valid && !stall) || ((m_current_state == M_LOOKUP) && hit && valid && !stall)) begin
             op_reg <= op;
+            cached_reg <= cached;
             tag_reg <= tag;
             index_reg <= index;
             offset_reg <= offset;
@@ -275,13 +349,16 @@ module cache (
         end
     end
 
-    assign data0_raddr = (m_current_state == M_IDLE) ? index : index_reg;
-    assign data1_raddr = (m_current_state == M_IDLE) ? index : index_reg;
+    // assign data0_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+    // assign data1_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+
+    assign data0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+    assign data1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
 
     // M_LOOKUP
-    wire hit_way_0 = tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0];
-    wire hit_way_1 = tagv1_rdata[20: 1] == tag_reg && tagv1_rdata[0];
-    wire hit = (hit_way_0) || (hit_way_1);
+    wire hit_way_0 = (tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0]) && cached_reg;
+    wire hit_way_1 = (tagv1_rdata[20: 1] == tag_reg && tagv1_rdata[0]) && cached_reg;
+    wire hit = ((hit_way_0) || (hit_way_1)) && cached_reg;
 
     // M_MISS
     reg replace_way;
@@ -297,10 +374,11 @@ module cache (
     end
 
     // 为防止在M_REPLACE状态同时发读写请求，此处允许`wr_req`提前于`wr_rdy`拉高，将写请求提前到M_MISS
-    assign wr_req = (m_current_state == M_MISS) && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata));
-    assign wr_type = 3'b100;
+    assign wr_req = (m_current_state == M_MISS) && (cached_reg && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata))
+                    || !cached_reg && op_reg);  // 缓存未命中，或者非缓存的写请求
+    assign wr_type = cached_reg ? 3'b100 : 3'b010;
     assign wr_addr = (replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0};
-    assign wr_wstrb = 4'b1111;
+    assign wr_wstrb = cached_reg ? 4'b1111 : wstrb_reg;
     assign wr_data = (replace_way == 1'b0) ? data0_rdata : data1_rdata;
 
     // M_REPLACE
@@ -317,8 +395,9 @@ module cache (
     assign d1_wdata = op_reg;
 
     assign rd_req = (m_current_state == M_REPLACE);
-    assign rd_type = 3'b100;
-    assign rd_addr = {tag_reg, index_reg, 4'b0};
+    assign rd_type = cached_reg ? 3'b100 : 3'b010;
+    // assign rd_addr = {tag_reg, index_reg, offset_reg}; // 非突发的时候[3:2]不是0
+    assign rd_addr = cached_reg ? {tag_reg, index_reg, 4'b0000} : {tag_reg, index_reg, offset_reg};
 
     // M_REFILL
     // 该信号用于bank选择，见`share`
@@ -385,13 +464,16 @@ module cache (
 
     assign data_ok = ((m_current_state == M_LOOKUP) && hit) ||
         ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) ||
-        ((m_current_state == M_REFILL) && (op_reg == 1'b0) && ret_valid && (read_cnt == offset_reg[3: 2]));
+        ((m_current_state == M_REFILL) && (op_reg == 1'b0) && ret_valid && (cached_reg && (read_cnt == offset_reg[3: 2]) || !cached_reg));
 
-    assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
-    assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
+    // assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
+    // assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
+
+    assign tagv0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+    assign tagv1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
 
     // 两个条件分别对应未命中和写命中的情况
-    wire data0_we = ((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg);
+    wire data0_we = cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg));
 
     // 根据read_cnt进行选bank
     wire [3: 0] data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
@@ -399,19 +481,19 @@ module cache (
     assign data0_bank1_we = ((data0_wbank_sel == 4'h2) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_bank2_we = ((data0_wbank_sel == 4'h4) && data0_we) ? 4'b1111 : 4'b0;
     assign data0_bank3_we = ((data0_wbank_sel == 4'h8) && data0_we) ? 4'b1111 : 4'b0;
-    assign data0_waddr = index_reg;
+    // assign data0_waddr = index_reg;
 
     // 第一个条件筛选写命中；第二个条件筛选读未命中：需要写入`ret_data`；第三个条件筛选写未命中：如果是`wdata`，则直接写入该字，否则写入`ret_data`
     assign data0_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
     // 下同
-    wire data1_we = ((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg);
+    wire data1_we = cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg));
     wire [3: 0] data1_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
     assign data1_bank0_we = ((data1_wbank_sel == 4'h1) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank1_we = ((data1_wbank_sel == 4'h2) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank2_we = ((data1_wbank_sel == 4'h4) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank3_we = ((data1_wbank_sel == 4'h8) && data1_we) ? 4'b1111 : 4'b0;
-    assign data1_waddr = index_reg;
+    // assign data1_waddr = index_reg;
     assign data1_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
     assign rdata = hit_way_0 ? data0_rdata[offset_reg[3: 2] * 32 +: 32] :
@@ -446,7 +528,10 @@ module cache (
                     end
                 end
                 M_MISS: begin
-                    if (!wr_rdy) begin
+                    if (!cached_reg && !op_reg) begin   // 非缓存的读请求，直接进入REPLACE状态。注意读请求在REPLACE状态发出。
+                        m_next_state = M_REPLACE;
+                    end
+                    else if (!wr_rdy) begin
                         m_next_state = M_MISS;
                     end
                     else begin
