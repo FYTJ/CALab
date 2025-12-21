@@ -85,16 +85,25 @@ module mmu(
     wire ppi_i = use_tlb_i && tlb_s0_found && tlb_s0_v && (crmd_plv_value > tlb_s0_plv);
     wire ppi_d = use_tlb_d && tlb_s1_found && tlb_s1_v && (crmd_plv_value > tlb_s1_plv);
 
-    assign mat_i = use_tlb_i ? (tlb_s0_found ? tlb_s0_mat : 2'b0) : 
-                   (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
+    // assign mat_i = use_tlb_i ? (tlb_s0_found ? tlb_s0_mat : 2'b0) : 
+    //                (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
+    //                (inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
+    //                (inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
+    //                2'b0;
+    // assign mat_d = use_tlb_d ? (tlb_s1_found ? tlb_s1_mat : 2'b0) : 
+    //                (crmd_da_value && !crmd_pg_value) ? crmd_datm_value :
+    //                (data_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
+    //                (data_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
+    //                2'b0;
+    
+    assign mat_i = (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
                    (inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
                    (inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
-                   2'b0;
-    assign mat_d = use_tlb_d ? (tlb_s1_found ? tlb_s1_mat : 2'b0) : 
-                   (crmd_da_value && !crmd_pg_value) ? crmd_datm_value :
+                   tlb_s0_mat;
+    assign mat_d = (crmd_da_value && !crmd_pg_value) ? crmd_datm_value :
                    (data_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
                    (data_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
-                   2'b0;
+                   tlb_s1_mat;
 
     // ////////////////////////////////////////////////////////////////////
     // ////////////////////////////////////////////////////////////////////

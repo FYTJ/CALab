@@ -584,7 +584,7 @@ module mycpu_top #(
         // CPU - cache
         .valid(data_sram_req),
         //.cached(mat_d[0]),  // 0: uncached, 1: cached
-        .cached(1'b1),      // temp
+        .cached(mat_d[0]),      // temp
         .op(data_sram_wr),  // 0: read, 1: write
         .index(data_sram_vaddr[11:4]),
         .tag(data_sram_paddr[31:12]),

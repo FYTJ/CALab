@@ -353,8 +353,22 @@ module cache (
     // assign data0_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
     // assign data1_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
 
-    assign data0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
-    assign data1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+    // assign data0_addr = ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) && !(w_current_state == W_WRITE)) ? index : index_reg;
+    // assign data1_addr = ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) && !(w_current_state == W_WRITE)) ? index : index_reg;
+
+    // assign data0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? 
+    //                     ((w_current_state == W_WRITE) ? w_index_reg : index) :
+    //                     index_reg;
+    // assign data1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? 
+    //                     ((w_current_state == W_WRITE) ? w_index_reg : index) :
+    //                     index_reg;
+
+    assign data0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP) ? 
+                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg)) :
+                        index_reg;
+    assign data1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP) ? 
+                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg)) :
+                        index_reg;
 
     // M_LOOKUP
     wire hit_way_0 = (tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0]) && cached_reg;
@@ -378,9 +392,9 @@ module cache (
     assign wr_req = (m_current_state == M_MISS) && (cached_reg && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata))
                     || !cached_reg && op_reg);  // 缓存未命中，或者非缓存的写请求
     assign wr_type = cached_reg ? 3'b100 : 3'b010;
-    assign wr_addr = (replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0};
+    assign wr_addr = cached_reg ? ((replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0}) : {tag_reg, index_reg, offset_reg};
     assign wr_wstrb = cached_reg ? 4'b1111 : wstrb_reg;
-    assign wr_data = (replace_way == 1'b0) ? data0_rdata : data1_rdata;
+    assign wr_data = cached_reg ? ((replace_way == 1'b0) ? data0_rdata : data1_rdata) : {96'b0, wdata_reg};
 
     // M_REPLACE
     assign tagv0_we = cached_reg && (replace_way == 1'b0) && ret_last;
@@ -457,11 +471,20 @@ module cache (
     wire [31: 0] hit_wdata = (w_wdata_reg & hit_mask) | (w_prev_data & ~hit_mask);
 
     // share
-    wire stall = 
-        (m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1) && valid && (op == 1'b0) && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
-        (w_current_state == W_WRITE) && valid && (op == 1'b0) && (tag == w_tag_reg) && (index == w_index_reg) && (offset[3: 2] == w_offset_reg[3: 2]);
+    // wire stall = 
+    //     (m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1) && valid && (op == 1'b0) && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
+    //     (w_current_state == W_WRITE) && valid && (op == 1'b0) && (tag == w_tag_reg) && (index == w_index_reg) && (offset[3: 2] == w_offset_reg[3: 2]);
 
-    assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
+    // wire stall = 
+    //     (m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1) && valid && (op == 1'b0) && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
+    //     (w_current_state == W_WRITE) && valid && (op == 1'b0) && ((offset[3: 2] == w_offset_reg[3: 2]) || (index != w_index_reg));
+
+    wire stall = 
+        (m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1) && valid && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
+        (w_current_state == W_WRITE) && valid && (op == 1'b0) && ((offset[3: 2] == w_offset_reg[3: 2]) || (index != w_index_reg));
+
+    // assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
+    assign addr_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
 
     // 这里有一个精妙的设计：对于cached且miss且重填前需要写回脏块的请求，我们不需要写回操作的data_ok信号，即不需要知道写回操作什么时候完成，
     // 因为AXI转接桥里的设计是：写操作完成之前，不能有新的读操作进入（rd_rdy == 0来保证），因此只要进入了REFILL状态，那么写回操作一定完成了。
@@ -556,7 +579,7 @@ module cache (
                             m_next_state = M_REPLACE;
                         end
                     end
-                    if (!rd_rdy) begin
+                    else if (!rd_rdy) begin
                         m_next_state = M_REPLACE;
                     end
                     else begin
