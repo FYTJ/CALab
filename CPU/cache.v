@@ -7,7 +7,7 @@ module cache (
 
     // CPU - cache
     input valid,
-    input cached,   // 0: uncached, 1: cached
+    // input cached,   // 0: uncached, 1: cached
     input op,  // 0: read, 1: write
     input [7: 0] index,
     input [19: 0] tag,
@@ -32,17 +32,25 @@ module cache (
     output [3: 0] wr_wstrb,
     output [127: 0] wr_data,
     input wr_rdy,
-    input wr_complete,
+    // input wr_complete,
 
-    input cacop_st_tag,
-    input cacop_idx_inv,
-    input cacop_hit_inv,
-    input [7: 0] cacop_index,
-    input [19: 0] cacop_tag,
-    input [3: 0] cacop_offset,
-    output cacop_ok
+    // input cacop_st_tag,
+    // input cacop_idx_inv,
+    // input cacop_hit_inv,
+    // input [7: 0] cacop_index,
+    // input [19: 0] cacop_tag,
+    // input [3: 0] cacop_offset,
+    // output cacop_ok
 );
     wire rst = !resetn;
+    wire cached = 1'b1;
+    wire wr_complete = 1'b1;
+    wire cacop_st_tag = 1'b0;
+    wire cacop_idx_inv = 1'b0;
+    wire cacop_hit_inv = 1'b0;
+    wire [7: 0] cacop_index = 8'b0;
+    wire [19: 0] cacop_tag = 20'b0;
+    wire [3: 0] cacop_offset = 4'b0;
 
     // FSM
     localparam M_IDLE = 5'b00001;
@@ -474,7 +482,7 @@ module cache (
     // assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
     assign addr_ok = !cacop && ((m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && valid && !stall));
 
-    assign cacop_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall);
+    // assign cacop_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall);
 
     // 这里有一个精妙的设计：对于cached且miss且重填前需要写回脏块的请求，我们不需要写回操作的data_ok信号，即不需要知道写回操作什么时候完成，
     // 因为AXI转接桥里的设计是：写操作完成之前，不能有新的读操作进入（rd_rdy == 0来保证），因此只要进入了REFILL状态，那么写回操作一定完成了。
