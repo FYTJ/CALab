@@ -88,7 +88,7 @@ module MEM (
     input tlbwr,
     input tlbfill,
     input invtlb,
-    input [4:0] invtlb_op,
+    input [4:0] inst_4_0,
 
     output wire tlbsrch_to_csr,
     output wire tlbrd_to_csr,
@@ -107,12 +107,36 @@ module MEM (
     input [5:0] mmu_ecode_d,
     input [8:0] mmu_esubcode_d,
 
-    output wire mem_inst
+    output wire mem_inst,
+
+    input cacop,
+    output reg cacop_out,
+
+    output this_cacop_refetch,
+    input RDW_this_cacop_refetch,
+
+    input cacop_flush,
+
+    output wire cacop_st_tag_i,
+    output wire cacop_idx_inv_i,
+    output wire cacop_hit_inv_i,
+    output wire cacop_st_tag_d,
+    output wire cacop_idx_inv_d,
+    output wire cacop_hit_inv_d,
+    input wire cacop_ok_i,
+    input wire cacop_ok_d
 );
 
     wire this_tlb_flush;
+    wire this_cacop_flush;
+
+    wire cacop_req_i = cacop_st_tag_i | cacop_idx_inv_i | cacop_hit_inv_i;
+    wire cacop_req_d = cacop_st_tag_d | cacop_idx_inv_d | cacop_hit_inv_d;
 
     reg handshake_done;
+
+    reg cacop_i_fire;
+    reg cacop_d_fire;
 
     always @(posedge clk) begin
         if(rst) begin
@@ -130,7 +154,9 @@ module MEM (
                       this_flush ||
                       !(res_from_mul && !(to_mul_resp_ready && from_mul_resp_valid)) &&
                       !(res_from_div && !(to_div_resp_ready && from_div_resp_valid)) &&
-                      !((res_from_mem || mem_we) && !(|mmu_ecode_d) && !(req && addr_ok || handshake_done));
+                      !((res_from_mem || mem_we) && !(|mmu_ecode_d) && !(req && addr_ok || handshake_done)) &&
+                      !(cacop && (inst_4_0[2:0] == 3'b000) && !(|mmu_ecode_d) && !(cacop_req_i && cacop_ok_i || cacop_i_fire)) &&
+                      !(cacop && (inst_4_0[2:0] == 3'b001) && !(|mmu_ecode_d) && !(cacop_req_d && cacop_ok_d || cacop_d_fire));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
@@ -141,11 +167,11 @@ module MEM (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush && !cacop_flush;
         end
     end
 
-    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_flush && !(|mmu_ecode_d);
+    assign req = in_valid && !handshake_done && !this_flush && (res_from_mem || mem_we) && !this_tlb_flush && !(|mmu_ecode_d) && !this_cacop_flush;
     assign wr = (|wstrb);
     assign wstrb  = {4{mem_we && valid && in_valid}} & (
                         ({4{mem_op[5]}} & (4'b0001 << alu_result[1: 0])) |  // SB
@@ -181,7 +207,7 @@ module MEM (
             data_valid_out <= 1'b0;
 			data_out <= 32'd0;
 		end
-        else if (ex_flush || ertn_flush || tlb_flush) begin
+        else if (ex_flush || ertn_flush || tlb_flush || cacop_flush) begin
             data_valid_out <= 1'b0;
 			data_out <= 32'd0;
         end
@@ -200,12 +226,47 @@ module MEM (
 
     assign this_tlb_flush = in_valid && RDW_this_tlb_refetch;
 
-    assign tlbsrch_to_csr = in_valid && tlbsrch && !this_flush && !this_tlb_flush;
-    assign tlbrd_to_csr   = in_valid && tlbrd && !this_flush && !this_tlb_flush;
-    assign tlbwr_to_csr   = in_valid && tlbwr && !this_flush && !this_tlb_flush;
-    assign tlbfill_to_csr = in_valid && tlbfill && !this_flush && !this_tlb_flush;
-    assign invtlb_to_csr  = in_valid && invtlb && !this_flush && !this_tlb_flush;
-    assign invtlb_op_to_csr = {5{in_valid & !this_flush & !this_tlb_flush}} & invtlb_op;
+    assign tlbsrch_to_csr = in_valid && tlbsrch && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign tlbrd_to_csr   = in_valid && tlbrd   && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign tlbwr_to_csr   = in_valid && tlbwr   && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign tlbfill_to_csr = in_valid && tlbfill && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign invtlb_to_csr  = in_valid && invtlb  && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign invtlb_op_to_csr = {5{in_valid & !this_flush & !this_tlb_flush & !this_cacop_flush}} & inst_4_0;
+
+    assign this_cacop_refetch = in_valid && (cacop || RDW_this_cacop_refetch);
+
+    assign this_cacop_flush = in_valid && RDW_this_cacop_refetch;
+
+    assign cacop_st_tag_i  = in_valid && cacop && !cacop_i_fire && (inst_4_0[2:0] == 3'b000) && (inst_4_0[4:3] == 2'b00) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign cacop_idx_inv_i = in_valid && cacop && !cacop_i_fire && (inst_4_0[2:0] == 3'b000) && (inst_4_0[4:3] == 2'b01) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign cacop_hit_inv_i = in_valid && cacop && !cacop_i_fire && (inst_4_0[2:0] == 3'b000) && (inst_4_0[4:3] == 2'b10) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign cacop_st_tag_d  = in_valid && cacop && !cacop_d_fire && (inst_4_0[2:0] == 3'b001) && (inst_4_0[4:3] == 2'b00) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign cacop_idx_inv_d = in_valid && cacop && !cacop_d_fire && (inst_4_0[2:0] == 3'b001) && (inst_4_0[4:3] == 2'b01) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+    assign cacop_hit_inv_d = in_valid && cacop && !cacop_d_fire && (inst_4_0[2:0] == 3'b001) && (inst_4_0[4:3] == 2'b10) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+
+    always @(posedge clk) begin
+        if(rst) begin
+            cacop_i_fire <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            cacop_i_fire <= 1'b0;
+        end
+        else if(cacop_req_i && cacop_ok_i) begin
+            cacop_i_fire <= 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            cacop_d_fire <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            cacop_d_fire <= 1'b0;
+        end
+        else if(cacop_req_d && cacop_ok_d) begin
+            cacop_d_fire <= 1'b1;
+        end
+    end
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 
@@ -333,7 +394,7 @@ module MEM (
             has_exception_out <= 1'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
-            has_exception_out <= has_exception || ((|mmu_ecode_d) & (res_from_mem || mem_we));
+            has_exception_out <= has_exception || ((|mmu_ecode_d) & (res_from_mem || mem_we || cacop_hit_inv_i || cacop_hit_inv_d)); // 另外两个cacop都是直接地址访问，不经过mmu
         end
     end
 
@@ -343,7 +404,7 @@ module MEM (
         end
         else if (in_valid && ready_go && out_ready) begin
             if(!has_exception) begin
-                exception_maddr_out <= addr & {32{(|mmu_ecode_d) & (res_from_mem || mem_we)}};
+                exception_maddr_out <= addr & {32{(|mmu_ecode_d) & (res_from_mem || mem_we || cacop_hit_inv_i || cacop_hit_inv_d)}};
             end
             else
                 exception_maddr_out <= exception_maddr;
@@ -356,7 +417,7 @@ module MEM (
         end
         else if (in_valid && ready_go && out_ready) begin
             if(!has_exception) begin
-                ecode_out <= mmu_ecode_d & {6{(res_from_mem || mem_we)}};
+                ecode_out <= mmu_ecode_d & {6{(res_from_mem || mem_we || cacop_hit_inv_i || cacop_hit_inv_d)}};
             end
             else begin
                 ecode_out <= ecode;
@@ -370,7 +431,7 @@ module MEM (
         end
         else if (in_valid && ready_go && out_ready) begin
             if(!has_exception) begin
-                esubcode_out <= mmu_esubcode_d & {9{(res_from_mem || mem_we)}};
+                esubcode_out <= mmu_esubcode_d & {9{(res_from_mem || mem_we || cacop_hit_inv_i || cacop_hit_inv_d)}};
             end
             else begin
                 esubcode_out <= esubcode;
@@ -402,6 +463,15 @@ module MEM (
         end
         else if (in_valid && ready_go && out_ready) begin
             tlb_out <= tlbsrch || tlbrd || tlbwr || tlbfill || invtlb;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            cacop_out <= 1'b0;
+        end
+        else if (in_valid && ready_go && out_ready) begin
+            cacop_out <= cacop;
         end
     end
 endmodule

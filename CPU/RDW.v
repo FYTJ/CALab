@@ -73,7 +73,13 @@ module RDW (
 
     input tlb,
     output tlb_submit,
-    output [31:0] tlb_flush_entry
+    output [31:0] tlb_flush_entry,
+
+    output this_cacop_refetch,
+
+    input cacop,
+    output cacop_submit,
+    output [31:0] cacop_flush_entry
 );
     assign this_flush = in_valid && (has_exception || WB_flush || ertn);
     wire ready_go;
@@ -104,6 +110,12 @@ module RDW (
     assign tlb_submit = in_valid && tlb;
 
     assign tlb_flush_entry = PC + 32'h4;
+
+    assign this_cacop_refetch = in_valid && cacop;
+
+    assign cacop_submit = in_valid && cacop;
+
+    assign cacop_flush_entry = PC + 32'h4;
 
     assign result_bypass = res_from_csr ? csr_result : alu_result;
 

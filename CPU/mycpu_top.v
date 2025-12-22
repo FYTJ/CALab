@@ -155,14 +155,16 @@ module mycpu_top #(
     wire EX_tlbwr;
     wire EX_tlbfill;
     wire EX_invtlb;
-    wire [4:0] EX_invtlb_op;
+    wire EX_cacop;
+    wire [4:0] EX_inst_4_0;
 
     wire MEM_tlbsrch;
     wire MEM_tlbrd;
     wire MEM_tlbwr;
     wire MEM_tlbfill;
     wire MEM_invtlb;
-    wire [ 4: 0] MEM_invtlb_op;
+    wire MEM_cacop;
+    wire [ 4: 0] MEM_inst_4_0;
 
     wire MEM_tlbsrch_to_csr;
     wire MEM_tlbrd_to_csr;
@@ -175,10 +177,19 @@ module mycpu_top #(
     wire EX_this_tlb_refetch;
     wire MEM_this_tlb_refetch;
     wire RDW_this_tlb_refetch;
-    
+
     wire RDW_tlb;
     wire tlb_submit;
     wire [31:0] tlb_flush_entry;
+
+    wire ID_this_cacop_refetch;
+    wire EX_this_cacop_refetch;
+    wire MEM_this_cacop_refetch;
+    wire RDW_this_cacop_refetch;
+    
+    wire RDW_cacop;
+    wire cacop_submit;
+    wire [31:0] cacop_flush_entry;
 
     wire [18:0] tlb_s0_vppn;
     wire        tlb_s0_va_bit12;
@@ -539,6 +550,14 @@ module mycpu_top #(
     wire wr_rdy_d;
     wire wr_complete_d;
 
+    wire cacop_st_tag_i;
+    wire cacop_idx_inv_i;
+    wire cacop_hit_inv_i;
+    wire cacop_ok_i;
+    wire cacop_st_tag_d;
+    wire cacop_idx_inv_d;
+    wire cacop_hit_inv_d;
+    wire cacop_ok_d;
 
     cache u_icache (
         .clk(clk),
@@ -546,8 +565,7 @@ module mycpu_top #(
 
         // CPU - cache
         .valid(inst_sram_req),
-        //.cached(mat_i[0]),  // 0: uncached, 1: cached
-        .cached(1'b1),      // temp
+        .cached(mat_i[0]),  // 0: uncached, 1: cached
         .op(inst_sram_wr),  // 0: read, 1: write
         .index(inst_sram_vaddr[11:4]),
         .tag(inst_sram_paddr[31:12]),
@@ -574,7 +592,15 @@ module mycpu_top #(
         .wr_wstrb(wr_wstrb_i),
         .wr_data(wr_data_i),
         .wr_rdy(wr_rdy_i),
-        .wr_complete(wr_complete_i)
+        .wr_complete(wr_complete_i),
+
+        .cacop_st_tag(cacop_st_tag_i),
+        .cacop_idx_inv(cacop_idx_inv_i),
+        .cacop_hit_inv(cacop_hit_inv_i),
+        .cacop_index(data_sram_vaddr[11:4]),  // i-cache和d-cache的cacop指令都用这个地址
+        .cacop_tag(data_sram_paddr[31:12]),
+        .cacop_offset(data_sram_vaddr[3:0]),
+        .cacop_ok(cacop_ok_i)
     );
 
     cache u_dcache (
@@ -583,8 +609,7 @@ module mycpu_top #(
 
         // CPU - cache
         .valid(data_sram_req),
-        //.cached(mat_d[0]),  // 0: uncached, 1: cached
-        .cached(mat_d[0]),      // temp
+        .cached(mat_d[0]),  // 0: uncached, 1: cached
         .op(data_sram_wr),  // 0: read, 1: write
         .index(data_sram_vaddr[11:4]),
         .tag(data_sram_paddr[31:12]),
@@ -610,7 +635,15 @@ module mycpu_top #(
         .wr_wstrb(wr_wstrb_d),
         .wr_data(wr_data_d),
         .wr_rdy(wr_rdy_d),
-        .wr_complete(wr_complete_d)
+        .wr_complete(wr_complete_d),
+
+        .cacop_st_tag(cacop_st_tag_d),
+        .cacop_idx_inv(cacop_idx_inv_d),
+        .cacop_hit_inv(cacop_hit_inv_d),
+        .cacop_index(data_sram_vaddr[11:4]),
+        .cacop_tag(data_sram_paddr[31:12]),
+        .cacop_offset(data_sram_vaddr[3:0]),
+        .cacop_ok(cacop_ok_d)
     );
 
     AXI_bridge u_AXI_bridge (
@@ -960,6 +993,9 @@ module mycpu_top #(
         .tlb_flush(tlb_submit),
         .tlb_flush_entry(tlb_flush_entry),
 
+        .cacop_flush(cacop_submit),
+        .cacop_flush_entry(cacop_flush_entry),
+
         .mmu_ecode_i(mmu_ecode_i),
         .mmu_esubcode_i(mmu_esubcode_i),
 
@@ -1014,6 +1050,13 @@ module mycpu_top #(
         .RDW_this_tlb_refetch(RDW_this_tlb_refetch),
 
         .tlb_flush(tlb_submit),
+
+        .ID_this_cacop_refetch(ID_this_cacop_refetch),
+        .EX_this_cacop_refetch(EX_this_cacop_refetch),
+        .MEM_this_cacop_refetch(MEM_this_cacop_refetch),
+        .RDW_this_cacop_refetch(RDW_this_cacop_refetch),
+
+        .cacop_flush(cacop_submit),
 
         .ID_this_csr_refetch(ID_this_csr_refetch),
         .EX_this_csr_refetch(EX_this_csr_refetch),
@@ -1117,7 +1160,7 @@ module mycpu_top #(
         .tlbwr_out(EX_tlbwr),
         .tlbfill_out(EX_tlbfill),
         .invtlb_out(EX_invtlb),
-        .invtlb_op_out(EX_invtlb_op),
+        .inst_4_0_out(EX_inst_4_0),
 
         .this_tlb_refetch(ID_this_tlb_refetch),
         .EX_this_tlb_refetch(EX_this_tlb_refetch),
@@ -1141,6 +1184,15 @@ module mycpu_top #(
 
         .EX_mem_inst(EX_mem_inst),
         .MEM_mem_inst(MEM_mem_inst),
+
+        .cacop_out(EX_cacop),
+
+        .this_cacop_refetch(ID_this_cacop_refetch),
+        .EX_this_cacop_refetch(EX_this_cacop_refetch),
+        .MEM_this_cacop_refetch(MEM_this_cacop_refetch),
+        .RDW_this_cacop_refetch(RDW_this_cacop_refetch),
+
+        .cacop_flush(cacop_submit),
 
         .exception_maddr(ID_exception_maddr),
         .exception_maddr_out(EX_exception_maddr)
@@ -1223,14 +1275,14 @@ module mycpu_top #(
         .tlbwr(EX_tlbwr),
         .tlbfill(EX_tlbfill),
         .invtlb(EX_invtlb),
-        .invtlb_op(EX_invtlb_op),
+        .inst_4_0(EX_inst_4_0),
 
         .tlbsrch_out(MEM_tlbsrch),
         .tlbrd_out(MEM_tlbrd),
         .tlbwr_out(MEM_tlbwr),
         .tlbfill_out(MEM_tlbfill),
         .invtlb_out(MEM_invtlb),
-        .invtlb_op_out(MEM_invtlb_op),
+        .inst_4_0_out(MEM_inst_4_0),
 
         .this_tlb_refetch(EX_this_tlb_refetch),
         .MEM_this_tlb_refetch(MEM_this_tlb_refetch),
@@ -1243,7 +1295,16 @@ module mycpu_top #(
 
         .tlb_flush(tlb_submit),
 
-        .mem_inst(EX_mem_inst)
+        .mem_inst(EX_mem_inst),
+
+        .cacop(EX_cacop),
+	    .cacop_out(MEM_cacop),
+
+        .this_cacop_refetch(EX_this_cacop_refetch),
+        .MEM_this_cacop_refetch(MEM_this_cacop_refetch),
+        .RDW_this_cacop_refetch(RDW_this_cacop_refetch),
+
+        .cacop_flush(cacop_submit)
     );
 
 
@@ -1351,7 +1412,7 @@ module mycpu_top #(
         .tlbwr(MEM_tlbwr),
         .tlbfill(MEM_tlbfill),
         .invtlb(MEM_invtlb),
-        .invtlb_op(MEM_invtlb_op),
+        .inst_4_0(MEM_inst_4_0),
         
         .tlbsrch_to_csr(MEM_tlbsrch_to_csr),
         .tlbrd_to_csr(MEM_tlbrd_to_csr),
@@ -1369,7 +1430,24 @@ module mycpu_top #(
         .mmu_ecode_d(mmu_ecode_d),
         .mmu_esubcode_d(mmu_esubcode_d),
 
-        .mem_inst(MEM_mem_inst)
+        .mem_inst(MEM_mem_inst),
+
+        .cacop(MEM_cacop),
+        .cacop_out(RDW_cacop),
+
+        .this_cacop_refetch(MEM_this_cacop_refetch),
+        .RDW_this_cacop_refetch(RDW_this_cacop_refetch),
+
+        .cacop_flush(cacop_submit),
+
+        .cacop_st_tag_i(cacop_st_tag_i),
+        .cacop_idx_inv_i(cacop_idx_inv_i),
+        .cacop_hit_inv_i(cacop_hit_inv_i),
+        .cacop_st_tag_d(cacop_st_tag_d),
+        .cacop_idx_inv_d(cacop_idx_inv_d),
+        .cacop_hit_inv_d(cacop_hit_inv_d),
+        .cacop_ok_i(cacop_ok_i),
+        .cacop_ok_d(cacop_ok_d)
     );
 
     RDW RDW_unit(
@@ -1447,7 +1525,13 @@ module mycpu_top #(
 
         .tlb(RDW_tlb),
         .tlb_submit(tlb_submit),
-        .tlb_flush_entry(tlb_flush_entry)
+        .tlb_flush_entry(tlb_flush_entry),
+
+        .this_cacop_refetch(RDW_this_cacop_refetch),
+
+        .cacop(RDW_cacop),
+        .cacop_submit(cacop_submit),
+        .cacop_flush_entry(cacop_flush_entry)
     );
 
     WB WB_unit(

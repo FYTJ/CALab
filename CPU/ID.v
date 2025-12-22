@@ -105,7 +105,7 @@ module ID (
     output reg tlbwr_out,
     output reg tlbfill_out,
     output reg invtlb_out,
-    output reg [4:0] invtlb_op_out,
+    output reg [4:0] inst_4_0_out,
 
     output this_tlb_refetch,
     input EX_this_tlb_refetch,
@@ -128,6 +128,15 @@ module ID (
     input EX_mem_inst,
     input MEM_mem_inst,
 
+    output reg cacop_out,
+
+    output this_cacop_refetch,
+    input EX_this_cacop_refetch,
+    input MEM_this_cacop_refetch,
+    input RDW_this_cacop_refetch,
+
+    input cacop_flush,
+
     input [31:0] exception_maddr,
     output reg [31:0] exception_maddr_out
 );
@@ -143,6 +152,7 @@ module ID (
                       this_flush ||
                       this_tlb_refetch ||
                       this_csr_flush ||
+                      this_cacop_refetch ||
                       !load_use_stall && !mul_div_stall && !rdcntid_stall && !csr_mem_stall;
 
     assign in_ready = !rst && (!in_valid || ready_go && out_ready);
@@ -152,7 +162,7 @@ module ID (
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush && !csr_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush && !csr_flush && !cacop_flush;
         end
     end
 
@@ -272,6 +282,7 @@ module ID (
     wire        inst_tlbwr;
     wire        inst_tlbfill;
     wire        inst_invtlb;
+    wire        inst_cacop;
 
     wire        need_ui5;
     wire        need_si12;
@@ -366,10 +377,11 @@ module ID (
     assign inst_tlbwr     = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_10_d[5'h0c] & op_09_05_d[5'h00] & op_04_00_d[5'h00];
     assign inst_tlbfill   = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h10] & op_14_10_d[5'h0d] & op_09_05_d[5'h00] & op_04_00_d[5'h00];
     assign inst_invtlb    = op_31_26_d[6'h01] & op_25_22_d[4'h9] & op_21_20_d[2'h0] & op_19_15_d[5'h13];
+    assign inst_cacop     = op_31_26_d[6'h01] & op_25_22_d[4'h8];
 
     assign mem_op = {inst_st_w, inst_st_h, inst_st_b, inst_ld_hu, inst_ld_bu, inst_ld_w, inst_ld_h, inst_ld_b};
 
-    assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_ld_h | inst_ld_b | inst_ld_hu | inst_ld_bu | inst_st_w | inst_st_h | inst_st_b | inst_jirl | inst_bl | inst_pcaddu12i;
+    assign alu_op[ 0] = inst_add_w | inst_addi_w | inst_ld_w | inst_ld_h | inst_ld_b | inst_ld_hu | inst_ld_bu | inst_st_w | inst_st_h | inst_st_b | inst_jirl | inst_bl | inst_pcaddu12i | inst_cacop;
     assign alu_op[ 1] = inst_sub_w;
     assign alu_op[ 2] = inst_slt | inst_slti;
     assign alu_op[ 3] = inst_sltu | inst_sltui;
@@ -386,7 +398,7 @@ module ID (
     assign div_op = {inst_mod_wu, inst_mod_w, inst_div_wu, inst_div_w};
 
     assign need_ui5   =  inst_slli_w | inst_srli_w | inst_srai_w;
-    assign need_si12  =  inst_addi_w | inst_ld_b | inst_ld_h | inst_ld_w | inst_st_b | inst_st_h | inst_st_w | inst_ld_bu | inst_ld_hu | inst_slti | inst_sltui;
+    assign need_si12  =  inst_addi_w | inst_ld_b | inst_ld_h | inst_ld_w | inst_st_b | inst_st_h | inst_st_w | inst_ld_bu | inst_ld_hu | inst_slti | inst_sltui | inst_cacop;
     assign need_ui12  =  inst_andi | inst_ori | inst_xori;
     assign need_si16  =  inst_jirl | inst_beq | inst_bne;
     assign need_si20  =  inst_lu12i_w | inst_pcaddu12i;
@@ -427,7 +439,8 @@ module ID (
                            inst_lu12i_w  |
                            inst_jirl     |
                            inst_bl       |
-                           inst_pcaddu12i;
+                           inst_pcaddu12i|
+                           inst_cacop;
 
     assign res_from_mul  = inst_mul_w | inst_mulh_w | inst_mulh_wu;
     assign res_from_div  = inst_div_w | inst_div_wu | inst_mod_w | inst_mod_wu;
@@ -435,7 +448,7 @@ module ID (
     assign res_from_csr  = inst_csrrd | inst_csrwr | inst_csrxchg;
     assign dst_is_r1     = inst_bl;
 
-    assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu & ~inst_tlbsrch & ~inst_tlbrd & ~inst_tlbwr & ~inst_tlbfill & ~inst_invtlb;
+    assign gr_we         = ~inst_st_b & ~inst_st_h & ~inst_st_w & ~inst_beq & ~inst_bne & ~inst_b & ~inst_blt & ~inst_bge & ~inst_bltu & ~inst_bgeu & ~inst_tlbsrch & ~inst_tlbrd & ~inst_tlbwr & ~inst_tlbfill & ~inst_invtlb & ~inst_cacop;
     assign mem_we        = inst_st_b | inst_st_h | inst_st_w;
     assign dest          = dst_is_r1 ? 5'd1 :
                            inst_rdcntid ? rj :
@@ -545,6 +558,8 @@ module ID (
     
     assign this_tlb_refetch = in_valid && (inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
 
+    assign this_cacop_refetch = in_valid && (inst_cacop || EX_this_cacop_refetch || MEM_this_cacop_refetch || RDW_this_cacop_refetch);
+
     assign this_csr_refetch = in_valid && (csr_affect_mem || EX_this_csr_refetch);
 
     assign this_csr_flush = in_valid && EX_this_csr_refetch;
@@ -556,14 +571,14 @@ module ID (
     /* csr control */
     assign csr_re = (inst_csrrd || inst_csrwr || inst_csrxchg) && ready_go;
     assign csr_num = inst[23: 10];
-    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush && !this_tlb_refetch && !this_csr_flush;
+    assign csr_we = in_valid && (inst_csrwr || inst_csrxchg) && ready_go && out_ready && !this_flush && !this_tlb_refetch && !this_csr_flush && !this_cacop_refetch;
     assign csr_wmask = {32{inst_csrwr}} | {32{inst_csrxchg}} & rj_value;
     assign csr_wvalue = rkd_value;
 
     assign SYSCALL = inst_syscall;
     assign BRK = inst_break;
-    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w || inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb) || 
-                 (inst_invtlb && (inst[4] || inst[3] || (&inst[2:0])));
+    assign INE = !(inst_add_w || inst_sub_w || inst_slt || inst_slti || inst_sltu || inst_sltui || inst_nor || inst_and || inst_or || inst_xor || inst_andi || inst_ori || inst_xori || inst_sll_w || inst_srl_w || inst_sra_w || inst_slli_w || inst_srli_w || inst_srai_w || inst_addi_w || inst_ld_b || inst_ld_h || inst_ld_w || inst_st_b || inst_st_h || inst_st_w || inst_ld_bu || inst_ld_hu || inst_jirl || inst_b || inst_bl || inst_beq || inst_bne || inst_blt || inst_bge || inst_bltu || inst_bgeu || inst_lu12i_w || inst_pcaddu12i || inst_mul_w || inst_mulh_w || inst_mulh_wu || inst_div_w || inst_mod_w || inst_div_wu || inst_mod_wu || inst_csrrd || inst_csrwr || inst_csrxchg || inst_ertn || inst_syscall || inst_break || inst_rdcntid || inst_rdcntvl_w || inst_rdcntvh_w || inst_tlbsrch || inst_tlbrd || inst_tlbwr || inst_tlbfill || inst_invtlb || inst_cacop) || 
+                 (inst_invtlb && (inst[4] || inst[3] || (&inst[2:0]))) || (inst_cacop && (inst[4:3] == 2'b11 || inst[2:0] == 3'b010));
     assign INT = has_interrupt;
 
     always @(posedge clk) begin
@@ -602,7 +617,7 @@ module ID (
 		end
 	end
 
-    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken & !this_flush & !this_tlb_refetch & !this_csr_flush;
+    assign br_taken_out = (~rst) & in_valid && ready_go && out_ready & br_taken & !this_flush & !this_tlb_refetch & !this_csr_flush & !this_cacop_refetch;
     assign br_target_out = {32{(~rst) & in_valid && ready_go && out_ready}} & br_target;
 
     always @(posedge clk) begin
@@ -817,7 +832,7 @@ module ID (
             tlbwr_out     <= 1'b0;
             tlbfill_out   <= 1'b0;
             invtlb_out    <= 1'b0;
-            invtlb_op_out <= 5'b0;
+            inst_4_0_out  <= 5'b0;
         end
         else if (in_valid && ready_go && out_ready) begin
             tlbsrch_out   <= inst_tlbsrch;
@@ -825,7 +840,7 @@ module ID (
             tlbwr_out     <= inst_tlbwr;
             tlbfill_out   <= inst_tlbfill;
             invtlb_out    <= inst_invtlb;
-            invtlb_op_out <= inst[ 4: 0];
+            inst_4_0_out  <= inst[ 4: 0];
         end
     end
 
@@ -844,6 +859,15 @@ module ID (
         end
         else if(in_valid && ready_go && out_ready) begin
             exception_maddr_out <= exception_maddr;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            cacop_out <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            cacop_out <= inst_cacop;
         end
     end
 endmodule

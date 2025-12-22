@@ -42,6 +42,9 @@ module IF (
     input tlb_flush,
     input [31:0] tlb_flush_entry,
 
+    input cacop_flush,
+    input [31:0] cacop_flush_entry,
+
     input [5:0] mmu_ecode_i,
     input [8:0] mmu_esubcode_i,
 
@@ -82,7 +85,7 @@ module IF (
         else if(ready_go) begin
             handshake_done <= !out_ready;
         end
-        else if(ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush) begin
+        else if(ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush || cacop_flush) begin
             handshake_done <= 1'b0;
         end
     end
@@ -103,6 +106,9 @@ module IF (
     reg csr_flush_reg;
     reg [31:0] csr_flush_target_reg;
 
+    reg cacop_flush_reg;
+    reg [31:0] cacop_flush_entry_reg;
+
     wire br_taken_preserved = br_taken | br_taken_reg;
     wire [31:0] br_target_preserved = br_taken ? br_target : br_target_reg;
     wire ex_flush_preserved = ex_flush | ex_flush_reg;
@@ -119,7 +125,10 @@ module IF (
     wire csr_flush_preserved = csr_flush | csr_flush_reg;
     wire [31:0] csr_flush_target_preserved = csr_flush ? csr_flush_target : csr_flush_target_reg;
 
-    wire handshake_done_effective = handshake_done && !ex_flush && !ertn_flush && !br_taken && !tlb_flush && !csr_flush;
+    wire cacop_flush_preserved = cacop_flush | cacop_flush_reg;
+    wire [31:0] cacop_flush_entry_preserved = cacop_flush ? cacop_flush_entry : cacop_flush_entry_reg;
+
+    wire handshake_done_effective = handshake_done && !ex_flush && !ertn_flush && !br_taken && !tlb_flush && !csr_flush && !cacop_flush;
 
     reg inst_valid;
     reg [31:0] inst;
@@ -127,7 +136,7 @@ module IF (
     assign req = !handshake_done_effective && !(br_stall && ID_in_valid);
     
     // discard the first instruction after exception flush
-    assign discard_out_wire = (ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush) && handshake_done && !inst_valid;
+    assign discard_out_wire = (ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush || cacop_flush) && handshake_done && !inst_valid;
 
     wire [31:0] seq_pc;
     wire [31:0] nextpc;
@@ -139,6 +148,7 @@ module IF (
                           ertn_flush_preserved ? ertn_entry_preserved :
                           tlb_flush_preserved ? tlb_flush_entry_preserved :
                           csr_flush_preserved ? csr_flush_target_preserved :
+                          cacop_flush_preserved ? cacop_flush_entry_preserved :
                           br_taken_preserved ? br_target_preserved : seq_pc;
     /////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
@@ -169,7 +179,7 @@ module IF (
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
-        else if(ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush) begin
+        else if(ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush || cacop_flush) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
@@ -210,7 +220,7 @@ module IF (
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
 		end
-        else if (ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush) begin
+        else if (ex_flush || ertn_flush || br_taken || tlb_flush || csr_flush || cacop_flush) begin
             inst_valid_out <= 1'b0;
 			inst_out <= 32'd0;
         end
@@ -361,6 +371,30 @@ module IF (
         end
         else if(csr_flush) begin
             csr_flush_target_reg <= csr_flush_target;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            cacop_flush_reg <= 1'b0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            cacop_flush_reg <= 1'b0;
+        end
+        else if(cacop_flush) begin
+            cacop_flush_reg <= 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if(rst) begin
+            cacop_flush_entry_reg <= 32'd0;
+        end
+        else if(in_valid && ready_go && out_ready) begin
+            cacop_flush_entry_reg <= 32'd0;
+        end
+        else if(cacop_flush) begin
+            cacop_flush_entry_reg <= cacop_flush_entry;
         end
     end
 

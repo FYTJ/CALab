@@ -32,7 +32,15 @@ module cache (
     output [3: 0] wr_wstrb,
     output [127: 0] wr_data,
     input wr_rdy,
-    input wr_complete
+    input wr_complete,
+
+    input cacop_st_tag,
+    input cacop_idx_inv,
+    input cacop_hit_inv,
+    input [7: 0] cacop_index,
+    input [19: 0] cacop_tag,
+    input [3: 0] cacop_offset,
+    output cacop_ok
 );
     wire rst = !resetn;
 
@@ -151,17 +159,6 @@ module cache (
     wire [127: 0] data1_rdata = {data1_bank3_rdata, data1_bank2_rdata, data1_bank1_rdata, data1_bank0_rdata};
 
     // data-ram支持一个读端口和一个写端口
-    // data_ram u_data0_bank0 (
-    //     .clka (clk),
-    //     .ena (data0_en),
-    //     .wea (data0_bank0_we),
-    //     .addra (data0_waddr),
-    //     .dina (data0_wdata),
-    //     .clkb (clk),
-    //     .enb (data0_en),
-    //     .addrb (data0_raddr),
-    //     .doutb (data0_bank0_rdata)
-    // );
     data_ram u_data0_bank0 (
         .clka (clk),
         .ena (data0_en),
@@ -171,17 +168,6 @@ module cache (
         .douta (data0_bank0_rdata)
     );
 
-    // data_ram u_data0_bank1 (
-    //     .clka (clk),
-    //     .ena (data0_en),
-    //     .wea (data0_bank1_we),
-    //     .addra (data0_waddr),
-    //     .dina (data0_wdata),
-    //     .clkb (clk),
-    //     .enb (data0_en),
-    //     .addrb (data0_raddr),
-    //     .doutb (data0_bank1_rdata)
-    // );
     data_ram u_data0_bank1 (
         .clka (clk),
         .ena (data0_en),
@@ -191,17 +177,6 @@ module cache (
         .douta (data0_bank1_rdata)
     );
 
-    // data_ram u_data0_bank2 (
-    //     .clka (clk),
-    //     .ena (data0_en),
-    //     .wea (data0_bank2_we),
-    //     .addra (data0_waddr),
-    //     .dina (data0_wdata),
-    //     .clkb (clk),
-    //     .enb (data0_en),
-    //     .addrb (data0_raddr),
-    //     .doutb (data0_bank2_rdata)
-    // );
     data_ram u_data0_bank2 (
         .clka (clk),
         .ena (data0_en),
@@ -211,17 +186,6 @@ module cache (
         .douta (data0_bank2_rdata)
     );
 
-    // data_ram u_data0_bank3 (
-    //     .clka (clk),
-    //     .ena (data0_en),
-    //     .wea (data0_bank3_we),
-    //     .addra (data0_waddr),
-    //     .dina (data0_wdata),
-    //     .clkb (clk),
-    //     .enb (data0_en),
-    //     .addrb (data0_raddr),
-    //     .doutb (data0_bank3_rdata)
-    // );
     data_ram u_data0_bank3 (
         .clka (clk),
         .ena (data0_en),
@@ -231,17 +195,6 @@ module cache (
         .douta (data0_bank3_rdata)
     );
 
-    // data_ram u_data1_bank0 (
-    //     .clka (clk),
-    //     .ena (data1_en),
-    //     .wea (data1_bank0_we),
-    //     .addra (data1_waddr),
-    //     .dina (data1_wdata),
-    //     .clkb (clk),
-    //     .enb (data1_en),
-    //     .addrb (data1_raddr),
-    //     .doutb (data1_bank0_rdata)
-    // );
     data_ram u_data1_bank0 (
         .clka (clk),
         .ena (data1_en),
@@ -251,17 +204,6 @@ module cache (
         .douta (data1_bank0_rdata)
     );
 
-    // data_ram u_data1_bank1 (
-    //     .clka (clk),
-    //     .ena (data1_en),
-    //     .wea (data1_bank1_we),
-    //     .addra (data1_waddr),
-    //     .dina (data1_wdata),
-    //     .clkb (clk),
-    //     .enb (data1_en),
-    //     .addrb (data1_raddr),
-    //     .doutb (data1_bank1_rdata)
-    // );
     data_ram u_data1_bank1 (
         .clka (clk),
         .ena (data1_en),
@@ -271,17 +213,6 @@ module cache (
         .douta (data1_bank1_rdata)
     );
 
-    // data_ram u_data1_bank2 (
-    //     .clka (clk),
-    //     .ena (data1_en),
-    //     .wea (data1_bank2_we),
-    //     .addra (data1_waddr),
-    //     .dina (data1_wdata),
-    //     .clkb (clk),
-    //     .enb (data1_en),
-    //     .addrb (data1_raddr),
-    //     .doutb (data1_bank2_rdata)
-    // );
     data_ram u_data1_bank2 (
         .clka (clk),
         .ena (data1_en),
@@ -291,17 +222,6 @@ module cache (
         .douta (data1_bank2_rdata)
     );
 
-    // data_ram u_data1_bank3 (
-    //     .clka (clk),
-    //     .ena (data1_en),
-    //     .wea (data1_bank3_we),
-    //     .addra (data1_waddr),
-    //     .dina (data1_wdata),
-    //     .clkb (clk),
-    //     .enb (data1_en),
-    //     .addrb (data1_raddr),
-    //     .doutb (data1_bank3_rdata)
-    // );
     data_ram u_data1_bank3 (
         .clka (clk),
         .ena (data1_en),
@@ -328,6 +248,14 @@ module cache (
     reg [3: 0] offset_reg;
     reg [3: 0] wstrb_reg;
     reg [31: 0] wdata_reg;
+
+    reg cacop_st_tag_reg;
+    reg cacop_idx_inv_reg;
+    reg cacop_hit_inv_reg;
+
+    wire cacop = cacop_st_tag || cacop_idx_inv || cacop_hit_inv;
+    wire cacop_reg = cacop_st_tag_reg || cacop_idx_inv_reg || cacop_hit_inv_reg;
+
     always @(posedge clk) begin
         if (rst) begin
             op_reg <= 1'b0;
@@ -337,9 +265,38 @@ module cache (
             offset_reg <= 4'b0;
             wstrb_reg <= 4'b0;
             wdata_reg <= 32'b0;
+
+            cacop_st_tag_reg <= 1'b0;
+            cacop_idx_inv_reg <= 1'b0;
+            cacop_hit_inv_reg <= 1'b0;
         end
         // request buffer的更新条件：1. IDLE -> LOOKUP; 2. LOOKUP -> LOOKUP
-        else if (((m_current_state == M_IDLE) && valid && !stall) || ((m_current_state == M_LOOKUP) && hit && valid && !stall)) begin
+        // else if (((m_current_state == M_IDLE) && (valid || cacop) && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (valid || cacop) && !stall)) begin
+        //     op_reg <= op;
+        //     cached_reg <= cached;
+        //     tag_reg <= tag;
+        //     index_reg <= index;
+        //     offset_reg <= offset;
+        //     wstrb_reg <= wstrb;
+        //     wdata_reg <= wdata;
+
+        //     cacop_st_tag_reg <= cacop_st_tag;
+        //     cacop_idx_inv_reg <= cacop_idx_inv;
+        //     cacop_hit_inv_reg <= cacop_hit_inv;
+        // end
+        else if(((m_current_state == M_IDLE) && cacop && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall)) begin
+            op_reg <= 1'b0;
+            cached_reg <= 1'b1;
+            tag_reg <= cacop_tag;
+            index_reg <= cacop_index;
+            offset_reg <= cacop_offset;
+            wstrb_reg <= 4'b0;
+            wdata_reg <= 32'b0;
+            cacop_st_tag_reg <= cacop_st_tag;
+            cacop_idx_inv_reg <= cacop_idx_inv;
+            cacop_hit_inv_reg <= cacop_hit_inv;
+        end
+        else if(((m_current_state == M_IDLE) && valid && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && valid && !stall)) begin
             op_reg <= op;
             cached_reg <= cached;
             tag_reg <= tag;
@@ -347,8 +304,21 @@ module cache (
             offset_reg <= offset;
             wstrb_reg <= wstrb;
             wdata_reg <= wdata;
+            cacop_st_tag_reg <= 1'b0;
+            cacop_idx_inv_reg <= 1'b0;
+            cacop_hit_inv_reg <= 1'b0;
         end
     end
+
+    // reg hit_way_reg;
+    // always @(posedge clk) begin
+    //     if(rst) begin
+    //         hit_way_reg <= 1'b0;
+    //     end
+    //     else if((m_current_state == M_LOOKUP) && hit && cacop_hit_inv_reg) begin
+    //         hit_way_reg <= hit_way_0 ? 1'b0 : 1'b1;
+    //     end
+    // end
 
     // assign data0_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
     // assign data1_raddr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
@@ -364,16 +334,16 @@ module cache (
     //                     index_reg;
 
     assign data0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP) ? 
-                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg)) :
+                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg) ? index : index_reg)) :
                         index_reg;
     assign data1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP) ? 
-                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg)) :
+                        ((w_current_state == W_WRITE) ? w_index_reg : ((m_current_state == M_IDLE || (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg) ? index : index_reg)) :
                         index_reg;
 
     // M_LOOKUP
-    wire hit_way_0 = (tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0]) && cached_reg;
-    wire hit_way_1 = (tagv1_rdata[20: 1] == tag_reg && tagv1_rdata[0]) && cached_reg;
-    wire hit = ((hit_way_0) || (hit_way_1)) && cached_reg;
+    wire hit_way_0 = (tagv0_rdata[20: 1] == tag_reg && tagv0_rdata[0]) && (cached_reg || cacop_hit_inv_reg);
+    wire hit_way_1 = (tagv1_rdata[20: 1] == tag_reg && tagv1_rdata[0]) && (cached_reg || cacop_hit_inv_reg);
+    wire hit = hit_way_0 || hit_way_1;
 
     // M_MISS
     reg replace_way;
@@ -383,33 +353,50 @@ module cache (
             replace_way <= 1'b0;
         end
         // 注意这里的赋值条件与LOOKUP -> MISS的条件相同，而不是组合连接
-        else if ((m_current_state == M_LOOKUP) && hit) begin
-            replace_way <= rand_way;
+        else if ((m_current_state == M_LOOKUP) && (!hit || hit && cacop_hit_inv_reg)) begin
+            if(cacop_st_tag_reg || cacop_idx_inv_reg) begin
+                replace_way <= offset_reg[0];
+            end
+            else if(cacop_hit_inv_reg) begin
+                replace_way <= hit_way_0 ? 1'b0 : 1'b1;
+            end
+            else begin
+                replace_way <= rand_way;
+            end
         end
     end
 
     // 为防止在M_REPLACE状态同时发读写请求，此处允许`wr_req`提前于`wr_rdy`拉高，将写请求提前到M_MISS
-    assign wr_req = (m_current_state == M_MISS) && (cached_reg && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata))
-                    || !cached_reg && op_reg);  // 缓存未命中，或者非缓存的写请求
-    assign wr_type = cached_reg ? 3'b100 : 3'b010;
-    assign wr_addr = cached_reg ? ((replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0}) : {tag_reg, index_reg, offset_reg};
-    assign wr_wstrb = cached_reg ? 4'b1111 : wstrb_reg;
-    assign wr_data = cached_reg ? ((replace_way == 1'b0) ? data0_rdata : data1_rdata) : {96'b0, wdata_reg};
+    assign wr_req = (m_current_state == M_MISS) && ((cached_reg || cacop_reg) && (((replace_way == 1'b0) && tagv0_rdata[0] && d0_rdata) || ((replace_way == 1'b1) && tagv1_rdata[0] && d1_rdata))
+                    || !cached_reg && op_reg);  // 缓存未命中，或者非缓存的写请求，或者cacop写回脏的cache行（i-cache一定没有脏行，不需要特殊判断）
+    assign wr_type = (cached_reg || cacop_reg) ? 3'b100 : 3'b010;
+    assign wr_addr = (cached_reg || cacop_reg) ? ((replace_way == 1'b0) ? {tagv0_rdata[20: 1], index_reg, 4'b0} : {tagv1_rdata[20: 1], index_reg, 4'b0}) : {tag_reg, index_reg, offset_reg};
+    assign wr_wstrb = (cached_reg || cacop_reg) ? 4'b1111 : wstrb_reg;
+    assign wr_data = (cached_reg || cacop_reg) ? ((replace_way == 1'b0) ? data0_rdata : data1_rdata) : {96'b0, wdata_reg};
 
-    // M_REPLACE
-    assign tagv0_we = cached_reg && (replace_way == 1'b0) && ret_last;
-    assign tagv0_wdata = {tag_reg, 1'b1};
-    assign tagv1_we = cached_reg && (replace_way == 1'b1) && ret_last;
-    assign tagv1_wdata = {tag_reg, 1'b1};
+    // M_REFILL
+    assign tagv0_we = (cacop_st_tag_reg || cacop_idx_inv_reg) ? ((m_current_state == M_REFILL) && !offset_reg[0]) :
+                      (cacop_hit_inv_reg) ? ((m_current_state == M_REFILL) && (replace_way == 1'b0)) :
+                      (cached_reg && (replace_way == 1'b0) && ret_last);
+    assign tagv0_wdata = cacop_reg ? 32'd0 : {tag_reg, 1'b1};
+    assign tagv1_we = (cacop_st_tag_reg || cacop_idx_inv_reg) ? ((m_current_state == M_REFILL) && offset_reg[0]) :
+                      (cacop_hit_inv_reg) ? ((m_current_state == M_REFILL) && (replace_way == 1'b1)) :
+                      (cached_reg && (replace_way == 1'b1) && ret_last);
+    assign tagv1_wdata = cacop_reg ? 32'd0 : {tag_reg, 1'b1};
 
-    assign d0_we = cached_reg && (replace_way == 1'b0) && ret_last;
+    assign d0_we = (cacop_st_tag_reg || cacop_idx_inv_reg) ? ((m_current_state == M_REFILL) && !offset_reg[0]) :
+                   (cacop_hit_inv_reg) ? ((m_current_state == M_REFILL) && (replace_way == 1'b0)) :
+                   (w_current_state == W_WRITE) ? ((w_way_reg == 1'b0) && w_we_reg) : (cached_reg && (replace_way == 1'b0) && ret_last);
+
     assign d0_addr = index_reg;
-    assign d0_wdata = op_reg;
-    assign d1_we = cached_reg && (replace_way == 1'b1) && ret_last;
+    assign d0_wdata = cacop_reg ? 1'b0 : op_reg;
+    assign d1_we = (cacop_st_tag_reg || cacop_idx_inv_reg) ? ((m_current_state == M_REFILL) && offset_reg[0]) :
+                   (cacop_hit_inv_reg) ? ((m_current_state == M_REFILL) && (replace_way == 1'b1)) :
+                   (w_current_state == W_WRITE) ? ((w_way_reg == 1'b1) && w_we_reg) : (cached_reg && (replace_way == 1'b1) && ret_last);
     assign d1_addr = index_reg;
-    assign d1_wdata = op_reg;
+    assign d1_wdata = cacop_reg ? 1'b0 : op_reg;
 
-    assign rd_req = (m_current_state == M_REPLACE) && !(!cached_reg && op_reg); // 对于非缓存的写请求，是不需要读内存的
+    assign rd_req = (m_current_state == M_REPLACE) && !(!cached_reg && op_reg) && !cacop_reg; // 对于非缓存的写请求和cacop指令，是不需要读内存的
     assign rd_type = cached_reg ? 3'b100 : 3'b010;
     // assign rd_addr = {tag_reg, index_reg, offset_reg}; // 非突发的时候[3:2]不是0
     assign rd_addr = cached_reg ? {tag_reg, index_reg, 4'b0000} : {tag_reg, index_reg, offset_reg};
@@ -453,7 +440,7 @@ module cache (
             w_wdata_reg <= 32'b0;
             w_prev_data <= 32'b0;
         end
-        else if ((m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1)) begin
+        else if ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (op_reg == 1'b1)) begin
             w_tag_reg <= tag_reg;
             w_index_reg <= index_reg;
             w_offset_reg <= offset_reg;
@@ -480,11 +467,14 @@ module cache (
     //     (w_current_state == W_WRITE) && valid && (op == 1'b0) && ((offset[3: 2] == w_offset_reg[3: 2]) || (index != w_index_reg));
 
     wire stall = 
-        (m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1) && valid && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
-        (w_current_state == W_WRITE) && valid && (op == 1'b0) && ((offset[3: 2] == w_offset_reg[3: 2]) || (index != w_index_reg));
+        (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (op_reg == 1'b1) && valid && ({tag, index, offset[3: 2]} == {tag_reg, index_reg, offset_reg[3: 2]}) ||
+        (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (op_reg == 1'b1) && cacop ||
+        (w_current_state == W_WRITE) && (valid && (op == 1'b0) && ((offset[3: 2] == w_offset_reg[3: 2]) || (index != w_index_reg)) || cacop);
 
     // assign addr_ok = (m_current_state == M_IDLE) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
-    assign addr_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && valid && !stall);
+    assign addr_ok = !cacop && ((m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && valid && !stall));
+
+    assign cacop_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall);
 
     // 这里有一个精妙的设计：对于cached且miss且重填前需要写回脏块的请求，我们不需要写回操作的data_ok信号，即不需要知道写回操作什么时候完成，
     // 因为AXI转接桥里的设计是：写操作完成之前，不能有新的读操作进入（rd_rdy == 0来保证），因此只要进入了REFILL状态，那么写回操作一定完成了。
@@ -492,20 +482,21 @@ module cache (
     // cache中的数据，如果这时候立刻有读请求，也得等待cache完成REFILL，回到IDLE状态才能相应，这时候数据早就被写到cache的data_ram里了，不会有写后读。
     // cached且hit的写请求可以直接返回data_ok，原因：写后读被hit write阻塞机制解决了。
     // 现在还需要考虑uncached的写请求。此时为解决写后读，必须引入新的接口信号wr_complete，表示写操作已经完成。
-    assign data_ok = ((m_current_state == M_LOOKUP) && hit) || 
+    // 对于cacop指令，因为用不到data_ok信号，所以不能随便发，否则会影响到处于IW和RDW的访存指令。
+    assign data_ok = !cacop_reg && (((m_current_state == M_LOOKUP) && hit) || 
         // ((m_current_state == M_LOOKUP) && (op_reg == 1'b1)) || // 之前的实现，不命中的写操作也直接拉高data_ok，这样不行，会有内存的写后读风险
         (m_current_state == M_REFILL) && !cached_reg && (op_reg == 1'b0) && ret_valid && ret_last || 
         (m_current_state == M_REPLACE) && !cached_reg && (op_reg == 1'b1) && wr_complete || 
-        (m_current_state == M_REFILL) && cached_reg && ret_valid && (read_cnt == offset_reg[3: 2]);
+        (m_current_state == M_REFILL) && cached_reg && ret_valid && (read_cnt == offset_reg[3: 2]));
 
     // assign tagv0_addr = (m_current_state == M_IDLE) ? index : index_reg;
     // assign tagv1_addr = (m_current_state == M_IDLE) ? index : index_reg;
 
-    assign tagv0_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
-    assign tagv1_addr = (m_current_state == M_IDLE || m_current_state == M_LOOKUP && hit) ? index : index_reg;
+    assign tagv0_addr = (m_current_state == M_IDLE || (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg) ? index : index_reg;
+    assign tagv1_addr = (m_current_state == M_IDLE || (m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg) ? index : index_reg;
 
     // 两个条件分别对应未命中和写命中的情况
-    wire data0_we = cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg));
+    wire data0_we = !cacop_reg && cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg));
 
     // 根据read_cnt进行选bank
     wire [3: 0] data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
@@ -519,7 +510,7 @@ module cache (
     assign data0_wdata = (w_current_state == W_WRITE) ? hit_wdata : !op_reg ? ret_data : (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
 
     // 下同
-    wire data1_we = cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg));
+    wire data1_we = !cacop_reg && cached_reg && (((m_current_state == M_REFILL) && (replace_way == 1'b1) && ret_valid) || ((w_current_state == W_WRITE) && (w_way_reg == 1'b1) && w_we_reg));
     wire [3: 0] data1_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
     assign data1_bank0_we = ((data1_wbank_sel == 4'h1) && data1_we) ? 4'b1111 : 4'b0;
     assign data1_bank1_we = ((data1_wbank_sel == 4'h2) && data1_we) ? 4'b1111 : 4'b0;
@@ -541,7 +532,7 @@ module cache (
         else begin
             case (m_current_state)
                 M_IDLE: begin
-                    if (valid && !stall) begin
+                    if ((valid || cacop) && !stall) begin
                         m_next_state = M_LOOKUP;
                     end
                     else begin
@@ -549,10 +540,16 @@ module cache (
                     end
                 end
                 M_LOOKUP: begin
-                    if (hit && (!valid || stall)) begin
+                    if (hit && cacop_hit_inv_reg) begin
+                        m_next_state = M_MISS;
+                    end
+                    else if (!hit && cacop_hit_inv_reg) begin
                         m_next_state = M_IDLE;
                     end
-                    else if (hit && valid) begin
+                    else if (hit && (!valid || stall)) begin
+                        m_next_state = M_IDLE;
+                    end
+                    else if (hit && (valid || cacop)) begin
                         m_next_state = M_LOOKUP;
                     end
                     else begin
@@ -560,18 +557,31 @@ module cache (
                     end
                 end
                 M_MISS: begin
-                    if (!cached_reg && !op_reg) begin   // 非缓存的读请求，直接进入REPLACE状态（因为不用发总线写）。注意读请求在REPLACE状态发出。
+                    if (!cacop_reg && !cached_reg && !op_reg) begin   // 非缓存的读请求，直接进入REPLACE状态（因为不用发总线写）。注意读请求在REPLACE状态发出。
                         m_next_state = M_REPLACE;
                     end
                     else if (!wr_rdy) begin
                         m_next_state = M_MISS;
                     end
                     else begin
-                        m_next_state = M_REPLACE;
+                        if(!wr_req && cacop_reg) begin  // 不发写请求的cacop（相应cache行不脏）
+                            m_next_state = M_REFILL;    // 此时直接进REFILL，否则进REPLACE等wr_complete，这是为了防止写后读
+                        end
+                        else begin
+                            m_next_state = M_REPLACE;
+                        end
                     end
                 end
                 M_REPLACE: begin
-                    if (!cached_reg && op_reg) begin   // 非缓存的写请求,不用发总线读，且写请求已经在MISS状态发出，但必须等到data_ok才能回IDLE
+                    if(cacop_reg) begin  // 发了写请求的cacop
+                        if (wr_complete) begin
+                            m_next_state = M_REFILL;
+                        end
+                        else begin
+                            m_next_state = M_REPLACE;
+                        end
+                    end
+                    else if (!cached_reg && op_reg) begin   // 非缓存的写请求,不用发总线读，且写请求已经在MISS状态发出，但必须等到data_ok才能回IDLE
                         if (wr_complete) begin
                             m_next_state = M_IDLE;
                         end
@@ -587,7 +597,7 @@ module cache (
                     end
                 end
                 M_REFILL: begin
-                    if (!(ret_valid && ret_last == 1'b1)) begin
+                    if (!cacop_reg && !(ret_valid && ret_last == 1'b1)) begin   // 如果是cacop指令，下一拍就回IDLE
                         m_next_state = M_REFILL;
                     end
                     else begin
@@ -608,7 +618,7 @@ module cache (
         else begin
             case (w_current_state)
                 W_IDLE: begin
-                    if ((m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1)) begin
+                    if ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (op_reg == 1'b1)) begin
                         w_next_state = W_WRITE;
                     end
                     else begin
@@ -616,7 +626,7 @@ module cache (
                     end
                 end 
                 W_WRITE: begin
-                    if ((m_current_state == M_LOOKUP) && hit && (op_reg == 1'b1)) begin
+                    if ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && (op_reg == 1'b1)) begin
                         w_next_state = W_WRITE;
                     end
                     else begin

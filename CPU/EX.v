@@ -80,14 +80,14 @@ module EX (
 	input tlbwr,
 	input tlbfill,
 	input invtlb,
-	input [4:0] invtlb_op,
+	input [4:0] inst_4_0,
 
 	output reg tlbsrch_out,
 	output reg tlbrd_out,
 	output reg tlbwr_out,
 	output reg tlbfill_out,
 	output reg invtlb_out,
-	output reg [4:0] invtlb_op_out,
+	output reg [4:0] inst_4_0_out,
 
 	output this_tlb_refetch,
 	input MEM_this_tlb_refetch,
@@ -100,25 +100,35 @@ module EX (
     output csr_flush_submit,
 	output [31:0] csr_flush_target_submit,
 
-	output wire mem_inst
+	output wire mem_inst,
+
+	input cacop,
+	output reg cacop_out,
+
+	output this_cacop_refetch,
+	input MEM_this_cacop_refetch,
+	input RDW_this_cacop_refetch,
+
+	input cacop_flush
 );
     wire ready_go;
     assign ready_go = !in_valid ||
 					  this_flush ||
 					  this_tlb_refetch ||
+					  this_cacop_refetch ||
 					  !(res_from_mul && !(from_mul_req_ready && to_mul_req_valid)) && !(res_from_div && !(from_div_req_ready && to_div_req_valid));
 
     assign in_ready = ~rst & (~in_valid | ready_go & out_ready);
 
-	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush && !this_tlb_refetch;
-	assign to_div_req_valid = in_valid && res_from_div && !this_flush && !this_tlb_refetch;
+	assign to_mul_req_valid = in_valid && res_from_mul && !this_flush && !this_tlb_refetch && !this_cacop_refetch;
+	assign to_div_req_valid = in_valid && res_from_div && !this_flush && !this_tlb_refetch && !this_cacop_refetch;
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !tlb_flush && !cacop_flush;
         end
     end
 
@@ -149,6 +159,7 @@ module EX (
 	assign this_flush = in_valid && (has_exception || MEM_flush || RDW_flush || WB_flush || ALE || ertn);
 
 	assign this_tlb_refetch = in_valid && (tlbsrch || tlbrd || tlbwr || tlbfill || invtlb || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
+	assign this_cacop_refetch = in_valid && (cacop || MEM_this_cacop_refetch || RDW_this_cacop_refetch);
 
 	assign this_csr_refetch = in_valid && csr_flush_input;
 	assign csr_flush_submit = in_valid && csr_flush_input;
@@ -367,7 +378,7 @@ module EX (
 			tlbwr_out   <= 1'b0;
 			tlbfill_out <= 1'b0;
 			invtlb_out  <= 1'b0;
-			invtlb_op_out <= 5'b0;
+			inst_4_0_out <= 5'b0;
 		end
 		else if (in_valid && ready_go && out_ready) begin
 			tlbsrch_out <= tlbsrch;
@@ -375,7 +386,16 @@ module EX (
 			tlbwr_out   <= tlbwr;
 			tlbfill_out <= tlbfill;
 			invtlb_out  <= invtlb;
-			invtlb_op_out <= invtlb_op;
+			inst_4_0_out <= inst_4_0;
+		end
+	end
+
+	always @(posedge clk) begin
+		if(rst) begin
+			cacop_out <= 1'b0;
+		end
+		else if (in_valid && ready_go && out_ready) begin
+			cacop_out <= cacop;
 		end
 	end
 endmodule

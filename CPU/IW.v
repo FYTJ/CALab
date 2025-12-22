@@ -50,6 +50,13 @@ module IW (
 
     input tlb_flush,
 
+    input ID_this_cacop_refetch,
+    input EX_this_cacop_refetch,
+    input MEM_this_cacop_refetch,
+    input RDW_this_cacop_refetch,
+
+    input cacop_flush,
+
     input ID_this_csr_refetch,
     input EX_this_csr_refetch,
     input csr_flush,
@@ -63,7 +70,7 @@ module IW (
 
     wire this_csr_refetch = in_valid && (ID_this_csr_refetch || EX_this_csr_refetch);
     
-    wire br_flush = br_taken && !this_flush && !this_tlb_refetch && !this_csr_refetch;
+    wire br_flush = br_taken && !this_flush && !this_tlb_refetch && !this_csr_refetch && !this_cacop_refetch;
 
     // wire csr_flush_effective = csr_flush && !this_flush && !this_tlb_refetch;
 
@@ -72,6 +79,7 @@ module IW (
                       br_flush ||
                       tlb_flush ||
                       csr_flush ||
+                      cacop_flush ||
                       (~(|discard)) && (inst_valid_from_IF || data_ok || inst_valid);
 
     
@@ -82,16 +90,18 @@ module IW (
                                 data_ok ? rdata :
                                 32'd0;
 
-    wire discard_from_IW = (ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
+    wire discard_from_IW = (ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush || cacop_flush) && in_valid && !(inst_valid_from_IF || (data_ok && (~(|discard))) || inst_valid);
 
     wire this_tlb_refetch = in_valid && (ID_this_tlb_refetch || EX_this_tlb_refetch || MEM_this_tlb_refetch || RDW_this_tlb_refetch);
+
+    wire this_cacop_refetch = in_valid && (ID_this_cacop_refetch || EX_this_cacop_refetch || MEM_this_cacop_refetch || RDW_this_cacop_refetch);
 
     always @(posedge clk) begin
         if (rst) begin
             out_valid <= 1'b0;
         end
         else if (out_ready) begin
-            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush && !tlb_flush && !csr_flush;
+            out_valid <= in_valid && ready_go && !ex_flush && !ertn_flush && !br_flush && !tlb_flush && !csr_flush && !cacop_flush;
         end
     end
 
@@ -101,7 +111,7 @@ module IW (
             inst <= 32'd0;
         end
         // else if(ex_flush || ertn_flush) begin
-        else if(ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush) begin
+        else if(ex_flush || ertn_flush || br_flush || tlb_flush || csr_flush || cacop_flush) begin
             inst_valid <= 1'b0;
             inst <= 32'd0;
         end
