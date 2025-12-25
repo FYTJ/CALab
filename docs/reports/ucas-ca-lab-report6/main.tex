@@ -1,0 +1,640 @@
+% 这是中国科学院大学计算机科学与技术专业《计算机组成原理（研讨课）》使用的实验报告 Latex 模板
+% 本模板与 2024 年 2 月 Jun-xiong Ji 完成, 更改自由 Shing-Ho Lin 和 Jun-Xiong Ji 于 2022 年 9 月共同完成的基础物理实验模板
+% 如有任何问题, 请联系: jijunxoing21@mails.ucas.ac.cn
+% This is the LaTeX template for report of Experiment of Computer Organization and Design courses, based on its provided Word template.
+% This template is completed on Febrary 2024, based on the joint collabration of Shing-Ho Lin and Junxiong Ji in September 2022.
+% Adding numerous pictures and equations leads to unsatisfying experience in Word. Therefore LaTeX is better.
+% Feel free to contact me via: jijunxoing21@mails.ucas.ac.cn
+
+\documentclass[11pt]{article}
+
+\usepackage[a4paper]{geometry}
+\geometry{left=2.0cm,right=2.0cm,top=2.5cm,bottom=2.5cm}
+
+\usepackage{ctex} % 支持中文的LaTeX宏包
+\usepackage{amsmath,amsfonts,graphicx,subfigure,amssymb,bm,amsthm,mathrsfs,mathtools,breqn} % 数学公式和符号的宏包集合
+\usepackage{algorithm,algorithmicx} % 算法和伪代码
+\usepackage[noend]{algpseudocode} % 算法和伪代码
+\usepackage{fancyhdr} % 自定义页眉页脚
+\usepackage[framemethod=TikZ]{mdframed} % 创建带边框的框架
+\usepackage{fontspec} % 字体设置
+\usepackage{adjustbox} % 调整盒子大小
+\usepackage{fontsize} % 设置字体大小
+\usepackage{tikz,xcolor} % 绘制图形和使用颜色
+\usepackage{multicol} % 多栏排版
+\usepackage{multirow} % 表格中合并单元格
+\usepackage{pdfpages} % 插入PDF文件
+\usepackage{listings} % 在文档中插入源代码
+\usepackage{wrapfig} % 文字绕排图片
+\usepackage{bigstrut,multirow,rotating} % 支持在表格中使用特殊命令
+\usepackage{booktabs} % 创建美观的表格
+\usepackage{circuitikz} % 绘制电路图
+\usepackage{zhnumber} % 中文序号（用于标题）
+\usepackage{tabularx} % 表格折行
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+% \lstset{
+%   frame=tb,
+%   aboveskip=3mm,
+%   belowskip=3mm,
+%   showstringspaces=false,
+%   columns=flexible,
+%   framerule=1pt,
+%   rulecolor=\color{gray!35},
+%   backgroundcolor=\color{gray!5},
+%   basicstyle={\small\ttfamily},
+%   numbers=none,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{dkgreen},
+%   stringstyle=\color{mauve},
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   tabsize=3,
+% }
+
+
+
+\lstset{
+    % basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single,
+}
+
+\lstdefinelanguage{Verilog}{
+    morekeywords={always, and, assign, attribute, begin, buf, bufif0, bufif1, case, casex, casez,
+                 cmos, deassign, default, defparam, disable, edge, else, end, endattribute,
+                 endcase, endfunction, endmodule, endprimitive, endspecify, endtable, endtask,
+                 event, for, force, forever, fork, function, highz0, highz1, if, ifnone, initial,
+                 inout, input, integer, join, large, macromodule, medium, module, nand, negedge,
+                 nmos, nor, not, notif0, notif1, or, output, parameter, pmos, posedge, primitive,
+                 pull0, pull1, pulldown, pullup, rcmos, real, realtime, reg, release, repeat,
+                 rnmos, rpmos, rtran, rtranif0, rtranif1, scalared, signed, small, specify,
+                 specparam, strong0, strong1, supply0, supply1, table, task, time, tran, tranif0,
+                 tranif1, tri, tri0, tri1, triand, trior, trireg, unsigned, vectored, wait, wand,
+                 weak0, weak1, while, wire, wor, xnor, xor},
+    morekeywords=[2]{`define, `undef, `ifdef, `ifndef, `else, `elsif, `endif, `include,
+                    `resetall, `timescale, `celldefine, `endcelldefine, `default_nettype,
+                    `unconnected_drive, `nounconnected_drive},
+    morekeywords=[3]{\$display, \$write, \$strobe, \$monitor, \$time, \$stime, \$realtime,
+                    \$finish, \$stop, \$dumpfile, \$dumpvars, \$dumpon, \$dumpoff, \$dumpall,
+                    \$dumpflush, \$dumplimit, \$random, \$readmemb, \$readmemh},
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    sensitive=true,
+    keywordstyle=\color{blue}\bfseries,
+    keywordstyle=[2]\color{purple}\bfseries,
+    keywordstyle=[3]\color{orange}\bfseries,
+    stringstyle=\color{red},
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=4,
+    captionpos=b,
+    breaklines=true,
+    breakatwhitespace=false,
+    title=\lstname,
+    escapeinside={\%*}{*},
+    morekeywords={*,...}
+}
+
+
+
+
+
+
+
+
+
+% 轻松引用, 可以用\cref{}指令直接引用, 自动加前缀.
+% 例: 图片label为fig:1
+% \cref{fig:1} => Figure.1
+% \ref{fig:1}  => 1
+\usepackage[capitalize]{cleveref}
+% \crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Section}{Sections}
+\Crefname{table}{Table}{Tables}
+\crefname{table}{Table.}{Tabs.}
+
+% \setmainfont{Palatino Linotype.ttf}
+% \setCJKmainfont{SimHei.ttf}
+% \setCJKsansfont{Songti.ttf}
+% \setCJKmonofont{SimSun.ttf}
+\punctstyle{kaiming}
+% 偏好的几个字体, 可以根据需要自行加入字体ttf文件并调用
+
+\renewcommand{\emph}[1]{\begin{kaishu}#1\end{kaishu}}
+
+% 对 section 等环境的序号使用中文
+% \renewcommand \thesection{\zhnum{section}、}
+% \renewcommand \thesubsection{\arabic{section}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%改这里可以修改实验报告表头的信息
+\newcommand{\name}{裴晨皓\ 竹彦博\ 纪弘璐}
+\newcommand{\studentNum}{2023K8009916003\ \ \ \ 2023K8009916001\ \ \ \ 2023K8009916002}
+\newcommand{\major}{计算机科学与技术}
+\newcommand{\labNum}{Project 7}
+\newcommand{\labName}{Cache设计专题实验}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input{tex_file/head.tex}
+
+%%%%%%%%%%%2个图
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\section{实验简介}
+
+这次实验中，本组同学按照讲义提示，先实现了独立的Cache模块，又向其中加入了非缓存访问的处理逻辑，作为ICache和DCache分别接入流水线；同时修改了AXI转接桥逻辑，使其接口与Cache面向AXI转接桥的接口相匹配，并加入了突发传输逻辑；此外，还对MMU模块进行修改，利用其对存储访问类型进行判定，从而决定Cache模块内走可缓存/非缓存的处理逻辑；最后，进一步修改Cache和流水线模块，使其支持CACOP指令的处理。
+
+
+\section{设计方案介绍}
+下图是完成本次实验后的处理器结构框图：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\textwidth]{fig/结构框图.png}
+    \caption{处理器结构框图}
+\end{figure}
+
+\subsection{总体思路}
+
+本次实验新增加了Cache模块，上面的结构框图还不够直观，下图直观展现新增Cache后各主要模块的协同工作情况：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.58\textwidth]{fig/abstract_logic.png}
+    \caption{协同工作逻辑图}
+\end{figure}
+
+\subsection{Cache模块设计}
+
+% 在讲义给出的已有状态转移逻辑的基础上，引入对非缓存情况的处理以及CACOP指令后，Cache模块的状态转移图如下所示：
+
+% \subsection{主状态机}
+% 首先是对Cache查找请求的接收
+
+% \subsection{Write\ Buffer状态机}
+
+\subsubsection{对Cache请求的接收}
+按照讲义说明，空闲的IDLE状态和LOOKUP状态都是可以接收流水线发来的请求的状态。如果主状态机处于这两个状态，并且在流水线发来Cache请求/CACOP指令时，只要不存在冲突(阻塞)，Cache就可以接收它。
+
+具体的冲突(阻塞)情况如下：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/stall.png}
+    \caption{来自流水线的Cache请求-冲突(阻塞)情况(单行代码较长, 故采用截图)}
+\end{figure}
+
+\begin{enumerate}
+    \item 数据冲突：
+    
+    如果正在处理一条写命中Cache请求：
+    \begin{itemize}
+        \item 若新的正常访存请求地址与正在处理的请求地址存在写后读冲突，那么需要阻塞。
+        \item 若新发来的请求为CACOP，也需要阻塞。因为CACOP指令与命中的store指令一样，涉及对Dirty位的改写，因此需要保证它们被顺序处理(顺序改写Dirty位)，这里选择在store处理完后再让CACOP“进来”。
+    \end{itemize}
+
+    \item 结构冲突：
+    
+    \begin{itemize}
+        \item 根据讲义提示，若Write\ Buffer状态机正处于WRITE状态，说明正在处理对Cache的写入，若流水线再发来一个Load类的Cache访问请求，与正在处理的写请求访问的是同一个Bank，则由于Bank的实现使用的是单端口RAM，故不能马上接收这一新请求。
+        \item 还是由于单端口RAM的特性，我们的设计中，RAM读写共用一个地址信号，在Write时这一地址信号被设为Write\ Buffer里保存的地址，而非新请求的地址，因此新请求的RAM地址与Write\ Buffer里保存的地址不同时，应当阻塞新请求，否则会从错误的RAM地址做读取。
+    \end{itemize}
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CACOP
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CACOP
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CACOP
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%CACOP
+\end{enumerate}
+
+进一步地，我们可以得到Cache接收新请求的条件，即addr_ok/cacop_ok的更新逻辑：
+\begin{lstlisting}[language=Verilog, caption={对Cache请求的接收-addr_ok/cacop_ok}]
+assign addr_ok = !cacop && ((m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && valid && !stall));
+assign cacop_ok = (m_current_state == M_IDLE && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall);
+\end{lstlisting}
+
+\begin{itemize}
+    \item 在没有阻塞的情况下，若是处在IDLE或是有正常访存hit的LOOKUP阶段，则可以接受请求。
+    \item 在LOOKUP阶段有可能存在hit的CACOP指令，但由于后续状态机还要进入MISS等阶段做Cache的写回，还要用到Request\ Buffer里保存的信息，故这时不能接受新请求。
+    \item 在我们的设计中，为了保障性能，减少CACOP造成的指令重取开销，所以在CACOP指令访问icache和IF级访问icache(取指)同时发生时，优先相应CACOP，拉高cacop_ok，拉低addr_ok。
+\end{itemize}
+
+接收请求的时候，更新Request\ Buffer：
+\begin{lstlisting}[language=Verilog, caption={对Cache请求的接收-Request\ Buffer更新(时序逻辑块代码片段节选)}]
+else if(((m_current_state == M_IDLE) && cacop && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && cacop && !stall)) begin
+    op_reg <= 1'b0;
+    cached_reg <= 1'b1;
+    tag_reg <= cacop_tag;
+    index_reg <= cacop_index;
+    offset_reg <= cacop_offset;
+    wstrb_reg <= 4'b0;
+    wdata_reg <= 32'b0;
+    cacop_st_tag_reg <= cacop_st_tag;
+    cacop_idx_inv_reg <= cacop_idx_inv;
+    cacop_hit_inv_reg <= cacop_hit_inv;
+end
+else if(((m_current_state == M_IDLE) && valid && !stall) || ((m_current_state == M_LOOKUP) && hit && !cacop_hit_inv_reg && valid && !stall)) begin
+    op_reg <= op;
+    cached_reg <= cached;
+    tag_reg <= tag;
+    index_reg <= index;
+    offset_reg <= offset;
+    wstrb_reg <= wstrb;
+    wdata_reg <= wdata;
+    cacop_st_tag_reg <= 1'b0;
+    cacop_idx_inv_reg <= 1'b0;
+    cacop_hit_inv_reg <= 1'b0;
+end
+\end{lstlisting}
+
+若是CACOP指令，则向Request\ Buffer存入CACOP指令的具体类型、index、tag等，并把存储访问类型置为可缓存(因为CACOP访问的就是Cache本身)；若是正常访存，则把正常访存对应的tag、index等信息保存下来，并且根据实际情况设定可缓存/非缓存。
+
+
+
+\subsubsection{正常访存Cache命中情况的处理}
+主状态机在LOOKUP状态对命中进行判定，若这一周期没有新的请求或是请求被阻塞，则回到IDLE空闲状态；若有未被阻塞的新请求，则下一拍仍在LOOKUP，对新请求进行处理。
+
+在可缓存时(Cacop采用查询索引时也复用此逻辑)，针对每一路Cache，对同一index，若请求的tag与Cache中存储的tag相同，且cache行有效，那么就为命中：
+\begin{lstlisting}[language=Verilog, caption={命中判定}]
+wire hit_way_1 = (tagv1_rdata[20: 1] == tag_reg && tagv1_rdata[0]) && (cached_reg || cacop_hit_inv_reg);
+wire hit = hit_way_0 || hit_way_1;
+\end{lstlisting}
+
+读命中比较简单，根据命中的是哪一路，选择相应的数据传给流水线即可。
+
+若是写命中，要把写相关信息以及命中哪一路的信息保存在Write Buffer，并且还要把命中的Bank内相应index的位置上原来的“字”暂存下来，然后与流水线发来的一个字大小的写数据通过wstrb掩码进行合并、拼接，得到最终写回Cache的数据：
+
+\begin{lstlisting}[language=Verilog, caption={写命中情况下最终写回Cache的数据}]
+wire [31: 0] hit_mask = {{8{w_wstrb_reg[3]}}, {8{w_wstrb_reg[2]}}, {8{w_wstrb_reg[1]}}, {8{w_wstrb_reg[0]}}};
+wire [31: 0] hit_wdata = (w_wdata_reg & hit_mask) | (w_prev_data & ~hit_mask);
+\end{lstlisting}
+
+在Write\ Buffer状态机处于WRITE状态时，即可将数据写回Cache，并更新Dirty位。
+
+
+\subsubsection{正常访存Cache未命中情况的处理}
+发现未命中后，主状态机会由LOOKUP状态转到MISS状态，做Cache替换。被替换的Cache行若Dirty位为1，则先拉高wr_req请求把数据写回内存，等待AXI转接桥能够接收后(wr_rdy拉高)，跳转到REPLACE。
+
+在REPLACE拉高rd_req，请求把新行从内存通过突发传输读出来，待AXI转接桥能够接收请求后(rd_rdy拉高)，跳转到REFILL状态，接收内存突发传回的数据，并存入Cache的data_ram里。
+
+不难想到，内存传回的16B位于不同的Bank里，故此处设立一计数器，每接收到一个字，计数器就增1，用于辅助把数据写入不同的Bank(传完后，last拉高时要重置，以便下次传输)：
+
+\begin{lstlisting}[language=Verilog, caption={突发读-计数器}]
+always @(posedge clk) begin
+    if (rst) begin
+        read_cnt <= 2'b0;
+    end
+    else if (ret_last == 1'b1) begin
+        read_cnt <= 2'b0;
+    end
+    else if (ret_valid) begin
+        read_cnt <= read_cnt + 2'b1;
+    end
+end
+\end{lstlisting}
+
+由于传回的第1个字写入被替换路的第0个Bank，第2个字写入第1个Bank，以此类推，因此根据计数器设计如下信号，生成Bank选择的独热码——第几个Bank被选中时，对应位为1，其余位为0：
+
+\begin{lstlisting}[language=Verilog, caption={Bank选择信号}]
+wire [3: 0] data0_wbank_sel = (m_current_state == M_REFILL) ? (4'b1 << read_cnt) : (4'b1 << w_offset_reg[3: 2]);
+\end{lstlisting}
+
+(上面的w_offset_reg为写命中时的Bank选择，类似地，也是用其生成独热码。)
+
+当命中(选中)第0号Bank时，如果第0路写控制信号拉高(即REFILL状态下第0路被替换)，那么就把这一个Bank的字节写使能拉高，否则置全0，其它Bank与此类似：
+\begin{lstlisting}[language=Verilog, caption={写Bank选择信号转换为写使能信号}]
+assign data0_bank0_we = ((data0_wbank_sel == 4'h1) && data0_we) ? 4'b1111 : 4'b0;
+\end{lstlisting}
+
+上面提到的第0路写控制信号用于控制“这一拍是否要对第0路做写操作”，具体如下：
+
+\begin{lstlisting}[language=Verilog, caption={第0路写控制信号}]
+wire data0_we = !cacop_reg && cached_reg 
+            && (((m_current_state == M_REFILL) && (replace_way == 1'b0) && ret_valid) 
+             || ((w_current_state == W_WRITE) && (w_way_reg == 1'b0) && w_we_reg));
+\end{lstlisting}
+
+data0_we拉高的条件为：在非缓存情况下，在REFILL状态重填第0路，且数据从AXI转接桥发回(ret_valid)；在写命中第0路的情况下，Write\ Buffer处于Write状态。
+
+还要注意的是，store操作未必是对整个字的修改，所以在写未命中情况的REFILL状态下，重填被store修改的那个字时，要特别处理：
+\begin{lstlisting}[language=Verilog, caption={写未命中-数据拼接}]
+wire [31: 0] refill_mask = {{8{wstrb_reg[3]}}, {8{wstrb_reg[2]}}, {8{wstrb_reg[1]}}, {8{wstrb_reg[0]}}};
+wire [31: 0] refill_wdata = (ret_data & ~refill_mask) | (wdata_reg & refill_mask);
+\end{lstlisting}
+首先根据wstrb生成按bit的掩码mask，然后用掩码把AXI转接桥传回的完整字的相应部分改成store指令写入的值即可。
+
+这时，结合前面几种情况，我们可以得出向Cache中写入的数据的选择逻辑：
+\begin{lstlisting}[language=Verilog, caption={写入Cache的数据选择逻辑}]
+assign data0_wdata = (w_current_state == W_WRITE) ? hit_wdata : 
+                     !op_reg ? ret_data : 
+                     (read_cnt == offset_reg[3: 2]) ? refill_wdata : ret_data;
+\end{lstlisting}
+这三个条件依次对应于：写命中、读未命中(需要写入AXI转接桥发回的ret_data)、写未命中(如果刚好是CPU发来的store指令修改的那个字，要向Cache写入拼接后的内容refill_wdata，其他情况直接填入AXI转接桥返回的字)
+
+此外，这里还要注意，发给内存的写数据是整行一次发回的，而从内存读回的数据是逐字接收的。
+\subsubsection{非缓存情况的处理}
+非缓存的情况下，虽然访存请求会经过Cache模块，但并不会与Cache内存储的信息进行交互。这种情况状态机的转换路径为：主状态机在LOOKUP接收请求后直接进入MISS，然后分读写两种情况：
+
+\begin{enumerate}
+    \item 若是读，则下一拍直接进入REPLACE状态向AXI转接桥发读请求，握手成功后进入REDILL，收到数据后回到IDLE。
+    \item 若是写，则向AXI转接桥发送写请求，握手成功后进入REPLACE，等待AXI转接桥发来数据写入成功信号data_ok(wr_complete)后，回到IDLE。
+\end{enumerate}
+这里要注意的是，非缓存一定要等数据真正写入内存，才能回IDLE接收新的请求，在此之前的新请求都需要被阻塞。从而保证了使用非缓存访问IO外设的正确性。
+
+这时，我们就能写出完整的发给流水线的data_ok信号逻辑：
+\begin{lstlisting}[language=Verilog, caption={data_ok信号逻辑}]
+assign data_ok = !cacop_reg && (((m_current_state == M_LOOKUP) && hit) || 
+        (m_current_state == M_REFILL) && !cached_reg && (op_reg == 1'b0) && ret_valid && ret_last || 
+        (m_current_state == M_REPLACE) && !cached_reg && (op_reg == 1'b1) && wr_complete || 
+        (m_current_state == M_REFILL) && cached_reg && ret_valid && (read_cnt == offset_reg[3: 2]));
+\end{lstlisting}
+上述代码中：
+\begin{enumerate}
+    \item 第一行为缓存命中，直接发data_ok；第4行为未命中重填，访存指令访问的那一个字的数据从AXI转接桥发回(根据计数器和offset判断)，就可以认为获得了load指令需要的字(的部分)/store指令修改的字，于是也可以发data_ok。
+    \item 第二、三行是非缓存情况，与前文描述一致，load指令拿到数据/store指令真正完成写入(wr_complete)，就发出data_ok。
+\end{enumerate}
+
+此外还要注意，可缓存情况下向内存发送的请求地址是按Cache行对齐的，可能与流水线发给Cache的地址不同；而非缓存情况下则是按字对齐(4字节)，与流水线发来的地址相同——二者要做区分，以读请求地址为例：
+\begin{lstlisting}[language=Verilog, caption={内存读请求地址}]
+assign rd_addr = cached_reg ? {tag_reg, index_reg, 4'b0000} : {tag_reg, index_reg, offset_reg};
+\end{lstlisting}
+
+
+\subsubsection{CACOP指令的添加}
+CACOP指令共有3种，有2种采用的都是地址直接索引，还有1种使用查询索引，使用查询索引的这种与普通load指令类似，需要对命中与否进行判断。这3种指令的共同点是，如果操作的相应Cache行是脏的，需要先将其写回内存(手册未说明Store\ Tag这种情况是否要写回脏行，我们的设计中采取了写回的方式处理)。
+
+在状态转移方面，使用查询索引的方式若未命中，则没有任何后续处理，直接回到IDLE；其他情况则一律进入MISS。若处理的是脏行，则复用替换时写回脏行的逻辑，需要拉高wr_req，向AXI转接桥发送写请求。待AXI接口发回的wr_rdy拉高，能够接收写请求后进入REPLACE状态，在REPLACE状态等待数据完成写入(wr_complete拉高)后，在REFILL状态对tag/v位进行处理，最后回到IDLE。
+
+CACOP的写回逻辑复用了未命中做替换时的逻辑，所以相当于也“替换”走了某一行，所以复用原有的replace_way逻辑(在原有基础上做添加)：
+
+\begin{lstlisting}[language=Verilog, caption={“替换(写回内存)”路选择}]
+else if ((m_current_state == M_LOOKUP) && (!hit || hit && cacop_hit_inv_reg)) begin
+    if(cacop_st_tag_reg || cacop_idx_inv_reg) begin
+        replace_way <= offset_reg[0];
+    end
+    else if(cacop_hit_inv_reg) begin
+        replace_way <= hit_way_0 ? 1'b0 : 1'b1;
+    end
+    else begin
+        replace_way <= rand_way;
+    end
+end
+\end{lstlisting}
+若是采用地址直接索引的两类CACOP，则根据偏移量offset的最低位选择操作哪一路，所以写回内存的与它是同一路；若是采用的查询索引方式，则操作/写回的是命中的那一路。
+
+根据前面的描述：CACOP要根据具体操作的那一路，产生tagv0/1的写使能，清零tag/v位——于是得到下面的逻辑：
+\begin{lstlisting}[language=Verilog, caption={tagv写逻辑(以第0路为例)}]
+assign tagv0_we 
+= (cacop_st_tag_reg || cacop_idx_inv_reg) ? ((m_current_state == M_REFILL) && !offset_reg[0]) :
+  (cacop_hit_inv_reg) ? ((m_current_state == M_REFILL) && (replace_way == 1'b0)) :
+  (cached_reg && (replace_way == 1'b0) && ret_last); //可缓存，从内存获取完重填数据
+assign tagv0_wdata = cacop_reg ? 32'd0 : {tag_reg, 1'b1};
+\end{lstlisting}
+类似地，相应dirty位也要做修改(归零)，此处不再赘述。
+
+此外，综合前面的所有情况，我们可以得到发给内存的wstrb：
+\begin{lstlisting}[language=Verilog, caption={发给内存的wstrb}]
+assign wr_wstrb = (cached_reg || cacop_reg) ? 4'b1111 : wstrb_reg;
+\end{lstlisting}
+只有非缓存情况下才要发送Request\ Buffer里保存的值；其余情况都是整行写回，即每一个字都要完整写回，所以wstrb置为全1。
+
+
+\subsection{对类SRAM-AXI转接桥的修改}
+这部分修改较为简单，只需要让AXI转接桥支持突发传输；并且修改原来的类SRAM接口，使转接桥接口与Cache模块面向AXI转接桥的接口相匹配，然后使转接桥顶层仲裁、分发逻辑与修改后的接口相匹配即可。
+
+\subsubsection{对顶层模块的修改}
+原先对读写请求的区分，要先通过sram_req判断有无请求，再根据sram_wr区分是读还是写，而现在Cache方面会直接发来明确的读写请求，所以要对部分逻辑做相应更改。
+
+以ar_id为例：
+\begin{lstlisting}[language=Verilog, caption={ar_id-原}]
+assign ar_id = (~sram_wr_2 && sram_req_2) ? 2'b10 : (~sram_wr_1 && sram_req_1) ? 2'b01 : 2'b00;
+\end{lstlisting}
+\begin{lstlisting}[language=Verilog, caption={ar_id-现}]
+assign ar_id = rd_req_d ? 2'b10 : rd_req_i ? 2'b01 : 2'b00;
+\end{lstlisting}
+(ar_id为顶层用于仲裁的独热码，10表示处理访存级dcache的请求，01表示处理取值级icache的请求，00表示无请求。并且，两个流水级请求同时到来时，为保障性能，先处理访存级dcache的请求。)
+
+为了支持突发，要引入len信号，表示突发传输的长度：
+\begin{lstlisting}[language=Verilog, caption={ar_len信号}]
+assign ar_len = ar_id[1] ? ((rd_type_d == 3'b100) ? 8'd3 : 8'd0) : ((rd_type_i == 3'b100) ? 8'd3 : 8'd0);
+\end{lstlisting}
+这行代码的type信号由Cache发来，是这次请求传输的字节数以2为底的对数(3'b100表示16字节，3'b010表示4字节)。所以最终长度的生成逻辑为：先跟据回应/处理请求的独热码ar_id做仲裁，对取指icache/访存级dcache进行选择，然后根据相应type，把len设为3(传输4次，单次传4字节，共16字节)或0(传输1次，单次传4字节，共4字节)。aw_len与此类似，不过由于取指级不会发写请求所以省去了仲裁，更加简单，不再赘述。
+
+% 由于Cache发来的Cache行写回请求是一次性发给转接桥16B数据，所以要把输入的wdata扩展到128位；Cache发来的读请求都是逐字接收，所以不需要修改rdata的宽度。进一步考虑：
+此外，由于Cache发来的写请求是一次性发给转接桥所有数据，所以要把输入的wdata扩展到128位以应对整行写回；而Cache发来的读请求，在接收数据时，都是逐字接收，所以不需要修改rdata的宽度。进一步考虑：
+\begin{itemize}
+    \item 逐字接收时，AXI要给Cache发送last信号，表示当前传输的是最后一个字；
+    \begin{lstlisting}[language=Verilog, caption={last信号}]
+    assign ret_last_i = r_id[0] & r_last;
+    assign ret_last_d = r_id[1] & r_last;
+    \end{lstlisting}
+    根据仲裁独热码，把读响应通道的last发给icache/dcache即可。
+    \item 一次性写回16B时，AXI顶层模块会把它完整的转交给写请求/数据通道模块，不在顶层进行处理。那么写操作last信号也就不用在顶层处理了，只要写请求/数据通道模块内在完整传输的最后一次写时拉高last，用顶层的AXI接口传给内存即可。此外，显然这一信号也不必传给Cache。
+\end{itemize}
+
+
+
+
+\subsubsection{写请求/数据/响应通道模块}
+此处需要增加设计，便于实现写突发传输。具体地，首先要加一个计数器，记录已经传输了多少个字：
+\begin{lstlisting}[language=Verilog, caption={写通道-计数器}]
+always @(posedge clk) begin
+    if (!resetn) begin
+        counter <= 8'd0;
+    end
+    else if (wready && wvalid && wlast) begin
+        counter <= 8'd0;
+    end
+    else if (wready && wvalid) begin
+        counter <= counter + 8'd1;
+    end
+end
+\end{lstlisting}
+每完成一次写数据握手，计数器就加1；当last拉高时说明已经是最后一次传输，于是把计数器清零，以便下次传输。
+
+一次传输的数据可能长达16B，但每次传输只能发4B，所以要利用counter计算偏移量，选择当前要发给内存的数据：
+\begin{lstlisting}[language=Verilog, caption={wdata信号}]
+assign wdata = data_reg[counter * 32 +: 32];
+\end{lstlisting}
+
+在计数器数值（已完成传输的数量）与本次写操作的len相等时，说明本次写操作的最后一个写数据已经发出，于是拉高last信号：
+\begin{lstlisting}[language=Verilog, caption={wlast信号}]
+assign wlast = (counter == len_reg);
+\end{lstlisting}
+
+此外，还要对状态机的转移条件进行修改，由于突发传输是一次请求握手，多次数据握手，所以：原先以“写数据通道握手成功”为条件进行转移的路径，要把转移条件改为“写数据通道数据传输完毕”，即向其中加入wlast信号：
+\begin{lstlisting}[language=Verilog, caption={修改后的状态转移逻辑(局部)}]
+BUSY: begin
+    if (awready && awvalid && wready && wvalid && wlast) begin
+        next_state = IDLE;
+    end
+    else if (awready && awready) begin
+        next_state = AW_FIRE;
+    end
+    else if (wready && wvalid && wlast) begin
+        next_state = W_FIRE;
+    end
+    else begin
+        next_state = BUSY;
+    end
+end
+AW_FIRE: begin
+    if (wready && wvalid && wlast) begin
+        next_state = IDLE;
+    end
+    else begin
+        next_state = AW_FIRE;
+    end
+end
+\end{lstlisting}
+
+\subsubsection{读请求/响应通道模块}
+这部分修改较为简单：
+\begin{itemize}
+    \item 读请求通道接收并保存请求信息时，要额外保存len信号，从而作为arlen发给内存；
+    \item 读响应通道接收内存发来的读数据时，要额外保存last信号，从而传给Cache模块，表示当前传输的是否为最后一个字。
+\end{itemize}
+
+
+
+\subsection{对流水线的修改-加入CACOP指令支持}
+由于使用查询索引方式的那一类CACOP指令的VA可被当做一条普通load指令访问Cache，所以我们的CACOP与load访存指令放在同一级实现(MEM级)。此外，由于操作指令 Cache 的 CACOP 指令和取指有特权资源相关冲突，所以要仿照上一章，新增一种重取机制。
+
+CACOP指令操作类型有3种，操作的对象有icache和dcache这2种，共计六种情况，每一种情况有单独的信号发给Cache，拉高即表明发送相应请求：
+\begin{lstlisting}[language=Verilog, caption={CACOP向Cache发送的请求(以对icache的store\ tag类型为例)}]
+assign cacop_st_tag_i  = in_valid && cacop && !cacop_i_fire && (inst_4_0[2:0] == 3'b000) && (inst_4_0[4:3] == 2'b00) && !this_flush && !this_tlb_flush && !this_cacop_flush;
+\end{lstlisting}
+以对icache的store\ tag类型为例：若当前MEM级为CACOP指令，且根据指令中的code(inst_4_0)判断为操作icache的store\ tag类指令，并且请求没有被接收(没有握手成功，cacop_i_fire为0)，且当前指令后续不需要被冲刷，那么就持续拉高cacop_st_tag_i，向Cache发请求。
+
+在CACOP指令收到Cache发回的cacop_ok信号后，拉高cacop_i_fire，表示针对icache的这条指令握手成功：
+\begin{lstlisting}[language=Verilog, caption={cacop_i_fire信号}]
+always @(posedge clk) begin
+    if(rst) begin
+        cacop_i_fire <= 1'b0;
+    end
+    else if(in_valid && ready_go && out_ready) begin
+        cacop_i_fire <= 1'b0;
+    end
+    else if(cacop_req_i && cacop_ok_i) begin
+        cacop_i_fire <= 1'b1;
+    end
+end
+\end{lstlisting}
+(这条指令从MEM级流出时，cacop_i_fire要清零，以便下次使用。)
+
+由于CACOP指令也需要握手，所以没握手成功时要被阻塞在MEM级：
+\begin{lstlisting}[language=Verilog, caption={ready_go信号修改(省略原有内容)}]
+assign ready_go = ...
+!(cacop && (inst_4_0[2:0] == 3'b000) && !(|mmu_ecode_d) && !(cacop_req_i && cacop_ok_i || cacop_i_fire)) &&
+!(cacop && (inst_4_0[2:0] == 3'b001) && !(|mmu_ecode_d) && !(cacop_req_d && cacop_ok_d || cacop_d_fire));
+\end{lstlisting}
+即：如果不是“既没发生TLB异常，又没握手成功”CACOP指令，才能继续流动。
+
+由于采用查询索引方式的那类CACOP指令（cacop_hit_inv_i/d）需要进行虚实地址翻译，可能出现TLB异常，所以要把它加到异常传递(检测)逻辑中：
+\begin{lstlisting}[language=Verilog, caption={修改后的异常传递逻辑}]
+else if (in_valid && ready_go && out_ready) begin
+    has_exception_out <= has_exception || ((|mmu_ecode_d) & (res_from_mem || mem_we || cacop_hit_inv_i || cacop_hit_inv_d));
+end
+\end{lstlisting}
+
+关于CACOP指令造成的的重取，基本完全仿照之前TLB指令导致重取的机制实现。由于MEM级实现CACOP，所以其流入下一级（RDW）后进行“提交”，从而冲刷前面的流水级，并把取指PC设为CACOP指令下一条顺序指令的PC(PC加4)。具体细节不再赘述。
+
+
+\subsection{MMU模块对存储访问类型的判定}
+以取指级的情况为例：
+\begin{lstlisting}[language=Verilog, caption={mat_i信号生成逻辑}]
+assign mat_i = (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
+               (inst_sram_vaddr[31: 29] == dmw0_vseg_value && dmw0_plv_cond) ? dmw0_mat_value :
+               (inst_sram_vaddr[31: 29] == dmw1_vseg_value && dmw1_plv_cond) ? dmw1_mat_value :
+                tlb_s0_mat;
+\end{lstlisting}
+(mat为0时表示非缓存，1表示可缓存。)
+\begin{itemize}
+    \item 直接地址翻译模式下，MAT由 CSR.CRMD 的 DATM 域决定；
+    \item 直接映射地址翻译模式下，MAT由所命中的直接映射窗口中的MAT 配置信息(dmw0/1_mat_value)决定；
+    \item 页表映射地址翻译模式下，MAT由虚实地址转换所用页表项中的 MAT 域配置信息决定。
+\end{itemize}
+
+\section{Debug记录}
+
+\subsection{忘记接入存储访问类型信号导致向外设发起突发请求}
+在接入dcache进行调试时，发现如下图所示波形：
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/外设突发.png}
+    \caption{忘记接入存储访问类型信号导致向外设发起突发请求-错误波形}
+\end{figure}
+上图中光标所在位置处，一次读请求握手成功，arlen为3，arid为1，是一次dcache发起的突发读请求(读4次，每次4B)。然而，在红框位置处，收到第一个读数据时(rvalid拉高)，rlast居然也拉高了，相当于后续3个4B没有传回就结束了，不禁令人困惑。
+
+后续检查发现，我们忘记接入存储访问类型的信号，导致所有访存请求都被当做了可缓存访问。上图波形中原本应为非缓存的情况，恰巧arlen为3，导致误企图向外设发起突发请求，而外设并不支持突发传输，故只传回了第一个4B数据，后续数据没有传回。
+
+正确接入存储访问类型信号后，问题得以解决。
+
+\subsection{两条连续写命中指令导致同一Bank同一Cache行的“写后读”}
+
+对于一条写命中指令，其第0个周期会发送请求，第1个周期会得到命中结果，并读出相应Bank、相应Cache行的原有数据，第2个周期会得出写入值与原值根据wstrb拼接后的值，在第2个周期进入第3个周期的时钟上升沿写回Cache。最初的设计中，连续两条针对同一Bank、同一Cache行的写命中指令出现下图所示情况：
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/连续写命中.png}
+    \caption{两条连续写命中指令导致同一Bank同一Cache行的“写后读”-错误波形}
+\end{figure}
+红框位置是第1条写命中指令发来的请求，请求写入850813af，wstrb为1111；黄框位置是第2条写命中指令发来的请求，请求写入40404040，wstrb为0100，即只把第2字节拼接到Cache内原来存储的字里，两条指令命中的是同一Bank、同一Cache行——按照正常时序，最终第二条指令写回Cache的字应为854013af。
+
+然而，在蓝框所示位置处，第1条指令才刚刚得到其应当写入Cache的值，而此时第2条指令也已经读出了命中Bank的数据，由于第1条指令要在进入下一周期的上升沿才写回Cache，所以第2条指令相当于读出了Cache的旧值，出现了“写后读”。毫不意外地，在下个周期，第2条指令用Cache的旧值与自己写入的字节进行拼接，得出了要写回Cache的00400000，而非正确的854013af。
+
+最终解决方式为引入阻塞，从而避免这种表面“连续写”，本质暗含“写后读”的情况出现。
+
+\subsection{Cache阻塞时忘记拉低addr_ok}
+
+我们设计的stall信号是用于阻塞Cache的，即拉高stall时不应接收新请求，所以发向流水线的addr_ok信号也应当拉低，而最初我们忘了用stall信号控制addr_ok，导致下图情况：
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/阻塞stall.png}
+    \caption{Cache阻塞时忘记拉低addr_ok-错误波形}
+\end{figure}
+
+在白框所示位置处，stall拉高，而同一周期内，红框位置处却拉高了addr_ok，与流水线发来的请求“误握手”成功。导致流水线方认为请求已被接收，只需要等待后续data_ok，而Cache方却并不认为自己接收了这次请求，自然也不会给流水线发data_ok信号。由于流水线一直等不到data_ok，后续指令也就都被阻塞，Cache也收不到新请求，整个系统卡死（如黄框所示，Cache的状态恒处于IDLE；图片最上方的PC值也不再改变）。
+
+解决方法十分简单，给原有的addr_ok信号“与”上“!stall”，限制stall拉高时对请求的接受即可。
+
+
+\subsection{突发传输请求地址忘记按Cache行对齐}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{fig/突发未对齐.png}
+    \caption{突发传输请求地址忘记按Cache行对齐-错误波形}
+\end{figure}
+
+如上图所示，Cache向内存发读请求时，若是可缓存情况下做突发传输，应该把流水线发来的地址按Cache行对齐再发给内存；而非缓存情况直接使用流水线发来的地址即可。在加入非缓存处理逻辑时，我们误把原有的突发传输请求地址先按Cache行对齐再发送的逻辑，直接改成了发送流水线传来的地址，进而在未按行对齐地址发起突发传输，取回了错误的一行数据。
+
+正确做法是使用选择器将两种请求地址分开：
+\begin{lstlisting}[language=Verilog, caption={发给内存的读请求地址}]
+assign rd_addr = cached_reg ? {tag_reg, index_reg, 4'b0000} : {tag_reg, index_reg, offset_reg};
+\end{lstlisting}
+
+
+\section{合作说明}
+
+本实验由本组成员共同合作完成，组内同学同等贡献。
+
+
+\end{document}

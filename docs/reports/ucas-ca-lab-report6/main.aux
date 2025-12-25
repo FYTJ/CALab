@@ -1,0 +1,61 @@
+\relax 
+\providecommand\zref@newlabel[2]{}
+\providecommand \oddpage@label [2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}实验简介}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}设计方案介绍}{1}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 处理器结构框图}}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}总体思路}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 协同工作逻辑图}}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Cache模块设计}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}对Cache请求的接收}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 来自流水线的Cache请求-冲突(阻塞)情况(单行代码较长, 故采用截图)}}{2}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}对Cache请求的接收-addr_ok/cacop_ok}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}对Cache请求的接收-Request\ Buffer更新(时序逻辑块代码片段节选)}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}正常访存Cache命中情况的处理}{3}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}命中判定}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}写命中情况下最终写回Cache的数据}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}正常访存Cache未命中情况的处理}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}突发读-计数器}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}Bank选择信号}{4}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {7}写Bank选择信号转换为写使能信号}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {8}第0路写控制信号}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {9}写未命中-数据拼接}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {10}写入Cache的数据选择逻辑}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.4}非缓存情况的处理}{5}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {11}data_ok信号逻辑}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {12}内存读请求地址}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.5}CACOP指令的添加}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {13}“替换(写回内存)”路选择}{6}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {14}tagv写逻辑(以第0路为例)}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {15}发给内存的wstrb}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}对类SRAM-AXI转接桥的修改}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}对顶层模块的修改}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {16}ar_id-原}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {17}ar_id-现}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {18}ar_len信号}{7}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {19}last信号}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}写请求/数据/响应通道模块}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {20}写通道-计数器}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {21}wdata信号}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {22}wlast信号}{8}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {23}修改后的状态转移逻辑(局部)}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.3}读请求/响应通道模块}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}对流水线的修改-加入CACOP指令支持}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {24}CACOP向Cache发送的请求(以对icache的store\ tag类型为例)}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {25}cacop_i_fire信号}{9}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {26}ready_go信号修改(省略原有内容)}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {27}修改后的异常传递逻辑}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}MMU模块对存储访问类型的判定}{10}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {28}mat_i信号生成逻辑}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Debug记录}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}忘记接入存储访问类型信号导致向外设发起突发请求}{11}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces 忘记接入存储访问类型信号导致向外设发起突发请求-错误波形}}{11}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}两条连续写命中指令导致同一Bank同一Cache行的“写后读”}{11}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces 两条连续写命中指令导致同一Bank同一Cache行的“写后读”-错误波形}}{12}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Cache阻塞时忘记拉低addr_ok}{12}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Cache阻塞时忘记拉低addr_ok-错误波形}}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}突发传输请求地址忘记按Cache行对齐}{14}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces 突发传输请求地址忘记按Cache行对齐-错误波形}}{14}{}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {29}发给内存的读请求地址}{14}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}合作说明}{14}{}\protected@file@percent }
+\gdef \@abspage@last{14}
