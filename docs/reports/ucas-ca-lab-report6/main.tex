@@ -567,7 +567,7 @@ assign mat_i = (crmd_da_value && !crmd_pg_value) ? crmd_datf_value :
 \end{lstlisting}
 (mat为0时表示非缓存，1表示可缓存。)
 \begin{itemize}
-    \item 直接地址翻译模式下，MAT由 CSR.CRMD 的 DATM 域决定；
+    \item 直接地址翻译模式下，MAT由 CSR.CRMD 的 DATF 域决定；
     \item 直接映射地址翻译模式下，MAT由所命中的直接映射窗口中的MAT 配置信息(dmw0/1_mat_value)决定；
     \item 页表映射地址翻译模式下，MAT由虚实地址转换所用页表项中的 MAT 域配置信息决定。
 \end{itemize}
